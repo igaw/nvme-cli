@@ -44,7 +44,7 @@ jobs:
       - name: install armhf compiler
         run: sudo apt install gcc-arm-linux-gnueabihf pkg-config
       - name: install libraries
-        run: sudo apt install uuid-dev:armhf libjson-c-dev:armhf
+        run: sudo apt install libjson-c-dev:armhf
       - uses: actions/checkout@v3
       - uses: BSFishy/meson-build@v1.0.3
         with:
@@ -74,7 +74,7 @@ jobs:
       - name: install powerpc64le compiler
         run: sudo apt install gcc-powerpc64le-linux-gnu pkg-config
       - name: install libraries
-        run: sudo apt install uuid-dev:ppc64el libjson-c-dev:ppc64el
+        run: sudo apt install libjson-c-dev:ppc64el
       - uses: actions/checkout@v3
       - uses: BSFishy/meson-build@v1.0.3
         with:
@@ -99,7 +99,7 @@ jobs:
           python-version: '3.x'
       - uses: BSFishy/meson-build@v1.0.3
         with:
-          setup-options: --werror -Duuid:werror=false --wrap-mode=forcefallback
+          setup-options: --werror --wrap-mode=forcefallback
           options: --verbose
           action: build
           meson-version: 0.61.2
@@ -115,7 +115,7 @@ jobs:
           python-version: '3.x'
       - uses: BSFishy/meson-build@v1.0.3
         with:
-          setup-options: --werror -Duuid:werror=false --wrap-mode=forcefallback --default-library=static
+          setup-options: --werror --wrap-mode=forcefallback --default-library=static
           options: --verbose
           action: build
           meson-version: 0.61.2
