@@ -104,7 +104,7 @@ jobs:
           action: build
           meson-version: 0.61.2
 
-  build-static:
+  build-with-library-static:
     runs-on: ubuntu-latest
     steps:
       - name: install libraries
@@ -116,6 +116,22 @@ jobs:
       - uses: BSFishy/meson-build@v1.0.3
         with:
           setup-options: --werror --wrap-mode=forcefallback --default-library=static
+          options: --verbose
+          action: build
+          meson-version: 0.61.2
+
+  build-static:
+    runs-on: ubuntu-latest
+    steps:
+      - name: install libraries
+        run: sudo apt-get install -y libpam-dev libcap-ng-dev
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - uses: BSFishy/meson-build@v1.0.3
+        with:
+          setup-options: --werror --wrap-mode=forcefallback --cross-file=.github/cross/ubuntu-static.txt --default-library=static
           options: --verbose
           action: build
           meson-version: 0.61.2
