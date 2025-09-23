@@ -16,8 +16,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include <nvme/types.h>
-
 struct nvme_root;
 typedef struct nvme_root *nvme_root_t;
 struct nvme_link;
