@@ -29,11 +29,13 @@ accessors_ch_custom_tgt = custom_target(
     output: [
         'accessors.h',
         'accessors.c',
+        'accessors.ld',
     ],
     command: [
         generate_accessors,
         '--h-out', '@OUTPUT0@',
         '--c-out', '@OUTPUT1@',
+        '--ld-out', '@OUTPUT2@',
         '--incl', join_paths(meson.current_source_dir(), 'structs-to-include.txt'),
         '@INPUT@',
     ],
@@ -42,12 +44,14 @@ accessors_ch_custom_tgt = custom_target(
     install_dir: [
         'nvme',       # Install @OUTPUT0@=='accessors.h' in this directory.
         false,        # Do not install @OUTPUT1@=='accessors.c'
+        false,
     ],
     install_mode: 'rw-r--r--',
 )
 
 tgt_accessors_h = accessors_ch_custom_tgt[0]
 tgt_accessors_c = accessors_ch_custom_tgt[1]
+tgt_accessors_ld = accessors_ch_custom_tgt[2]
 
 if meson.version().version_compare('>=1.4.0')
     accessors_h_full_path = tgt_accessors_h.full_path()

@@ -49,6 +49,7 @@
 
 #define OUTPUT_FNAME_DEFAULT_C "accessors.c"
 #define OUTPUT_FNAME_DEFAULT_H "accessors.h"
+#define OUTPUT_FNAME_DEFAULT_LD "accessors.ld"
 
 #define STRUCT_RE     "struct[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*\\{([^}]*)\\}[[:space:]]*;"
 #define CHAR_ARRAY_RE "^(const[[:space:]]+)?char[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*\\[[[:space:]]*([A-Za-z0-9_]+)[[:space:]]*\\][[:space:]]*;"
@@ -807,6 +808,7 @@ typedef struct Conf {
 	bool             verbose;
 	const char       *c_fname;	/* Generated output *.c file name */
 	const char       *h_fname;	/* Generated output *.h file name */
+	const char       *ld_fname;     /* Generated ou5tput *.ld file name */
 	const char       *prefix;	/* Prefix added to each functions */
 	StringList_t     hdr_files;	/* Input header file list */
 	StringList_t     incl_list;	/* Inclusion list (read from --incl) */
@@ -1361,6 +1363,29 @@ static void generate_src(FILE  *generated_src, StructInfo_t  *si, Conf_t  *conf)
 	}
 }
 
+/**
+ * @brief Generate linker script (.ld) implementations for accessors of
+ * one struct.
+ *
+ * Writes linker entries for each member in @si to the provided output
+ * FILE (@generated_ld). Handles special
+ *
+ * @param generated_ld: FILE* to write implementations to.
+ * @param si: Pointer to the struct description.
+ * @param conf: Pointer to Conf_t containing args and generation options.
+ */
+static void generate_ld(FILE  *generated_ld, StructInfo_t  *si, Conf_t  *conf)
+{
+	for (size_t m = 0; m < si->count; m++) {
+		Member_t  *member = &si->members[m];
+
+		fprintf(generated_ld,
+				"\t\t%s%s_%s_get;\n"
+				"\t\t%s%s_%s_set;\n",
+				conf->prefix, si->name, member->name,
+				conf->prefix, si->name, member->name);
+	}
+}
 
 /******************************************************************************/
 
@@ -1376,12 +1401,14 @@ static void print_usage(const char *prog)
 	       "Options:\n"
 	       "  -c, --c-out         Name of the generated *.c file. Default: %s\n"
 	       "  -h, --h-out         Name of the generated *.h file. Default: %s\n"
+	       "  -l, --ld-out        Name of the generated *.ld file. Default: %s\n"
 	       "  -e, --excl <file>   Exclusion list. Which member of a struct to exclude (struct::member per line). Default: do not exclude anything\n"
 	       "  -i, --incl <file>   Inclusion list. Which struct to include (struct name per line). Default: include every struct found\n"
 	       "  -p, --prefix <str>  Prefix for generated function names\n"
 	       "  -v, --verbose       Verbose output\n"
 	       "  -H, --help          Show this message\n",
-	       prog, OUTPUT_FNAME_DEFAULT_C, OUTPUT_FNAME_DEFAULT_H);
+	       prog, OUTPUT_FNAME_DEFAULT_C, OUTPUT_FNAME_DEFAULT_H,
+	       OUTPUT_FNAME_DEFAULT_LD);
 }
 
 /**
@@ -1402,10 +1429,11 @@ static void args_parse(Conf_t *conf, int argc, char *argv[])
 {
 	const char  *opt_excl_file = NULL;
 	const char  *opt_incl_file = NULL;
-	static const char  *optstr = "o:c:h:e:i:p:vH";
+	static const char  *optstr = "o:c:h:l:e:i:p:vH";
 	static struct option  longopts[] = {
 		{ "c-out",   required_argument, NULL, 'c' },
 		{ "h-out",   required_argument, NULL, 'h' },
+		{ "ld-out",  required_argument, NULL, 'l' },
 		{ "excl",    required_argument, NULL, 'e' },
 		{ "incl",    required_argument, NULL, 'i' },
 		{ "prefix",  required_argument, NULL, 'p' },
@@ -1417,6 +1445,7 @@ static void args_parse(Conf_t *conf, int argc, char *argv[])
 	conf->verbose = false;
 	conf->c_fname = OUTPUT_FNAME_DEFAULT_C;
 	conf->h_fname = OUTPUT_FNAME_DEFAULT_H;
+	conf->ld_fname = OUTPUT_FNAME_DEFAULT_LD;
 	conf->prefix = "";
 
 	for (int opt = getopt_long(argc, argv, optstr, longopts, NULL);
@@ -1425,6 +1454,7 @@ static void args_parse(Conf_t *conf, int argc, char *argv[])
 		switch (opt) {
 		case 'c': conf->c_fname = optarg; break;
 		case 'h': conf->h_fname = optarg; break;
+		case 'l': conf->ld_fname = optarg; break;
 		case 'e': opt_excl_file = optarg; break;
 		case 'i': opt_incl_file = optarg; break;
 		case 'p': conf->prefix  = optarg; break;
@@ -1583,8 +1613,10 @@ int main(int argc, char *argv[])
 	char          *guard;
 	FILE          *generated_hdr = NULL;
 	FILE          *generated_src = NULL;
+	FILE          *generated_ld = NULL;
 	FILE          *tmp_hdr_code = NULL;
 	FILE          *tmp_src_code = NULL;
+	FILE          *tmp_ld_code = NULL;
 	Conf_t        conf;
 	int           dont_care;
 
@@ -1599,6 +1631,7 @@ int main(int argc, char *argv[])
 	/* Creates temporary files to hold the generated code. */
 	tmp_hdr_code = tmpfile();
 	tmp_src_code = tmpfile();
+	tmp_ld_code = tmpfile();
 
 	STRLST_FOREACH(&conf.hdr_files, in_hdr) {
 		StructInfo_t *si;
@@ -1647,6 +1680,9 @@ int main(int argc, char *argv[])
 				" * Accessors for: struct %s\n"
 				" */\n", si->name);
 			generate_src(tmp_src_code, si, &conf);
+
+			/* Generate entries for the linker script (*.ld) */
+			generate_ld(tmp_ld_code, si, &conf);
 		}
 	}
 
@@ -1714,6 +1750,23 @@ int main(int argc, char *argv[])
 	append_file(generated_src, tmp_src_code);
 	fclose(tmp_src_code);
 	fclose(generated_src);
+
+	/***********************************************************************
+	 * Third, output the linker script file.
+	 */
+	mkdir_fullpath(conf.ld_fname, 0755); /* create output file's directory if needed */
+	generated_ld = fopen(conf.ld_fname, "w");
+	fprintf(generated_ld,
+		"\n"
+		"LIBNVME_ACCESSORS_3_0 {\n"
+		"	global:\n");
+
+	/* Copy temporary file to output */
+	append_file(generated_ld, tmp_ld_code);
+
+	fprintf(generated_ld, "};\n");
+	fclose(tmp_ld_code);
+	fclose(generated_ld);
 
 	if (conf.verbose)
 		printf("\nGenerated %s and %s\n", conf.h_fname, conf.c_fname);

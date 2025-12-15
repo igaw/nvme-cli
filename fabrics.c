@@ -545,6 +545,8 @@ next:
 	return ret;
 }
 
+#include ".build/libnvme/src/accessors/accessors.h"
+
 static int _discover_from_json_config_file(struct nvme_global_ctx *ctx,
 					   nvme_host_t h, nvme_ctrl_t c,
 					   const char *desc, bool connect,
@@ -561,6 +563,8 @@ static int _discover_from_json_config_file(struct nvme_global_ctx *ctx,
 	traddr = nvme_ctrl_get_traddr(c);
 	host_traddr = nvme_ctrl_get_host_traddr(c);
 	host_iface = nvme_ctrl_get_host_iface(c);
+
+	nvme_ctrl_name_get(c);
 
 	if (!transport && !traddr)
 		return 0;

@@ -40,17 +40,37 @@ deps = [
     declare_dependency(sources: tgt_accessors_h),
 ]
 
-source_dir = meson.current_source_dir()
+build_dir = meson.current_build_dir()
 mapfile = 'libnvme.map'
-version_script_arg = join_paths(source_dir, mapfile)
+version_script_arg = join_paths(build_dir, 'libnvme.merged.map')
 
+libnvme_map_build = configure_file(
+    input: mapfile,
+    output: mapfile,
+    copy: true,
+)
+
+merged_map = custom_target(
+    'libnvme.merged.map',
+    input: [
+        libnvme_map_build,
+        tgt_accessors_ld,
+    ],
+    output: 'libnvme.merged.map',
+    command: [
+        'sh', '-c', 'cat "$@" > "$0"', '@OUTPUT@', '@INPUT@'
+    ],
+)
 libnvme = library(
     'nvme', # produces libnvme.so
     sources,
     version: libnvme_so_version,
-    link_args: ['-Wl,--version-script=' + version_script_arg],
+    link_args: [
+      '-Wl,--whole-archive', libaccessors.full_path(), '-Wl,--no-whole-archive',
+      '-Wl,--version-script=' + version_script_arg
+    ],
     dependencies: deps,
-    link_depends: mapfile,
+    link_depends: merged_map,
     c_args: [
         '-include', accessors_h_full_path,
     ],
