@@ -25,6 +25,7 @@ plugin_sources = [
     'plugins/ssstc/ssstc-nvme.c',
     'plugins/toshiba/toshiba-nvme.c',
     'plugins/transcend/transcend-nvme.c',
+    'plugins/twsc/twsc-nvme.c',
     'plugins/virtium/virtium-nvme.c',
     'plugins/wdc/wdc-nvme.c',
     'plugins/wdc/wdc-utils.c',
