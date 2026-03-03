@@ -4,6 +4,10 @@
 # it can be included as the first and only header without any
 # prior includes.  If compilation fails, a header is missing its
 # own dependencies.
+#
+# The .c source files are generated at configure time from the
+# test-header.c.in template so there is no per-header boilerplate
+# to maintain in the repository.
 
 foreach hdr : [
     'cmds',
@@ -19,9 +23,16 @@ foreach hdr : [
     'types',
     'util',
 ]
+    hdr_conf = configuration_data()
+    hdr_conf.set('HDR', hdr)
+    src = configure_file(
+        input: 'test-header.c.in',
+        output: 'test-header-' + hdr + '.c',
+        configuration: hdr_conf,
+    )
     exe = executable(
         'test-header-' + hdr,
-        'test-header-' + hdr + '.c',
+        src,
         dependencies: [libnvme_dep],
     )
     test('libnvme - header/' + hdr, exe)
