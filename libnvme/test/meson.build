@@ -161,6 +161,7 @@ psk = executable(
 
 test('libnvme - psk', psk)
 
+subdir('headers')
 subdir('ioctl')
 subdir('nbft')
 
