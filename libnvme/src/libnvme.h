@@ -16,6 +16,7 @@ extern "C" {
 
 #include <nvme/types.h>
 #include <nvme/cmds.h>
+#include <nvme/ops.h>
 #include <nvme/linux.h>
 #include <nvme/ioctl.h>
 #include <nvme/nbft.h>

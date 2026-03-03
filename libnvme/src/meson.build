@@ -101,6 +101,7 @@ install_headers(
         'nvme/ioctl.h',
         'nvme/linux.h',
         'nvme/cmds.h',
+        'nvme/ops.h',
         'nvme/log.h',
         'nvme/nbft.h',
         'nvme/tree.h',

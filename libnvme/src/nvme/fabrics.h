@@ -633,7 +633,7 @@ int nvmf_connect_config_json(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx);
 
 /**
- * nvmf_config_modify() - Modify and update the configurtion
+ * nvmf_config_modify() - Modify and update the configuration
  * @ctx: Global context
  * @fctx: Fabrics context
  *
