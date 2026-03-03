@@ -30,6 +30,8 @@ project(
     ],
 )
 
+fs = import('fs')
+
 cc = meson.get_compiler('c')
 cxx_available = add_languages('cpp', required: false, native: false)
 
@@ -49,6 +51,8 @@ cxx_available = add_languages('cpp', required: false, native: false)
 # dependencies are present. Also, -Dpython=enabled forces -Dlibnvme=enabled.
 want_nvme = get_option('nvme').disabled() == false
 want_libnvme = get_option('libnvme').disabled() == false
+want_docs = get_option('docs')
+want_docs_build = get_option('docs-build')
 
 feature_python = get_option('python')
 if feature_python.disabled()
@@ -72,7 +76,9 @@ endif
 # version to be composed of 2 or 3 digits after stripping trailing identifiers
 # such as "-rc.*". If the project version is composed of only two digits, then
 # we append '.0' to it.
-ver_digits = meson.project_version().split('-')[0]
+ver = meson.project_version()
+ver_digits = ver.split('-')[0]
+ver_digits = ver_digits.split('.dev')[0]
 num_digits = ver_digits.split('.').length()
 if num_digits < 2 or num_digits > 3
     error('Invalid version: ', meson.project_version())
@@ -80,6 +86,12 @@ elif num_digits == 3
     libnvme_so_version = ver_digits
 else
     libnvme_so_version = ver_digits + '.0'
+endif
+
+# For PyPI builds, use only the major version (e.g., '3' instead of '3.0.0').
+# This avoids the need for symbolic links which pip/wheel doesn't preserve.
+if get_option('pypi')
+    libnvme_so_version = libnvme_so_version.split('.')[0]
 endif
 
 ################################################################################
@@ -92,6 +104,8 @@ udevrulesdir   = join_paths(prefixdir, get_option('udevrulesdir'))
 dracutrulesdir = join_paths(prefixdir, get_option('dracutrulesdir'))
 systemddir     = join_paths(prefixdir, get_option('systemddir'))
 rundir         = join_paths(prefixdir, get_option('rundir'))
+
+std_prefix = prefixdir == '/usr' or prefixdir == '/usr/local'
 
 ###############################################################################
 conf = configuration_data()
@@ -374,9 +388,14 @@ conf.set(
     description: 'Is dlsym function present',
 )
 
+conf.set('NVME_HAVE_SENDFILE', cc.has_function('sendfile'))
+
 project_config_file = 'nvme-config.h'
 nvme_config_h = configure_file(output: project_config_file, configuration: conf)
-config_dep = declare_dependency(sources: nvme_config_h)
+config_dep = declare_dependency(
+    sources: nvme_config_h,
+    include_directories: '.',
+)
 
 # The -include option below requires the full path when
 # nvme-cli is build as subproject of another meson project.
@@ -395,14 +414,25 @@ add_project_arguments(
     language : 'c',
 )
 
-incdir = include_directories(
-    [
-        '.',
-        'ccan',
-        'libnvme',
-        'libnvme/src',
-    ]
-)
+# This handles a specific packaging scenario where libnvme is built and
+# installed separately from nvme-cli. In this case, libnvme is installed
+# under a non-standard prefix, and nvme-cli must be built against the
+# previously installed libnvme headers.
+#
+# To support this layout, we explicitly add the libnvme include path from
+# the non-standard prefix. This cannot be done using include_directories(),
+# which only supports relative paths, while the libnvme include path is
+# absolute.
+if not want_libnvme and not std_prefix
+    libnvme_hdr_location = prefixdir / get_option('includedir')
+    message(
+        'Using non-standard libnvme headers location: ',
+        libnvme_hdr_location
+    )
+
+    # Allow compiler to find headers in non-standard location
+    add_project_arguments('-I' + libnvme_hdr_location, language : 'c')
+endif
 
 ################################################################################
 libtype = get_option('default_library')
@@ -428,73 +458,9 @@ substs.set('PREFIX', prefixdir)
 substs.set('URL', 'https://github.com/linux-nvme/nvme-cli/')
 substs.set('VERSION_MAJOR', libnvme_so_version.split('.')[0])
 
-configure_file(
-    input:         'nvme.spec.in',
-    output:        'nvme.spec',
-    configuration: substs,
-)
-
-disc = configure_file(
-    input: 'etc/discovery.conf.in',
-    output: 'discovery.conf',
-    configuration: substs,
-    install: true,
-    install_dir: join_paths(sysconfdir, 'nvme'),
-)
-
-dracut_files = [
-    '70-nvmf-autoconnect.conf',
-]
-
-foreach file : dracut_files
-    configure_file(
-        input: 'nvmf-autoconnect/dracut-conf/' + file + '.in',
-        output: file,
-        configuration: substs,
-        install: true,
-        install_dir: dracutrulesdir,
-    )
-endforeach
-
-systemd_files = [
-    'nvmefc-boot-connections.service',
-    'nvmf-autoconnect.service',
-    'nvmf-connect-nbft.service',
-    'nvmf-connect.target',
-    'nvmf-connect@.service',
-]
-
-foreach file : systemd_files
-    configure_file(
-        input: 'nvmf-autoconnect/systemd/' + file + '.in',
-        output: file,
-        configuration: substs,
-        install: true,
-        install_dir: systemddir,
-    )
-endforeach
-
-udev_files = [
-    '65-persistent-net-nbft.rules',
-    '70-nvmf-autoconnect.rules',
-    '70-nvmf-keys.rules',
-    '71-nvmf-hpe.rules',
-    '71-nvmf-netapp.rules',
-    '71-nvmf-vastdata.rules',
-]
-
-foreach file : udev_files
-    configure_file(
-        input: 'nvmf-autoconnect/udev-rules/' + file + '.in',
-        output: file,
-        configuration: substs,
-        install: true,
-        install_dir: udevrulesdir
-    )
-endforeach
 
 ################################################################################
-subdir('ccan')      # declares: libccan
+subdir('ccan')      # declares: ccan_dep
 subdir('libnvme')   # declares: libnvme_dep
 
 if want_nvme
@@ -524,12 +490,15 @@ if want_nvme
     executable(
         'nvme',
         sources,
-        dependencies: [ libnvme_dep, json_c_dep ],
+        dependencies: [
+            config_dep,
+            ccan_dep,
+            libnvme_dep,
+            json_c_dep,
+        ],
         link_args: '-ldl',
-        link_with: libccan,
-        include_directories: [incdir, ],
         install: true,
-        install_dir: sbindir
+        install_dir: sbindir,
     )
 
     subdir('unit')
@@ -537,20 +506,84 @@ if want_nvme
         subdir('tests')
     endif
 
-    subdir('Documentation')
+    configure_file(
+        input:         'nvme.spec.in',
+        output:        'nvme.spec',
+        configuration: substs,
+    )
+
+    disc = configure_file(
+        input: 'etc/discovery.conf.in',
+        output: 'discovery.conf',
+        configuration: substs,
+        install: true,
+        install_dir: join_paths(sysconfdir, 'nvme'),
+    )
+
+    dracut_files = [
+        '70-nvmf-autoconnect.conf',
+    ]
+
+    foreach file : dracut_files
+        configure_file(
+            input: 'nvmf-autoconnect/dracut-conf/' + file + '.in',
+            output: file,
+            configuration: substs,
+            install: true,
+            install_dir: dracutrulesdir,
+        )
+    endforeach
+
+    systemd_files = [
+        'nvmefc-boot-connections.service',
+        'nvmf-autoconnect.service',
+        'nvmf-connect-nbft.service',
+        'nvmf-connect.target',
+        'nvmf-connect@.service',
+    ]
+
+    foreach file : systemd_files
+        configure_file(
+            input: 'nvmf-autoconnect/systemd/' + file + '.in',
+            output: file,
+            configuration: substs,
+            install: true,
+            install_dir: systemddir,
+        )
+    endforeach
+
+    udev_files = [
+        '65-persistent-net-nbft.rules',
+        '70-nvmf-autoconnect.rules',
+        '70-nvmf-keys.rules',
+        '71-nvmf-hpe.rules',
+        '71-nvmf-netapp.rules',
+        '71-nvmf-vastdata.rules',
+    ]
+
+    foreach file : udev_files
+        configure_file(
+            input: 'nvmf-autoconnect/udev-rules/' + file + '.in',
+            output: file,
+            configuration: substs,
+            install: true,
+            install_dir: udevrulesdir
+        )
+    endforeach
+
+    install_data(
+        'completions/bash-nvme-completion.sh',
+        rename: 'nvme',
+        install_dir: datadir / 'bash-completion/completions',
+    )
+    install_data(
+        'completions/_nvme',
+        install_dir: datadir / 'zsh/site-functions',
+    )
 endif
 
+subdir('Documentation')
 
-################################################################################
-install_data(
-    'completions/bash-nvme-completion.sh',
-    rename: 'nvme',
-    install_dir: datadir / 'bash-completion/completions',
-)
-install_data(
-    'completions/_nvme',
-    install_dir: datadir / 'zsh/site-functions',
-)
 
 ################################################################################
 path_dict = {
@@ -581,6 +614,7 @@ wanted_dict = {
     'nvme':             want_nvme,
     'libnvme':          want_libnvme,
     'python bindings ': want_python,
+    'build docs':       want_docs_build,
 }
 summary(wanted_dict, section: 'Features to build', bool_yn: true)
 

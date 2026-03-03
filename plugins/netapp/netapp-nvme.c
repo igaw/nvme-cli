@@ -24,9 +24,10 @@
 #include <string.h>
 #include <libgen.h>
 
+#include <libnvme.h>
+
 #include "common.h"
 #include "nvme.h"
-#include "libnvme.h"
 
 #include "util/suffix.h"
 
@@ -764,7 +765,7 @@ static int netapp_smdevices_get_info(struct nvme_transport_handle *hdl,
 	if (err) {
 		fprintf(stderr,
 			"Identify Controller failed to %s (%s)\n", dev,
-			err < 0 ? strerror(-err) :
+			err < 0 ? nvme_strerror(-err) :
 			nvme_status_to_string(err, false));
 		return 0;
 	}
@@ -780,7 +781,7 @@ static int netapp_smdevices_get_info(struct nvme_transport_handle *hdl,
 	if (err) {
 		fprintf(stderr,
 			"Unable to identify namespace for %s (%s)\n",
-			dev, err < 0 ? strerror(-err) :
+			dev, err < 0 ? nvme_strerror(-err) :
 			nvme_status_to_string(err, false));
 		return 0;
 	}
@@ -799,7 +800,7 @@ static int netapp_ontapdevices_get_info(struct nvme_transport_handle *hdl,
 	err = nvme_identify_ctrl(hdl, &item->ctrl);
 	if (err) {
 		fprintf(stderr, "Identify Controller failed to %s (%s)\n",
-			dev, err < 0 ? strerror(-err) :
+			dev, err < 0 ? nvme_strerror(-err) :
 			nvme_status_to_string(err, false));
 		return 0;
 	}
@@ -813,7 +814,7 @@ static int netapp_ontapdevices_get_info(struct nvme_transport_handle *hdl,
 	err = nvme_identify_ns(hdl, item->nsid, &item->ns);
 	if (err) {
 		fprintf(stderr, "Unable to identify namespace for %s (%s)\n",
-			dev, err < 0 ? strerror(-err) :
+			dev, err < 0 ? nvme_strerror(-err) :
 			nvme_status_to_string(err, false));
 		return 0;
 	}
@@ -828,7 +829,7 @@ static int netapp_ontapdevices_get_info(struct nvme_transport_handle *hdl,
 	err = nvme_identify_ns_descs_list(hdl, item->nsid, nsdescs);
 	if (err) {
 		fprintf(stderr, "Unable to identify namespace descriptor for %s (%s)\n",
-			dev, err < 0 ? strerror(-err) :
+			dev, err < 0 ? nvme_strerror(-err) :
 			nvme_status_to_string(err, false));
 		free(nsdescs);
 		return 0;
@@ -840,7 +841,7 @@ static int netapp_ontapdevices_get_info(struct nvme_transport_handle *hdl,
 	err = nvme_get_ontap_c2_log(hdl, item->nsid, item->log_data, ONTAP_C2_LOG_SIZE);
 	if (err) {
 		fprintf(stderr, "Unable to get log page data for %s (%s)\n",
-			dev, err < 0 ? strerror(-err) :
+			dev, err < 0 ? nvme_strerror(-err) :
 			nvme_status_to_string(err, false));
 		return 0;
 	}
@@ -901,20 +902,7 @@ static int netapp_smdevices(int argc, char **argv, struct command *acmd,
 	int num_smdevices = 0;
 	struct nvme_transport_handle *hdl;
 
-	struct config {
-		bool verbose;
-		char *output_format;
-	};
-
-	struct config cfg = {
-		.output_format = "normal",
-	};
-
-	OPT_ARGS(opts) = {
-		OPT_FLAG("verbose", 'v', &cfg.verbose, "Increase output verbosity"),
-		OPT_FMT("output-format", 'o', &cfg.output_format, "Output Format: normal|json|column"),
-		OPT_END()
-	};
+	NVME_ARGS(opts);
 
 	if (!ctx)
 		return -ENOMEM;
@@ -923,9 +911,10 @@ static int netapp_smdevices(int argc, char **argv, struct command *acmd,
 	if (ret < 0)
 		return ret;
 
-	fmt = netapp_output_format(cfg.output_format);
+	fmt = netapp_output_format(nvme_args.output_format);
 	if (fmt != NNORMAL && fmt != NCOLUMN && fmt != NJSON) {
-		fprintf(stderr, "Unrecognized output format: %s\n", cfg.output_format);
+		fprintf(stderr, "Unrecognized output format: %s\n",
+			nvme_args.output_format);
 		return -EINVAL;
 	}
 
@@ -967,7 +956,7 @@ static int netapp_smdevices(int argc, char **argv, struct command *acmd,
 		ret = nvme_open(ctx, path, &hdl);
 		if (ret) {
 			fprintf(stderr, "Unable to open %s: %s\n", path,
-				strerror(-ret));
+				nvme_strerror(-ret));
 			continue;
 		}
 
@@ -1012,20 +1001,7 @@ static int netapp_ontapdevices(int argc, char **argv, struct command *acmd,
 	int num_ontapdevices = 0;
 	struct nvme_transport_handle *hdl;
 
-	struct config {
-		bool verbose;
-		char *output_format;
-	};
-
-	struct config cfg = {
-		.output_format = "normal",
-	};
-
-	OPT_ARGS(opts) = {
-		OPT_FLAG("verbose", 'v', &cfg.verbose, "Increase output verbosity"),
-		OPT_FMT("output-format", 'o', &cfg.output_format, "Output Format: normal|json|column"),
-		OPT_END()
-	};
+	NVME_ARGS(opts);
 
 	if (!ctx)
 		return -ENOMEM;
@@ -1034,9 +1010,10 @@ static int netapp_ontapdevices(int argc, char **argv, struct command *acmd,
 	if (ret < 0)
 		return ret;
 
-	fmt = netapp_output_format(cfg.output_format);
+	fmt = netapp_output_format(nvme_args.output_format);
 	if (fmt != NNORMAL && fmt != NCOLUMN && fmt != NJSON) {
-		fprintf(stderr, "Unrecognized output format: %s\n", cfg.output_format);
+		fprintf(stderr, "Unrecognized output format: %s\n",
+			nvme_args.output_format);
 		return -EINVAL;
 	}
 
@@ -1078,7 +1055,7 @@ static int netapp_ontapdevices(int argc, char **argv, struct command *acmd,
 		ret = nvme_open(ctx, path, &hdl);
 		if (ret) {
 			fprintf(stderr, "Unable to open %s: %s\n", path,
-					strerror(-ret));
+					nvme_strerror(-ret));
 			continue;
 		}
 

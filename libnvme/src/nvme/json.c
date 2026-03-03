@@ -6,19 +6,16 @@
  * Authors: Hannes Reinecke <hare@suse.de>
  */
 
-#include <stdio.h>
-#include <errno.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 
 #include <json.h>
 
+#include <libnvme.h>
+
 #include "cleanup.h"
-#include "fabrics.h"
-#include "log.h"
 #include "private.h"
-#include "linux.h"
 
 #define JSON_UPDATE_INT_OPTION(c, k, a, o)				\
 	if (!strcmp(# a, k ) && !c->a) c->a = json_object_get_int(o);
@@ -243,7 +240,7 @@ int json_read_config(struct nvme_global_ctx *ctx, const char *config_file)
 	fd = open(config_file, O_RDONLY);
 	if (fd < 0) {
 		nvme_msg(ctx, LOG_DEBUG, "Error opening %s, %s\n",
-			 config_file, strerror(errno));
+			 config_file, nvme_strerror(errno));
 		return fd;
 	}
 	json_root = parse_json(ctx, fd);
@@ -386,7 +383,7 @@ static void json_update_subsys(struct json_object *subsys_array,
 	}
 }
 
-int json_update_config(struct nvme_global_ctx *ctx, const char *config_file)
+int json_update_config(struct nvme_global_ctx *ctx, int fd)
 {
 	nvme_host_t h;
 	struct json_object *json_root, *host_obj;
@@ -432,19 +429,12 @@ int json_update_config(struct nvme_global_ctx *ctx, const char *config_file)
 			json_object_put(host_obj);
 		}
 	}
-	if (!config_file) {
-		ret = json_object_to_fd(1, json_root,
-					JSON_C_TO_STRING_PRETTY |
-					JSON_C_TO_STRING_NOSLASHESCAPE);
-		printf("\n");
-	} else
-		ret = json_object_to_file_ext(config_file, json_root,
-					      JSON_C_TO_STRING_PRETTY |
-					      JSON_C_TO_STRING_NOSLASHESCAPE);
-	if (ret < 0) {
-		nvme_msg(ctx, LOG_ERR, "Failed to write to %s, %s\n",
-			 config_file ? "stdout" : config_file,
-			 json_util_get_last_err());
+	ret = json_object_to_fd(fd, json_root,
+				JSON_C_TO_STRING_PRETTY |
+				JSON_C_TO_STRING_NOSLASHESCAPE);
+	if (ret < 0 || write(fd, "\n", 1) < 0) {
+		nvme_msg(ctx, LOG_ERR, "Failed to write JSON config file: %s\n",
+			 ret ? json_util_get_last_err() : strerror(errno));
 		ret = -EIO;
 	}
 	json_object_put(json_root);

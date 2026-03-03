@@ -25,10 +25,11 @@
 #include <ccan/minmax/minmax.h>
 #include <ccan/endian/endian.h>
 
+#include <libnvme.h>
+
 #include "cleanup.h"
 #include "private.h"
 #include "util.h"
-#include "log.h"
 
 /* The bionic libc implementation doesn't define LINE_MAX */
 #ifndef LINE_MAX
@@ -560,6 +561,7 @@ int nvme_get_feature_length(int fid, __u32 cdw11, enum nvme_data_tfr dir,
 	case NVME_FEAT_FID_RESV_MASK:
 	case NVME_FEAT_FID_RESV_PERSIST:
 	case NVME_FEAT_FID_WRITE_PROTECT:
+	case NVME_FEAT_FID_POWER_LIMIT:
 		*len = 0;
 		break;
 	case NVME_FEAT_FID_ENH_CTRL_METADATA:
@@ -1165,4 +1167,16 @@ void *__nvme_realloc(void *p, size_t len)
 	}
 
 	return result;
+}
+
+const struct ifaddrs *nvme_getifaddrs(struct nvme_global_ctx *ctx)
+{
+	if (!ctx->ifaddrs_cache) {
+		struct ifaddrs *p;
+
+		if (!getifaddrs(&p))
+			ctx->ifaddrs_cache = p;
+	}
+
+	return ctx->ifaddrs_cache;
 }

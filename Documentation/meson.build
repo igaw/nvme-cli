@@ -77,11 +77,13 @@ adoc_sources = [
     'nvme-lockdown',
     'nvme-mi-cmd-support-effects-log',
     'nvme-micron-clear-pcie-errors',
+    'nvme-micron-id-ctrl',
     'nvme-micron-internal-log',
     'nvme-micron-nand-stats',
     'nvme-micron-pcie-stats',
     'nvme-micron-selective-download',
     'nvme-micron-smart-add-log',
+    'nvme-micron-smart-log',
     'nvme-micron-temperature-stats',
     'nvme-netapp-ontapdevices',
     'nvme-netapp-smdevices',
@@ -265,13 +267,11 @@ adoc_includes = [
     'cmds-main.txt',
 ]
 
-want_docs = get_option('docs')
-want_docs_build = get_option('docs-build')
 if want_docs != 'false'
     mandir = join_paths(get_option('mandir'), 'man1')
     htmldir = join_paths(get_option('htmldir'), 'nvme')
 
-    asciidoctor = find_program('asciidoc', required: get_option('docs-build'))
+    asciidoctor = find_program('asciidoc', required: want_docs_build)
     if want_docs_build and asciidoctor.found()
         # Build documentation before installing
         foreach file : adoc_includes

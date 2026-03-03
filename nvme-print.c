@@ -8,8 +8,9 @@
 #include <sys/stat.h>
 #include <locale.h>
 
+#include <libnvme.h>
+
 #include "nvme.h"
-#include "libnvme.h"
 #include "nvme-print.h"
 #include "nvme-models.h"
 #include "util/suffix.h"
@@ -20,7 +21,7 @@
 #define nvme_print(name, flags, ...)				\
 	do {							\
 		struct print_ops *ops = nvme_print_ops(flags);	\
-		if (ops && ops->name && !nvme_cfg.dry_run)	\
+		if (ops && ops->name && !nvme_args.dry_run)	\
 			ops->name(__VA_ARGS__);			\
 	} while (false)
 
@@ -146,7 +147,7 @@ const char *nvme_sstat_status_to_string(__u16 status)
 		return "NVM Subsystem has never been sanitized.";
 	case NVME_SANITIZE_SSTAT_STATUS_COMPLETE_SUCCESS:
 		return "Most Recent Sanitize Command Completed Successfully.";
-	case NVME_SANITIZE_SSTAT_STATUS_IN_PROGESS:
+	case NVME_SANITIZE_SSTAT_STATUS_IN_PROGRESS:
 		return "Sanitize in Progress.";
 	case NVME_SANITIZE_SSTAT_STATUS_COMPLETED_FAILED:
 		return "Most Recent Sanitize Command Failed.";
@@ -520,6 +521,47 @@ void nvme_show_status(int status)
 		ops->show_status(status);
 }
 
+static void nvme_show_cmd_err(const char *msg, bool admin,
+			      struct nvme_passthru_cmd *cmd, int err)
+{
+	if (!err)
+		return;
+	else if (err < 0)
+		nvme_show_error("%s: %s", msg, nvme_strerror(-err));
+	else if (cmd)
+		nvme_show_opcode_status(err, false, cmd->opcode);
+	else
+		nvme_show_status(err);
+}
+
+void nvme_show_err(const char *msg, int err)
+{
+	nvme_show_cmd_err(msg, false, NULL, err);
+}
+
+void nvme_show_io_cmd_err(const char *msg, struct nvme_passthru_cmd *cmd,
+			  int err)
+{
+	nvme_show_cmd_err(msg, false, cmd, err);
+}
+
+void nvme_show_admin_cmd_err(const char *msg, struct nvme_passthru_cmd *cmd,
+			     int err)
+{
+	nvme_show_cmd_err(msg, true, cmd, err);
+}
+
+void nvme_show_opcode_status(int status, bool admin, __u8 opcode)
+{
+	struct print_ops *ops = nvme_print_ops(NORMAL);
+
+	if (nvme_is_output_format_json())
+		ops = nvme_print_ops(JSON);
+
+	if (ops && ops->show_opcode_status)
+		ops->show_opcode_status(status, admin, opcode);
+}
+
 void nvme_show_error_status(int status, const char *msg, ...)
 {
 	struct print_ops *ops = nvme_print_ops(NORMAL);
@@ -530,7 +572,7 @@ void nvme_show_error_status(int status, const char *msg, ...)
 	if (nvme_is_output_format_json())
 		ops = nvme_print_ops(JSON);
 
-	if (ops && ops->show_status)
+	if (ops && ops->show_error_status)
 		ops->show_error_status(status, msg, ap);
 
 	va_end(ap);
@@ -788,14 +830,19 @@ const char *nvme_log_to_string(__u8 lid)
 	case NVME_LOG_LID_REACHABILITY_GROUPS:		return "Reachability Groups";
 	case NVME_LOG_LID_REACHABILITY_ASSOCIATIONS:	return "Reachability Associations";
 	case NVME_LOG_LID_CHANGED_ALLOC_NS:		return "Changed Allocated Namespace List";
+	case NVME_LOG_LID_DEV_PERSONALITY:		return "Device Personalities";
+	case NVME_LOG_LID_CROSS_CTRL_RESET:		return "Cross-Controller Reset";
+	case NVME_LOG_LID_LOST_HOST_COMMUNICATION:	return "Lost Host Communication";
 	case NVME_LOG_LID_FDP_CONFIGS:			return "FDP Configurations";
 	case NVME_LOG_LID_FDP_RUH_USAGE:		return "Reclaim Unit Handle Usage";
 	case NVME_LOG_LID_FDP_STATS:			return "FDP Statistics";
 	case NVME_LOG_LID_FDP_EVENTS:			return "FDP Events";
+	case NVME_LOG_LID_POWER_MEASUREMENT:		return "Power Measurement";
 	case NVME_LOG_LID_DISCOVERY:			return "Discovery";
 	case NVME_LOG_LID_HOST_DISCOVERY:		return "Host Discovery";
 	case NVME_LOG_LID_AVE_DISCOVERY:		return "AVE Discovery";
 	case NVME_LOG_LID_PULL_MODEL_DDC_REQ:		return "Pull Model DDC Request";
+	case NVME_LOG_LID_SANITIZE_NS_STATUS_LIST:	return "Sanitize Namespace Status List";
 	case NVME_LOG_LID_RESERVATION:			return "Reservation Notification";
 	case NVME_LOG_LID_SANITIZE:			return "Sanitize Status";
 	case NVME_LOG_LID_ZNS_CHANGED_ZONES:		return "Changed Zone List";
@@ -902,6 +949,10 @@ const char *nvme_feature_to_string(enum nvme_features_id feature)
 	case NVME_FEAT_FID_NS_ADMIN_LABEL:	return "Namespace Admin Label";
 	case NVME_FEAT_FID_KEY_VALUE:		return "Key Value Configuration";
 	case NVME_FEAT_FID_CTRL_DATA_QUEUE:	return "Controller Data Queue";
+	case NVME_FEAT_FID_CONF_DEV_PERSONALITY:return "Configurable Device Personality";
+	case NVME_FEAT_FID_POWER_LIMIT:		return "Power Limit";
+	case NVME_FEAT_FID_POWER_THRESH:	return "Power Threshold";
+	case NVME_FEAT_FID_POEWR_MEASUREMENT:	return "Power Measurement";
 	case NVME_FEAT_FID_EMB_MGMT_CTRL_ADDR:	return "Embedded Management Controller Address";
 	case NVME_FEAT_FID_HOST_MGMT_AGENT_ADDR:return "Host Management Agent Address";
 	case NVME_FEAT_FID_ENH_CTRL_METADATA:	return "Enhanced Controller Metadata";
@@ -1438,6 +1489,36 @@ const char *nvme_pls_mode_to_string(__u8 mode)
 		return "enabled with Emergency Power Fail";
 	case 2:
 		return "enabled with Forced Quiescence";
+	default:
+		break;
+	}
+
+	return "Reserved";
+}
+
+const char *nvme_feature_power_limit_scale_to_string(__u8 pls)
+{
+	switch (pls) {
+	case NVME_PSD_PS_NOT_REPORTED:
+		return "not reported";
+	case NVME_PSD_PS_100_MICRO_WATT:
+		return "0.0001 W";
+	case NVME_PSD_PS_10_MILLI_WATT:
+		return "0.01 W";
+	default:
+		break;
+	}
+
+	return "Reserved";
+}
+
+const char *nvme_power_measurement_type_to_string(__u8 pmt)
+{
+	switch (pmt) {
+	case NVME_PMT_NSS_TOTAL_POWER:
+		return "NVM subsystem total power";
+	case NVME_PMT_VS_MIN ... NVME_PMT_VS_MAX:
+		return "Vendor Specific";
 	default:
 		break;
 	}

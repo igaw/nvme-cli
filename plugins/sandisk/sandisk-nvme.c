@@ -14,9 +14,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <libnvme.h>
+
 #include "common.h"
 #include "nvme.h"
-#include "libnvme.h"
 #include "plugin.h"
 #include "linux/types.h"
 #include "util/cleanup.h"
@@ -104,7 +105,7 @@ static int sndk_do_cap_telemetry_log(struct nvme_global_ctx *ctx,
 	output = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 	if (output < 0) {
 		fprintf(stderr, "%s: Failed to open output file %s: %s!\n",
-				__func__, file, strerror(errno));
+				__func__, file, nvme_strerror(errno));
 		return output;
 	}
 
@@ -154,7 +155,7 @@ static int sndk_do_cap_telemetry_log(struct nvme_global_ctx *ctx,
 	}
 
 	if (fsync(output) < 0) {
-		fprintf(stderr, "ERROR: %s: fsync: %s\n", __func__, strerror(errno));
+		fprintf(stderr, "ERROR: %s: fsync: %s\n", __func__, nvme_strerror(errno));
 		err = -1;
 	}
 
@@ -211,7 +212,7 @@ static int sndk_do_cap_udui(struct nvme_transport_handle *hdl, char *file,
 	if (!log) {
 		fprintf(stderr,
 			"%s: ERROR: log header malloc failed : status %s, size 0x%x\n",
-			__func__, strerror(errno), udui_log_hdr_size);
+			__func__, nvme_strerror(errno), udui_log_hdr_size);
 		return -1;
 	}
 	memset(log, 0, udui_log_hdr_size);
@@ -239,7 +240,7 @@ static int sndk_do_cap_udui(struct nvme_transport_handle *hdl, char *file,
 	output = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 	if (output < 0) {
 		fprintf(stderr, "%s: Failed to open output file %s: %s!\n", __func__, file,
-			strerror(errno));
+			nvme_strerror(errno));
 		goto out;
 	}
 
@@ -310,13 +311,16 @@ static int sndk_vs_internal_fw_log(int argc, char **argv,
 	const char *file = "Output file pathname.";
 	const char *size = "Data retrieval transfer size.";
 	const char *data_area =
-		"Data area to retrieve up to. Currently only supported on the SN340, SN640, SN730, and SN840 devices.";
-	const char *file_size = "Output file size. Currently only supported on the SN340 device.";
+		"Data area to retrieve up to. Supported for telemetry, see man page for other use cases.";
+	const char *file_size =
+		"Output file size. Deprecated, see man page for supported devices.";
 	const char *offset =
-		"Output file data offset. Currently only supported on the SN340 device.";
+		"Output file data offset. Deprecated, see man page for supported devices.";
 	const char *type =
-		"Telemetry type - NONE, HOST, or CONTROLLER Currently only supported on the SN530, SN640, SN730, SN740, SN810, SN840 and ZN350 devices.";
-	const char *verbose = "Display more debug messages.";
+		"Telemetry type - NONE, HOST, or CONTROLLER:\n" \
+		"  NONE - Default, capture without using NVMe telemetry.\n" \
+		"  HOST - Host-initiated telemetry.\n" \
+		"  CONTROLLER - Controller-initiated telemetry.";
 	char f[PATH_MAX] = {0};
 	char fileSuffix[PATH_MAX] = {0};
 	__u32 xfer_size = 0;
@@ -336,7 +340,6 @@ static int sndk_vs_internal_fw_log(int argc, char **argv,
 		__u64 file_size;
 		__u64 offset;
 		char *type;
-		bool verbose;
 	};
 
 	struct config cfg = {
@@ -346,19 +349,15 @@ static int sndk_vs_internal_fw_log(int argc, char **argv,
 		.file_size = 0,
 		.offset = 0,
 		.type = NULL,
-		.verbose = false,
 	};
 
-	OPT_ARGS(opts) = {
+	NVME_ARGS(opts,
 		OPT_FILE("output-file",   'o', &cfg.file,      file),
 		OPT_UINT("transfer-size", 's', &cfg.xfer_size, size),
 		OPT_UINT("data-area",     'd', &cfg.data_area, data_area),
 		OPT_LONG("file-size",     'f', &cfg.file_size, file_size),
 		OPT_LONG("offset",        'e', &cfg.offset,    offset),
-		OPT_FILE("type",          't', &cfg.type,      type),
-		OPT_FLAG("verbose",       'v', &cfg.verbose,   verbose),
-		OPT_END()
-	};
+		OPT_FILE("type",          't', &cfg.type,      type));
 
 	ret = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (ret)
@@ -383,7 +382,7 @@ static int sndk_vs_internal_fw_log(int argc, char **argv,
 		/* verify file name and path is valid before getting dump data */
 		verify_file = open(cfg.file, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 		if (verify_file < 0) {
-			fprintf(stderr, "ERROR: SNDK: open: %s\n", strerror(errno));
+			fprintf(stderr, "ERROR: SNDK: open: %s\n", nvme_strerror(errno));
 			goto out;
 		}
 		close(verify_file);
@@ -469,7 +468,7 @@ static int sndk_vs_internal_fw_log(int argc, char **argv,
 			goto out;
 		} else {
 			ret = sndk_do_cap_udui(hdl, f, xfer_size,
-					 cfg.verbose, cfg.file_size,
+					 nvme_args.verbose, cfg.file_size,
 					 cfg.offset);
 			goto out;
 		}
@@ -565,10 +564,8 @@ static int sndk_drive_resize(int argc, char **argv,
 		.size = 0,
 	};
 
-	OPT_ARGS(opts) = {
-		OPT_UINT("size", 's', &cfg.size, size),
-		OPT_END()
-	};
+	NVME_ARGS(opts,
+		OPT_UINT("size", 's', &cfg.size, size));
 
 	ret = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (ret)
@@ -850,7 +847,7 @@ static int sndk_get_fw_act_history_C2(struct nvme_global_ctx *ctx, struct nvme_t
 
 	data = (__u8 *)malloc(sizeof(__u8) * SNDK_FW_ACT_HISTORY_C2_LOG_BUF_LEN);
 	if (!data) {
-		fprintf(stderr, "ERROR: SNDK: malloc: %s\n", strerror(errno));
+		fprintf(stderr, "ERROR: SNDK: malloc: %s\n", nvme_strerror(errno));
 		return -1;
 	}
 
@@ -916,10 +913,7 @@ static int sndk_vs_fw_activate_history(int argc, char **argv,
 		.output_format = "normal",
 	};
 
-	OPT_ARGS(opts) = {
-		OPT_FMT("output-format", 'o', &cfg.output_format, "Output Format: normal|json"),
-		OPT_END()
-	};
+	NVME_ARGS(opts);
 
 	ret = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (ret)
@@ -967,9 +961,7 @@ static int sndk_clear_fw_activate_history(int argc, char **argv,
 	__u64 capabilities = 0;
 	int ret;
 
-	OPT_ARGS(opts) = {
-		OPT_END()
-	};
+	NVME_ARGS(opts);
 
 	ret = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (ret)
@@ -1039,9 +1031,7 @@ static int sndk_capabilities(int argc, char **argv,
 	uint64_t capabilities = 0;
 	int ret;
 
-	OPT_ARGS(opts) = {
-		OPT_END()
-	};
+	NVME_ARGS(opts);
 
 	ret = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (ret)

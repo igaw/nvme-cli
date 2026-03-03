@@ -15,9 +15,10 @@
 #include <inttypes.h>
 #include <time.h>
 
+#include <libnvme.h>
+
 #include "common.h"
 #include "nvme.h"
-#include "libnvme.h"
 #include "plugin.h"
 #include "nvme-print.h"
 #include "solidigm-util.h"
@@ -498,7 +499,8 @@ static int ilog_dump_identify_page(struct nvme_transport_handle *hdl,
 	_cleanup_free_ char *filename = NULL;
 	int err;
 
-	err = nvme_identify(hdl, nsid, NVME_CSI_NVM, cns->id, buff, 0);
+	err = nvme_identify(hdl, nsid, NVME_CSI_NVM, cns->id, buff,
+		sizeof(data));
 	if (err)
 		return err;
 
@@ -524,7 +526,7 @@ static int ilog_ensure_dump_id_ctrl(struct nvme_transport_handle *hdl,
 	first = false;
 	err = ilog_dump_identify_page(hdl, ilog, &idctrl, 0);
 
-	if (!err)
+	if (err == 0)
 		ilog->count++;
 
 	return err;
@@ -815,6 +817,8 @@ static int ilog_dump_pel(struct nvme_transport_handle *hdl, struct ilog *ilog)
 	if (err)
 		return err;
 
+	ilog->count++;
+
 	err = log_save(&lp, ilog->cfg->out_dir, "log_pages", "lid_0x0d_lsp_0x00_lsi_0x0000.bin",
 		       pevent_log_full, lp.buffer_size);
 
@@ -846,19 +850,15 @@ int solidigm_get_internal_log(int argc, char **argv, struct command *acmd,
 	const char *desc = "Get Debug Firmware Logs and save them.";
 	const char *type = "Log type; Defaults to ALL.";
 	const char *out_dir = "Output directory; defaults to current working directory.";
-	const char *verbose = "To print out verbose info.";
 
 	struct config cfg = {
 		.out_dir = ".",
 		.type = type_ALL,
 	};
 
-	OPT_ARGS(opts) = {
+	NVME_ARGS(opts,
 		OPT_STRING("type", 't', "ALL|CIT|HIT|NLOG|ASSERT|EVENT|EXTENDED", &cfg.type, type),
-		OPT_STRING("dir-name", 'd', "DIRECTORY", &cfg.out_dir, out_dir),
-		OPT_FLAG("verbose", 'v', &cfg.verbose,      verbose),
-		OPT_END()
-	};
+		OPT_STRING("dir-name", 'd', "DIRECTORY", &cfg.out_dir, out_dir));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (err)
@@ -969,7 +969,7 @@ int solidigm_get_internal_log(int argc, char **argv, struct command *acmd,
 	if (ilog.count > 0) {
 		int ret_cmd;
 		_cleanup_free_ char *cmd = NULL;
-		char *quiet = cfg.verbose ? "" : " -q";
+		char *quiet = nvme_args.verbose ? "" : " -q";
 
 		if (asprintf(&zip_name, "%s.zip", unique_folder) < 0)
 			return -errno;
@@ -1001,7 +1001,7 @@ out:
 		if (err > 0)
 			nvme_show_status(err);
 
-	} else if ((ilog.count > 1) || cfg.verbose)
+	} else if ((ilog.count > 0) || cfg.verbose)
 		printf("Total: %d log files in %s/%s\n", ilog.count, initial_folder, output_path);
 
 	return err;

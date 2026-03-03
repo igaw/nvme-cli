@@ -7,8 +7,9 @@
 #include <sys/ioctl.h>
 #include <dlfcn.h>
 
-#include <nvme/ioctl.h>
-#include <nvme/private.h>
+#include <libnvme.h>
+
+#include "nvme/private.h"
 
 #include "mock.h"
 #include "util.h"
@@ -157,7 +158,8 @@ int ioctl(int fd, int request, ...)
 		if (!real_ioctl)
 			fail("Error: dlsym failed to find original ioctl\n");
 #else
-		fail("Error: unhandled ioctl\n");
+		fprintf(stderr, "Warning: unhandled ioctl %lx\n", request);
+		return -ENOTTY;
 #endif
 	}
 

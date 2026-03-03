@@ -88,6 +88,52 @@ __u8 nvme_status_to_errno(int status, bool fabrics);
 const char *nvme_status_to_string(int status, bool fabrics);
 
 /**
+ * nvme_sanitize_ns_status_to_string() - Returns sanitize ns status string.
+ * @sc: Return status code from an sanitize ns command
+ *
+ * Return: The sanitize ns status string if it is a specific status code.
+ */
+static inline const char *
+nvme_sanitize_ns_status_to_string(__u16 sc)
+{
+	switch (sc) {
+	case NVME_SC_EXCEEDS_MAX_NS_SANITIZE:
+		return "Req Exceeds Max NS Sanitize Operations In Progress";
+	default:
+		break;
+	}
+
+	return NULL;
+};
+
+/**
+ * nvme_opcode_status_to_string() - Returns nvme opcode status string.
+ * @status: Return status from an nvme passthrough command
+ * @admin:  Set to true if an admin command
+ * @opcode: Opcode from an nvme passthrough command
+ *
+ * Return: The nvme opcode status string if it is an nvme status field,
+ * or a standard errno string if status is < 0.
+ */
+static inline const char *
+nvme_opcode_status_to_string(int status, bool admin, __u8 opcode)
+{
+	__u16 sct = nvme_status_code_type(status);
+	__u16 sc = nvme_status_code(status);
+	const char *s = NULL;
+
+	if (status >= 0 && sct == NVME_SCT_CMD_SPECIFIC) {
+		if (admin && opcode == nvme_admin_sanitize_ns)
+			s = nvme_sanitize_ns_status_to_string(sc);
+	}
+
+	if (s)
+		return s;
+
+	return nvme_status_to_string(status, false);
+}
+
+/**
  * nvme_errno_to_string() - Returns string describing nvme connect failures
  * @err: Returned error code from nvme_add_ctrl()
  *
@@ -241,6 +287,14 @@ static inline void nvme_feature_decode_arbitration(__u32 value, __u8 *ab,
 
 #define NVME_FEAT_PM_PS(v)		NVME_GET(v, FEAT_PWRMGMT_PS)
 #define NVME_FEAT_PM_WH(v)		NVME_GET(v, FEAT_PWRMGMT_WH)
+
+#define NVME_FEAT_POWER_LIMIT_PLV(v)	NVME_GET(v, FEAT_POWER_LIMIT_PLV)
+#define NVME_FEAT_POWER_LIMIT_PLS(v)	NVME_GET(v, FEAT_POWER_LIMIT_PLS)
+
+#define NVME_FEAT_POWER_THRESH_PTV(v)	NVME_GET(v, FEAT_POWER_THRESH_PTV)
+#define NVME_FEAT_POWER_THRESH_PTS(v)	NVME_GET(v, FEAT_POWER_THRESH_PTS)
+#define NVME_FEAT_POWER_THRESH_PMTS(v)	NVME_GET(v, FEAT_POWER_THRESH_PMTS)
+#define NVME_FEAT_POWER_THRESH_EPT(v)	NVME_GET(v, FEAT_POWER_THRESH_EPT)
 
 static inline void nvme_feature_decode_power_mgmt(__u32 value, __u8 *ps,
 						  __u8 *wh)

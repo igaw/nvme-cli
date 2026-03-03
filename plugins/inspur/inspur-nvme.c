@@ -10,9 +10,10 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include <libnvme.h>
+
 #include "common.h"
 #include "nvme.h"
-#include "libnvme.h"
 #include "plugin.h"
 #include "nvme-print.h"
 #include "util/suffix.h"
@@ -212,7 +213,7 @@ static int nvme_get_vendor_log(int argc, char **argv, struct command *acmd, stru
 	__u8 local_mem[BYTE_OF_4K];
 	int err;
 
-	OPT_ARGS(opts) = { OPT_END() };
+	NVME_ARGS(opts);
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (err)

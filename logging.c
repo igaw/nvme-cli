@@ -27,6 +27,12 @@ struct submit_data {
 int log_level;
 static struct submit_data sb;
 
+bool is_printable_at_level(int level)
+{
+	return ((log_level >= level) &&
+		(strcmp(nvme_args.output_format, "normal") == 0));
+}
+
 int map_log_level(int verbose, bool quiet)
 {
 	int log_level;
@@ -97,7 +103,7 @@ static void nvme_log_retry(int errnum)
 	if (log_level < LOG_DEBUG)
 		return;
 
-	printf("passthru command returned '%s'\n", strerror(errnum));
+	printf("passthru command returned '%s'\n", nvme_strerror(errnum));
 }
 
 void *nvme_submit_entry(struct nvme_transport_handle *hdl,
@@ -126,7 +132,7 @@ void nvme_submit_exit(struct nvme_transport_handle *hdl,
 bool nvme_decide_retry(struct nvme_transport_handle *hdl,
 		struct nvme_passthru_cmd *cmd, int err)
 {
-	if (!nvme_cfg.no_retries)
+	if (!nvme_args.no_retries)
 		return false;
 
 	if (err != -EAGAIN ||

@@ -29,9 +29,10 @@
 #include <linux/socket.h>
 #include <limits.h>
 
+#include <libnvme.h>
+
 #include "common.h"
 #include "nvme.h"
-#include "libnvme.h"
 #include "nvme-print.h"
 
 #define CREATE_CMD
@@ -168,7 +169,7 @@ static int read_file(const char *file, unsigned char **data, unsigned int *len)
 	if (file == NULL) return err;
 
 	if ((fd = open(file, O_RDONLY)) < 0) {
-		fprintf(stderr, "Failed to open %s: %s\n", file, strerror(errno));
+		fprintf(stderr, "Failed to open %s: %s\n", file, nvme_strerror(errno));
 		return fd;
 	}
 
@@ -189,7 +190,7 @@ static int read_file(const char *file, unsigned char **data, unsigned int *len)
 	if (err < 0) {
 		err = -errno;
 		fprintf(stderr, "Failed to read data from file"
-				" %s with %s\n", file, strerror(errno));
+				" %s with %s\n", file, nvme_strerror(errno));
 		free(buf);
 		goto out;
 	}
@@ -855,7 +856,7 @@ int rpmb_cmd_option(int argc, char **argv, struct command *acmd, struct plugin *
 		.target  = 0,
 	};
 	
-	OPT_ARGS(opts) = {
+	NVME_ARGS(opts,
 		OPT_STRING("cmd",     'c', "command", &cfg.cmd,     opt),
 		OPT_STRING("msgfile", 'f', "FILE",    &cfg.msgfile, mfile),
 		OPT_STRING("keyfile", 'g', "FILE",    &cfg.keyfile, kfile),
@@ -863,9 +864,7 @@ int rpmb_cmd_option(int argc, char **argv, struct command *acmd, struct plugin *
 		OPT_STRING("msg",     'd', "data",    &cfg.msg,     msg),
 		OPT_UINT("address",   'o', &cfg.address,  address),
 		OPT_UINT("blocks",    'b', &cfg.blocks,   blocks),
-		OPT_UINT("target",    't', &cfg.target,   target),
-		OPT_END()
-	};
+		OPT_UINT("target",    't', &cfg.target,   target));
 	
 	_cleanup_free_ unsigned char *key_buf = NULL;
 	_cleanup_free_ unsigned char *msg_buf = NULL;

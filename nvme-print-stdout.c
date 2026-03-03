@@ -14,8 +14,9 @@
 #include <ccan/htable/htable.h>
 #include <ccan/hash/hash.h>
 
+#include <libnvme.h>
+
 #include "nvme.h"
-#include "libnvme.h"
 #include "nvme-print.h"
 #include "nvme-models.h"
 #include "util/suffix.h"
@@ -309,9 +310,11 @@ void nvme_show_pel_header(struct nvme_persistent_event_log *pevent_log_head, int
 	}
 }
 
-static void pel_event_header(int i, struct nvme_persistent_event_entry *pevent_entry_head,
-			     int human)
+void nvme_show_pel_event_header(int i, struct nvme_persistent_event_entry *pevent_entry_head,
+				int human)
 {
+	__u16 vsil = le16_to_cpu(pevent_entry_head->vsil);
+
 	printf("Event Number: %u\n", i);
 	printf("Event Type: %s\n", nvme_pel_event_to_string(pevent_entry_head->etype));
 	printf("Event Type Revision: %u\n", pevent_entry_head->etype_rev);
@@ -324,11 +327,17 @@ static void pel_event_header(int i, struct nvme_persistent_event_entry *pevent_e
 	printf("Controller Identifier: %u\n", le16_to_cpu(pevent_entry_head->cntlid));
 	printf("Event Timestamp: %"PRIu64"\n", le64_to_cpu(pevent_entry_head->ets));
 	printf("Port Identifier: %u\n", le16_to_cpu(pevent_entry_head->pelpid));
-	printf("Vendor Specific Information Length: %u\n", le16_to_cpu(pevent_entry_head->vsil));
+	printf("Vendor Specific Information Length: %u\n", vsil);
 	printf("Event Length: %u\n", le16_to_cpu(pevent_entry_head->el));
+
+	if (vsil) {
+		printf("Vendor Specific Information:\n");
+		d((void *)pevent_entry_head + 1, vsil, 16, 1);
+	}
 }
 
-static void pel_smart_health_event(void *pevent_log_info, __u32 offset, const char *devname)
+void nvme_show_pel_smart_health_event(void *pevent_log_info, __u32 offset,
+				      const char *devname)
 {
 	struct nvme_smart_log *smart_event = pevent_log_info + offset;
 
@@ -336,7 +345,7 @@ static void pel_smart_health_event(void *pevent_log_info, __u32 offset, const ch
 	stdout_smart_log(smart_event, NVME_NSID_ALL, devname);
 }
 
-static void pel_fw_commit_event(void *pevent_log_info, __u32 offset)
+void nvme_show_pel_fw_commit_event(void *pevent_log_info, __u32 offset)
 {
 	struct nvme_fw_commit_event *fw_commit_event = pevent_log_info + offset;
 
@@ -353,7 +362,7 @@ static void pel_fw_commit_event(void *pevent_log_info, __u32 offset)
 	       le16_to_cpu(fw_commit_event->vndr_assign_fw_commit_rc));
 }
 
-static void pel_timestamp_event(void *pevent_log_info, __u32 offset)
+void nvme_show_pel_timestamp_event(void *pevent_log_info, __u32 offset)
 {
 	struct nvme_time_stamp_change_event *ts_change_event = pevent_log_info + offset;
 
@@ -363,8 +372,8 @@ static void pel_timestamp_event(void *pevent_log_info, __u32 offset)
 	       le64_to_cpu(ts_change_event->ml_secs_since_reset));
 }
 
-static void pel_power_on_reset_event(void *pevent_log_info, __u32 offset,
-				     struct nvme_persistent_event_entry *pevent_entry_head)
+void nvme_show_pel_power_on_reset_event(void *pevent_log_info, __u32 offset,
+					struct nvme_persistent_event_entry *pevent_entry_head)
 {
 	__u64 *fw_rev;
 	__u32 por_info_len = le16_to_cpu(pevent_entry_head->el) -
@@ -391,7 +400,7 @@ static void pel_power_on_reset_event(void *pevent_log_info, __u32 offset,
 	}
 }
 
-static void pel_nss_hw_error_event(void *pevent_log_info, __u32 offset)
+void nvme_show_pel_nss_hw_error_event(void *pevent_log_info, __u32 offset)
 {
 	struct nvme_nss_hw_err_event *nss_hw_err_event = pevent_log_info + offset;
 
@@ -400,7 +409,7 @@ static void pel_nss_hw_error_event(void *pevent_log_info, __u32 offset)
 	       nvme_nss_hw_error_to_string(nss_hw_err_event->nss_hw_err_event_code));
 }
 
-static void pel_change_ns_event(void *pevent_log_info, __u32 offset)
+void nvme_show_pel_change_ns_event(void *pevent_log_info, __u32 offset)
 {
 	struct nvme_change_ns_event *ns_event = pevent_log_info + offset;
 
@@ -416,7 +425,7 @@ static void pel_change_ns_event(void *pevent_log_info, __u32 offset)
 	printf("Namespace ID: %u\n", le32_to_cpu(ns_event->nsid));
 }
 
-static void pel_format_start_event(void *pevent_log_info, __u32 offset)
+void nvme_show_pel_format_start_event(void *pevent_log_info, __u32 offset)
 {
 	struct nvme_format_nvm_start_event *format_start_event = pevent_log_info + offset;
 
@@ -426,7 +435,7 @@ static void pel_format_start_event(void *pevent_log_info, __u32 offset)
 	printf("Format NVM CDW10: %u\n", le32_to_cpu(format_start_event->format_nvm_cdw10));
 }
 
-static void pel_format_completion_event(void *pevent_log_info, __u32 offset)
+void nvme_show_pel_format_completion_event(void *pevent_log_info, __u32 offset)
 {
 	struct nvme_format_nvm_compln_event *format_cmpln_event = pevent_log_info + offset;
 
@@ -438,7 +447,7 @@ static void pel_format_completion_event(void *pevent_log_info, __u32 offset)
 	printf("Status Field: %u\n", le32_to_cpu(format_cmpln_event->status_field));
 }
 
-static void pel_sanitize_start_event(void *pevent_log_info, __u32 offset)
+void nvme_show_pel_sanitize_start_event(void *pevent_log_info, __u32 offset)
 {
 	struct nvme_sanitize_start_event *sanitize_start_event = pevent_log_info + offset;
 
@@ -448,7 +457,7 @@ static void pel_sanitize_start_event(void *pevent_log_info, __u32 offset)
 	printf("Sanitize CDW11: %u\n", le32_to_cpu(sanitize_start_event->sani_cdw11));
 }
 
-static void pel_sanitize_completion_event(void *pevent_log_info, __u32 offset)
+void nvme_show_pel_sanitize_completion_event(void *pevent_log_info, __u32 offset)
 {
 	struct nvme_sanitize_compln_event *sanitize_cmpln_event = pevent_log_info + offset;
 
@@ -458,7 +467,7 @@ static void pel_sanitize_completion_event(void *pevent_log_info, __u32 offset)
 	printf("Completion Information: %u\n", le16_to_cpu(sanitize_cmpln_event->cmpln_info));
 }
 
-static void pel_set_feature_event(void *pevent_log_info, __u32 offset)
+void nvme_show_pel_set_feature_event(void *pevent_log_info, __u32 offset)
 {
 	int fid, cdw11, cdw12, dword_cnt;
 	unsigned char *mem_buf;
@@ -484,7 +493,7 @@ static void pel_set_feature_event(void *pevent_log_info, __u32 offset)
 	}
 }
 
-static void pel_thermal_excursion_event(void *pevent_log_info, __u32 offset)
+void nvme_show_pel_thermal_excursion_event(void *pevent_log_info, __u32 offset)
 {
 	struct nvme_thermal_exc_event *thermal_exc_event = pevent_log_info + offset;
 
@@ -493,11 +502,62 @@ static void pel_thermal_excursion_event(void *pevent_log_info, __u32 offset)
 	printf("Threshold: %u\n", thermal_exc_event->threshold);
 }
 
+static void pel_vs_event_data(void *vsed, __u8 vsedt, __u16 vsedl)
+{
+	printf("Vendor Specific Event Data:\n");
+	switch (vsedt) {
+	case NVME_PEL_VSEDT_EVENT_NAME:
+		printf("Event Name for Vendor Specific Event Code:\n");
+		printf("%.*s\n", vsedl, (char *)vsed);
+		break;
+	case NVME_PEL_VSEDT_ASCII_STRING:
+		printf("ASCII String Data:\n");
+		printf("%.*s\n", vsedl, (char *)vsed);
+		break;
+	case NVME_PEL_VSEDT_BINARY:
+		printf("Binary Data:\n");
+		d(vsed, vsedl, 16, 1);
+		break;
+	case NVME_PEL_VSEDT_SIGNED_INT:
+		printf("Signed Integer Data: %" PRId64 "\n", (int64_t)vsedt);
+		break;
+	default:
+		printf("Reserved data type. As Binary:\n");
+		d(vsed, vsedl, 16, 1);
+	}
+}
+
+void nvme_show_pel_vendor_specific_event(void *pevent_log_info, __u32 offset,
+					 __u32 event_data_len)
+{
+	__u32 progress = 0;
+	__u16 vsedl;
+	int i;
+	struct nvme_vs_event_desc *vs_desc;
+
+	printf("Vendor Specific Event Entry:\n");
+	for (i = 0; progress < event_data_len; i++) {
+		vs_desc = pevent_log_info + offset + progress;
+		vsedl = le16_to_cpu(vs_desc->vsedl);
+
+		printf("Vendor Specific Event Descriptor %u:\n", i);
+		printf("Vendor Specific Event Code: %u\n", le16_to_cpu(vs_desc->vsec));
+		printf("Vendor Specific Event Data Type: %u\n", vs_desc->vsedt);
+		printf("Vendor Specific Event UIndex: %u\n", vs_desc->uidx);
+		printf("Vendor Specific Event Data Length: %u\n", vsedl);
+		if (vsedl)
+			pel_vs_event_data(vs_desc + 1, vs_desc->vsedt,
+					  vsedl);
+		progress += sizeof(*vs_desc) + vsedl;
+	}
+}
+
 static void stdout_persistent_event_log(void *pevent_log_info, __u8 action, __u32 size,
 					const char *devname)
 {
 	struct nvme_persistent_event_log *pevent_log_head;
 	__u32 offset = sizeof(*pevent_log_head);
+	__u16 vsil, el;
 	struct nvme_persistent_event_entry *pevent_entry_head;
 	int human = stdout_print_ops.flags & VERBOSE;
 
@@ -522,63 +582,78 @@ static void stdout_persistent_event_log(void *pevent_log_info, __u8 action, __u3
 			break;
 
 		pevent_entry_head = pevent_log_info + offset;
+		vsil = le16_to_cpu(pevent_entry_head->vsil);
+		el = le16_to_cpu(pevent_entry_head->el);
 
-		if ((offset + pevent_entry_head->ehl + 3 +
-			le16_to_cpu(pevent_entry_head->el)) >= size)
+		if ((offset + pevent_entry_head->ehl + 3 + el) >= size)
 			break;
 
-		pel_event_header(i, pevent_entry_head, human);
+		nvme_show_pel_event_header(i, pevent_entry_head, human);
 
-		offset += pevent_entry_head->ehl + 3;
+		offset += pevent_entry_head->ehl + vsil + 3;
 
 		switch (pevent_entry_head->etype) {
 		case NVME_PEL_SMART_HEALTH_EVENT:
-			pel_smart_health_event(pevent_log_info, offset, devname);
+			nvme_show_pel_smart_health_event(pevent_log_info,
+							 offset, devname);
 			break;
 		case NVME_PEL_FW_COMMIT_EVENT:
-			pel_fw_commit_event(pevent_log_info, offset);
+			nvme_show_pel_fw_commit_event(pevent_log_info, offset);
 			break;
 		case NVME_PEL_TIMESTAMP_EVENT:
-			pel_timestamp_event(pevent_log_info, offset);
+			nvme_show_pel_timestamp_event(pevent_log_info, offset);
 			break;
 		case NVME_PEL_POWER_ON_RESET_EVENT:
-			pel_power_on_reset_event(pevent_log_info, offset, pevent_entry_head);
+			nvme_show_pel_power_on_reset_event(pevent_log_info,
+							   offset,
+							   pevent_entry_head);
 			break;
 		case NVME_PEL_NSS_HW_ERROR_EVENT:
-			pel_nss_hw_error_event(pevent_log_info, offset);
+			nvme_show_pel_nss_hw_error_event(pevent_log_info,
+							 offset);
 			break;
 		case NVME_PEL_CHANGE_NS_EVENT:
-			pel_change_ns_event(pevent_log_info, offset);
+			nvme_show_pel_change_ns_event(pevent_log_info, offset);
 			break;
 		case NVME_PEL_FORMAT_START_EVENT:
-			pel_format_start_event(pevent_log_info, offset);
+			nvme_show_pel_format_start_event(pevent_log_info,
+							 offset);
 			break;
 		case NVME_PEL_FORMAT_COMPLETION_EVENT:
-			pel_format_completion_event(pevent_log_info, offset);
+			nvme_show_pel_format_completion_event(pevent_log_info,
+							      offset);
 			break;
 		case NVME_PEL_SANITIZE_START_EVENT:
-			pel_sanitize_start_event(pevent_log_info, offset);
+			nvme_show_pel_sanitize_start_event(pevent_log_info,
+							   offset);
 			break;
 		case NVME_PEL_SANITIZE_COMPLETION_EVENT:
-			pel_sanitize_completion_event(pevent_log_info, offset);
+			nvme_show_pel_sanitize_completion_event(pevent_log_info,
+								offset);
 			break;
 		case NVME_PEL_SET_FEATURE_EVENT:
-			pel_set_feature_event(pevent_log_info, offset);
+			nvme_show_pel_set_feature_event(pevent_log_info,
+							offset);
 			break;
 		case NVME_PEL_TELEMETRY_CRT:
 			d(pevent_log_info + offset, 512, 16, 1);
 			break;
 		case NVME_PEL_THERMAL_EXCURSION_EVENT:
-			pel_thermal_excursion_event(pevent_log_info, offset);
+			nvme_show_pel_thermal_excursion_event(pevent_log_info,
+							      offset);
 			break;
 		case NVME_PEL_SANITIZE_MEDIA_VERIF_EVENT:
 			printf("Sanitize Media Verification Event\n");
+			break;
+		case NVME_PEL_VENDOR_SPECIFIC_EVENT:
+			nvme_show_pel_vendor_specific_event(pevent_log_info,
+							    offset, el - vsil);
 			break;
 		default:
 			printf("Reserved Event\n\n");
 			break;
 		}
-		offset += le16_to_cpu(pevent_entry_head->el);
+		offset += el;
 		printf("\n");
 	}
 }
@@ -1135,7 +1210,7 @@ static void stdout_subsystem_ctrls(nvme_subsystem_t s)
 	}
 }
 
-static void stdout_subsys_config(nvme_subsystem_t s)
+static void stdout_subsys_config(nvme_subsystem_t s, bool show_iopolicy)
 {
 	int len = strlen(nvme_subsystem_get_name(s));
 
@@ -1143,8 +1218,9 @@ static void stdout_subsys_config(nvme_subsystem_t s)
 	       nvme_subsystem_get_nqn(s));
 	printf("%*s   hostnqn=%s\n", len, " ",
 	       nvme_host_get_hostnqn(nvme_subsystem_get_host(s)));
-	printf("%*s   iopolicy=%s\n", len, " ",
-		nvme_subsystem_get_iopolicy(s));
+	if (show_iopolicy)
+		printf("%*s   iopolicy=%s\n", len, " ",
+				nvme_subsystem_get_iopolicy(s));
 
 	if (stdout_print_ops.flags & VERBOSE) {
 		printf("%*s   model=%s\n", len, " ",
@@ -1179,7 +1255,8 @@ static void stdout_subsystem(struct nvme_global_ctx *ctx, bool show_ana)
 				printf("\n");
 			first = false;
 
-			stdout_subsys_config(s);
+			stdout_subsys_config(s,
+					stdout_print_ops.flags & VERBOSE);
 			printf("\\\n");
 
 			if (!show_ana || !stdout_subsystem_multipath(s))
@@ -1745,6 +1822,20 @@ static void stdout_status(int status)
 			val);
 		break;
 	}
+}
+
+static void stdout_opcode_status(int status, bool admin, __u8 opcode)
+{
+	int val = nvme_status_get_value(status);
+	int type = nvme_status_get_type(status);
+
+	if (status >= 0 && type == NVME_STATUS_TYPE_NVME) {
+		fprintf(stderr, "NVMe status: %s(0x%x)\n",
+			nvme_opcode_status_to_string(val, admin, opcode), val);
+		return;
+	}
+
+	stdout_status(status);
 }
 
 static void stdout_error_status(int status, const char *msg, va_list ap)
@@ -3108,10 +3199,8 @@ static void print_psd_workload(__u8 apw)
 	}
 }
 
-static void print_ps_power_and_scale(__le16 ctr_power, __u8 scale)
+static void print_power_and_scale(__u16 power, __u8 scale)
 {
-	__u16 power = le16_to_cpu(ctr_power);
-
 	switch (scale & 0x3) {
 	case NVME_PSD_PS_NOT_REPORTED:
 		/* Not reported for this power state */
@@ -3129,6 +3218,11 @@ static void print_ps_power_and_scale(__le16 ctr_power, __u8 scale)
 		printf("reserved");
 		break;
 	}
+}
+
+static void print_ps_power_and_scale(__le16 ctr_power, __u8 scale)
+{
+	print_power_and_scale(le16_to_cpu(ctr_power), scale);
 }
 
 static void print_psd_time(const char *desc, __u8 time, __u8 ts)
@@ -4667,7 +4761,7 @@ static void stdout_sanitize_log(struct nvme_sanitize_log_page *sanitize,
 	printf("Sanitize Progress                      (SPROG) :  %u",
 	       le16_to_cpu(sanitize->sprog));
 
-	if (human && status == NVME_SANITIZE_SSTAT_STATUS_IN_PROGESS)
+	if (human && status == NVME_SANITIZE_SSTAT_STATUS_IN_PROGRESS)
 		stdout_sanitize_log_sprog(le16_to_cpu(sanitize->sprog));
 	else
 		printf("\n");
@@ -4887,10 +4981,19 @@ static void stdout_lba_status_info(__u64 result)
 	       (__u32)NVME_FEAT_LBAS_LSIRI(result));
 }
 
+static bool line_equal(unsigned char *buf, int len, int width, int offset)
+{
+	if (!offset || len < offset + width || log_level >= LOG_DEBUG)
+		return false;
+
+	return !memcmp(buf + offset - width, buf + offset, width);
+}
+
 void stdout_d(unsigned char *buf, int len, int width, int group)
 {
 	int i, offset = 0;
 	char ascii[32 + 1] = { 0 };
+	bool omitting = false;
 
 	assert(width < sizeof(ascii));
 
@@ -4900,8 +5003,21 @@ void stdout_d(unsigned char *buf, int len, int width, int group)
 		printf("%3x", i);
 
 	for (i = 0; i < len; i++) {
-		if (!(i % width))
+		if (!(i % width)) {
+			if (line_equal(buf, len, width, offset)) {
+				if (!omitting) {
+					omitting = true;
+					printf("\n*");
+				}
+				offset += width;
+				continue;
+			} else if (omitting) {
+				omitting = false;
+			}
 			printf("\n%04x:", offset);
+		}
+		if (omitting)
+			continue;
 		if (i % group)
 			printf("%02x", buf[i]);
 		else
@@ -4913,6 +5029,8 @@ void stdout_d(unsigned char *buf, int len, int width, int group)
 			memset(ascii, 0, sizeof(ascii));
 		}
 	}
+	if (omitting)
+		printf("\n%04x:\n", offset);
 
 	if (strlen(ascii)) {
 		unsigned int b = width - (i % width);
@@ -5281,6 +5399,33 @@ static void stdout_feature_show_fields(enum nvme_features_id fid,
 		field = NVME_FEAT_BPWPC_BP0WPS(result);
 		printf("\tBoot Partition 0 Write Protection State (BP0WPS): %s\n",
 			nvme_bpwps_to_string(field));
+		break;
+	case NVME_FEAT_FID_POWER_LIMIT:
+		field = NVME_FEAT_POWER_LIMIT_PLS(result);
+		printf("\tPower Limit Scale (PLS): %u - %s\n", field,
+		       nvme_feature_power_limit_scale_to_string(field));
+		printf("\tPower Limit Value (PLV): %u\n",
+		       NVME_FEAT_POWER_LIMIT_PLV(result));
+		printf("\tPower Limit: ");
+		print_power_and_scale(NVME_FEAT_POWER_LIMIT_PLV(result), field);
+		printf("\n");
+		break;
+	case NVME_FEAT_FID_POWER_THRESH:
+		field = NVME_FEAT_POWER_THRESH_EPT(result);
+		printf("\tEnable Power Threshold (EPT): %u - %s\n",
+		       field, field ? "Enabled" : "Disabled");
+		field = NVME_FEAT_POWER_THRESH_PMTS(result);
+		printf("\tPower Measurement Type Select (PMTS): %u - %s\n",
+		       field, nvme_power_measurement_type_to_string(field));
+		field = NVME_FEAT_POWER_THRESH_PTS(result);
+		printf("\tPower Threshold Scale (PTS): %u - %s\n", field,
+		       nvme_feature_power_limit_scale_to_string(field));
+		printf("\tPower Threshold Value (PTV): %u\n",
+		       NVME_FEAT_POWER_THRESH_PTV(result));
+		printf("\tPower Threshold: ");
+		print_power_and_scale(NVME_FEAT_POWER_THRESH_PTV(result),
+				      field);
+		printf("\n");
 		break;
 	default:
 		break;
@@ -6043,7 +6188,7 @@ static void stdout_topology_tabular(struct nvme_global_ctx *ctx)
 				printf("\n");
 			first = false;
 
-			stdout_subsys_config(s);
+			stdout_subsys_config(s, true);
 			printf("\n");
 
 			if (nvme_is_multipath(s))
@@ -6076,7 +6221,7 @@ static void stdout_simple_topology(struct nvme_global_ctx *ctx,
 				printf("\n");
 			first = false;
 
-			stdout_subsys_config(s);
+			stdout_subsys_config(s, true);
 			printf("\\\n");
 
 			if (nvme_is_multipath(s))
@@ -6679,6 +6824,7 @@ static struct print_ops stdout_print_ops = {
 	.show_message			= stdout_message,
 	.show_perror			= stdout_perror,
 	.show_status			= stdout_status,
+	.show_opcode_status		= stdout_opcode_status,
 	.show_error_status		= stdout_error_status,
 	.show_key_value			= stdout_key_value,
 };

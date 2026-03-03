@@ -27,9 +27,10 @@
 
 #include <sys/stat.h>
 
+#include <libnvme.h>
+
 #include "common.h"
 #include "nvme.h"
-#include "libnvme.h"
 #include "plugin.h"
 
 #include "util/suffix.h"
@@ -303,18 +304,8 @@ static int huawei_list(int argc, char **argv, struct command *acmd,
 	unsigned int huawei_num = 0;
 	nvme_print_flags_t fmt;
 	const char *desc = "Retrieve basic information for the given huawei device";
-	struct config {
-		char *output_format;
-	};
 
-	struct config cfg = {
-		.output_format = "normal",
-	};
-
-	OPT_ARGS(opts) = {
-		OPT_FMT("output-format", 'o', &cfg.output_format, "Output Format: normal|json"),
-		OPT_END()
-	};
+	NVME_ARGS(opts);
 
 	if (!ctx)
 		return -ENOMEM;
@@ -323,7 +314,7 @@ static int huawei_list(int argc, char **argv, struct command *acmd,
 	if (ret)
 		return ret;
 
-	ret = validate_output_format(cfg.output_format, &fmt);
+	ret = validate_output_format(nvme_args.output_format, &fmt);
 	if (ret < 0 || (fmt != JSON && fmt != NORMAL))
 		return ret;
 
@@ -345,7 +336,7 @@ static int huawei_list(int argc, char **argv, struct command *acmd,
 		ret = nvme_open(ctx, path, &hdl);
 		if (ret) {
 			fprintf(stderr, "Cannot open device %s: %s\n",
-				path, strerror(-ret));
+				path, nvme_strerror(-ret));
 			continue;
 		}
 		ret = huawei_get_nvme_info(hdl, &list_items[huawei_num], path);

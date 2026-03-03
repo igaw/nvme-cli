@@ -8,10 +8,9 @@
 diff = find_program('diff', required : false)
 if diff.found()
     tree_dump = executable(
-        'libnvme - test-tree-dump',
+        'test-tree-dump',
         ['tree-dump.c'],
         dependencies: libnvme_dep,
-        include_directories: [incdir, ],
     )
 
     tree_data = [

@@ -6,8 +6,9 @@
 #include <unistd.h>
 #include <inttypes.h>
 
+#include <libnvme.h>
+
 #include "nvme.h"
-#include "libnvme.h"
 #include "plugin.h"
 
 #define CREATE_CMD
@@ -26,9 +27,7 @@ static int getHealthValue(int argc, char **argv, struct command *acmd, struct pl
 	_cleanup_nvme_transport_handle_ struct nvme_transport_handle *hdl = NULL;
 	int result;
 
-	OPT_ARGS(opts) = {
-		OPT_END()
-	};
+	NVME_ARGS(opts);
 
 	result = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (result) {
@@ -61,9 +60,7 @@ static int getBadblock(int argc, char **argv, struct command *acmd, struct plugi
 	unsigned char data[1] = {0};
 	int result;
 
-	OPT_ARGS(opts) = {
-		OPT_END()
-	};
+	NVME_ARGS(opts);
 
 	result = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (result) {

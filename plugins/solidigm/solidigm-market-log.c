@@ -13,9 +13,10 @@
 #include <unistd.h>
 #include <inttypes.h>
 
+#include <libnvme.h>
+
 #include "common.h"
 #include "nvme.h"
-#include "libnvme.h"
 #include "plugin.h"
 #include "nvme-print.h"
 #include "solidigm-util.h"
@@ -36,11 +37,8 @@ int sldgm_get_market_log(int argc, char **argv, struct command *acmd,
 	__u8 uuid_idx;
 	bool  raw_binary = false;
 
-	OPT_ARGS(opts) = {
-		OPT_FLAG("raw-binary", 'b', &raw_binary, raw),
-		OPT_INCR("verbose", 'v', &nvme_cfg.verbose, verbose),
-		OPT_END()
-	};
+	NVME_ARGS(opts,
+		OPT_FLAG("raw-binary", 'b', &raw_binary, raw));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (err)

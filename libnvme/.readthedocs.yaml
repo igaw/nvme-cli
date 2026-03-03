@@ -1,23 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
-
 version: 2
 
 build:
   os: ubuntu-24.04
   tools:
-    python: "3"
+    python: "3.14"
   apt_packages:
     - meson
-    - python3-lxml
-    - docbook-xsl
-    - xsltproc
-    - pandoc
   jobs:
-    post_install:
-      - pip3 install lxml
+    install:
+      - pip install asciidoc sphinx
     pre_build:
-      - meson setup .build -Ddocs=rst -Ddocs-build=true || cat .build/meson-logs/meson-log.txt
-      - meson compile -C .build
+      - scripts/build.sh rst_docs
 
 sphinx:
-  configuration: .build/doc/conf.py
+  configuration: .build-ci/libnvme/doc/conf.py

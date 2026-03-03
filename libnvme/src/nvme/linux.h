@@ -24,6 +24,7 @@
 /**
  * nvme_fw_download_seq() - Firmware download sequence
  * @hdl:	Transport handle
+ * @ish:	Ignore Shutdown (for NVMe-MI command)
  * @size:	Total size of the firmware image to transfer
  * @xfer:	Maximum size to send with each partial transfer
  * @offset:	Starting offset to send with this firmware download
@@ -32,8 +33,8 @@
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_fw_download_seq(struct nvme_transport_handle *hdl, __u32 size, __u32 xfer, __u32 offset,
-			 void *buf);
+int nvme_fw_download_seq(struct nvme_transport_handle *hdl, bool ish,
+			__u32 size, __u32 xfer, __u32 offset, void *buf);
 
 /**
  * nvme_set_etdas() - Set the Extended Telemetry Data Area 4 Supported bit
@@ -193,6 +194,7 @@ int nvme_get_lba_status_log(struct nvme_transport_handle *hdl, bool rae, struct 
 /**
  * nvme_namespace_attach_ctrls() - Attach namespace to controller(s)
  * @hdl:	Transport handle
+ * @ish:	Ignore Shutdown (for NVMe-MI command)
  * @nsid:	Namespace ID to attach
  * @num_ctrls:	Number of controllers in ctrlist
  * @ctrlist:	List of controller IDs to perform the attach action
@@ -200,11 +202,13 @@ int nvme_get_lba_status_log(struct nvme_transport_handle *hdl, bool rae, struct 
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_namespace_attach_ctrls(struct nvme_transport_handle *hdl, __u32 nsid, __u16 num_ctrls, __u16 *ctrlist);
+int nvme_namespace_attach_ctrls(struct nvme_transport_handle *hdl, bool ish,
+				__u32 nsid, __u16 num_ctrls, __u16 *ctrlist);
 
 /**
  * nvme_namespace_detach_ctrls() - Detach namespace from controller(s)
  * @hdl:	Transport handle
+ * @ish:	Ignore Shutdown (for NVMe-MI command)
  * @nsid:	Namespace ID to detach
  * @num_ctrls:	Number of controllers in ctrlist
  * @ctrlist:	List of controller IDs to perform the detach action
@@ -212,7 +216,8 @@ int nvme_namespace_attach_ctrls(struct nvme_transport_handle *hdl, __u32 nsid, _
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_namespace_detach_ctrls(struct nvme_transport_handle *hdl, __u32 nsid, __u16 num_ctrls, __u16 *ctrlist);
+int nvme_namespace_detach_ctrls(struct nvme_transport_handle *hdl, bool ish,
+			__u32 nsid, __u16 num_ctrls, __u16 *ctrlist);
 
 /**
  * nvme_open() - Open an nvme controller or namespace device
@@ -227,7 +232,7 @@ int nvme_namespace_detach_ctrls(struct nvme_transport_handle *hdl, __u32 nsid, _
  */
 int nvme_open(struct nvme_global_ctx *ctx, const char *name,
 	      struct nvme_transport_handle **hdl);
-                                          
+
 /**
  * nvme_close() - Close transport handle
  * @hdl:	Transport handle
@@ -367,6 +372,7 @@ enum nvme_hmac_alg {
 
 /**
  * nvme_gen_dhchap_key() - DH-HMAC-CHAP key generation
+ * @ctx:	struct nvme_global_ctx object
  * @hostnqn:	Host NVMe Qualified Name
  * @hmac:	HMAC algorithm
  * @key_len:	Output key length
@@ -376,12 +382,14 @@ enum nvme_hmac_alg {
  * Return: If key generation was successful the function returns 0 or
  * a negative error code otherwise.
  */
-int nvme_gen_dhchap_key(char *hostnqn, enum nvme_hmac_alg hmac,
-			unsigned int key_len, unsigned char *secret,
-			unsigned char *key);
+int nvme_gen_dhchap_key(struct nvme_global_ctx *ctx,
+		char *hostnqn, enum nvme_hmac_alg hmac,
+		unsigned int key_len, unsigned char *secret,
+		unsigned char *key);
 
 /**
  * nvme_lookup_keyring() - Lookup keyring serial number
+ * @ctx:	struct nvme_global_ctx object
  * @keyring:    Keyring name
  * @key:	Key serial number to return
  *
@@ -389,10 +397,12 @@ int nvme_gen_dhchap_key(char *hostnqn, enum nvme_hmac_alg hmac,
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_lookup_keyring(const char *keyring, long *key);
+int nvme_lookup_keyring(struct nvme_global_ctx *ctx,
+		const char *keyring, long *key);
 
 /**
  * nvme_describe_key_serial() - Return key description
+ * @ctx:	struct nvme_global_ctx object
  * @key_id:    Key serial number
  *
  * Fetches the description of the key or keyring identified
@@ -401,10 +411,12 @@ int nvme_lookup_keyring(const char *keyring, long *key);
  * Return: The description of @key_id or NULL on failure.
  * The returned string needs to be freed by the caller.
  */
-char *nvme_describe_key_serial(long key_id);
+char *nvme_describe_key_serial(struct nvme_global_ctx *ctx,
+		long key_id);
 
 /**
  * nvme_lookup_key() - Lookup key serial number
+ * @ctx:	struct nvme_global_ctx object
  * @type:	Key type
  * @identity:	Key description
  * @key:	Key serial number to return
@@ -414,10 +426,12 @@ char *nvme_describe_key_serial(long key_id);
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_lookup_key(const char *type, const char *identity, long *key);
+int nvme_lookup_key(struct nvme_global_ctx *ctx, const char *type,
+		const char *identity, long *key);
 
 /**
  * nvme_set_keyring() - Link keyring for lookup
+ * @ctx:           struct nvme_global_ctx object
  * @keyring_id:    Keyring id
  *
  * Links @keyring_id into the session keyring such that
@@ -425,10 +439,11 @@ int nvme_lookup_key(const char *type, const char *identity, long *key);
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_set_keyring(long keyring_id);
+int nvme_set_keyring(struct nvme_global_ctx *ctx, long keyring_id);
 
 /**
  * nvme_read_key() - Read key raw data
+ * @ctx:		struct nvme_global_ctx object
  * @keyring_id:		Id of the keyring holding %key_id
  * @key_id:		Key id
  * @len:		Length of the returned data
@@ -441,11 +456,12 @@ int nvme_set_keyring(long keyring_id);
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_read_key(long keyring_id, long key_id, int *len,
-		  unsigned char **key);
+int nvme_read_key(struct nvme_global_ctx *ctx, long keyring_id,
+		long key_id, int *len, unsigned char **key);
 
 /**
  * nvme_update_key() - Update key raw data
+ * @ctx:	struct nvme_global_ctx object
  * @keyring_id:	Id of the keyring holding %key_id
  * @key_type:	Type of the key to insert
  * @identity:	Key identity string
@@ -460,12 +476,13 @@ int nvme_read_key(long keyring_id, long key_id, int *len,
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_update_key(long keyring_id, const char *key_type,
-		    const char *identity, unsigned char *key_data,
-		    int key_len, long *key);
+int nvme_update_key(struct nvme_global_ctx *ctx, long keyring_id,
+		const char *key_type, const char *identity,
+		unsigned char *key_data, int key_len, long *key);
 
 /**
  * typedef nvme_scan_tls_keys_cb_t - Callback for iterating TLS keys
+ * @ctx:	struct nvme_global_ctx object
  * @keyring:	Keyring which has been iterated
  * @key:	Key for which the callback has been invoked
  * @desc:	Description of the key
@@ -474,11 +491,12 @@ int nvme_update_key(long keyring_id, const char *key_type,
  *
  * Called for each TLS PSK in the keyring.
  */
-typedef void (*nvme_scan_tls_keys_cb_t)(long keyring, long key,
-					char *desc, int desc_len, void *data);
+typedef void (*nvme_scan_tls_keys_cb_t)(struct nvme_global_ctx *ctx,
+		long keyring, long key, char *desc, int desc_len, void *data);
 
 /**
  * nvme_scan_tls_keys() - Iterate over TLS keys in a keyring
+ * @ctx:	struct nvme_global_ctx object
  * @keyring:	Keyring holding TLS keys
  * @cb:		Callback function
  * @data:	Pointer for data to be passed to @cb
@@ -491,11 +509,12 @@ typedef void (*nvme_scan_tls_keys_cb_t)(long keyring, long key,
  *
  * Return: Number of keys for which @cb was called, or negative error code
  */
-int nvme_scan_tls_keys(const char *keyring, nvme_scan_tls_keys_cb_t cb,
-		       void *data);
+int nvme_scan_tls_keys(struct nvme_global_ctx *ctx, const char *keyring,
+		nvme_scan_tls_keys_cb_t cb, void *data);
 
 /**
  * nvme_insert_tls_key() - Derive and insert TLS key
+ * @ctx:	struct nvme_global_ctx object
  * @keyring:	Keyring to use
  * @key_type:	Type of the resulting key
  * @hostnqn:	Host NVMe Qualified Name
@@ -510,12 +529,14 @@ int nvme_scan_tls_keys(const char *keyring, nvme_scan_tls_keys_cb_t cb,
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_insert_tls_key(const char *keyring, const char *key_type,
-			 const char *hostnqn, const char *subsysnqn, int hmac,
-			 unsigned char *configured_key, int key_len, long *key);
+int nvme_insert_tls_key(struct nvme_global_ctx *ctx, const char *keyring,
+		const char *key_type, const char *hostnqn,
+		const char *subsysnqn, int hmac, unsigned char *configured_key,
+		int key_len, long *key);
 
 /**
  * nvme_insert_tls_key_versioned() - Derive and insert TLS key
+ * @ctx:	struct nvme_global_ctx object
  * @keyring:    Keyring to use
  * @key_type:	Type of the resulting key
  * @hostnqn:	Host NVMe Qualified Name
@@ -532,14 +553,16 @@ int nvme_insert_tls_key(const char *keyring, const char *key_type,
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_insert_tls_key_versioned(const char *keyring, const char *key_type,
-				  const char *hostnqn, const char *subsysnqn,
-				  int version, int hmac,
-				  unsigned char *configured_key, int key_len,
-				  long *key);
+int nvme_insert_tls_key_versioned(struct nvme_global_ctx *ctx,
+		const char *keyring, const char *key_type,
+		const char *hostnqn, const char *subsysnqn,
+		int version, int hmac,
+		unsigned char *configured_key, int key_len,
+		long *key);
 
 /**
  * nvme_insert_tls_key_compat() - Derive and insert TLS key
+ * @ctx:	struct nvme_global_ctx object
  * @keyring:    Keyring to use
  * @key_type:	Type of the resulting key
  * @hostnqn:	Host NVMe Qualified Name
@@ -560,14 +583,16 @@ int nvme_insert_tls_key_versioned(const char *keyring, const char *key_type,
  * Return: The key serial number if the key could be inserted into
  * the keyring or 0 with errno otherwise.
  */
-int nvme_insert_tls_key_compat(const char *keyring, const char *key_type,
-			       const char *hostnqn, const char *subsysnqn,
-			       int version, int hmac,
-			       unsigned char *configured_key, int key_len,
-			       long *key);
+int nvme_insert_tls_key_compat(struct nvme_global_ctx *ctx,
+		const char *keyring, const char *key_type,
+		const char *hostnqn, const char *subsysnqn,
+		int version, int hmac,
+		unsigned char *configured_key, int key_len,
+		long *key);
 
 /**
  * nvme_generate_tls_key_identity() - Generate the TLS key identity
+ * @ctx:	struct nvme_global_ctx object
  * @hostnqn:	Host NVMe Qualified Name
  * @subsysnqn:	Subsystem NVMe Qualified Name
  * @version:	Key version to use
@@ -583,13 +608,15 @@ int nvme_insert_tls_key_compat(const char *keyring, const char *key_type,
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_generate_tls_key_identity(const char *hostnqn, const char *subsysnqn,
-				   int version, int hmac,
-				   unsigned char *configured_key, int key_len,
-				   char **identity);
+int nvme_generate_tls_key_identity(struct nvme_global_ctx *ctx,
+		const char *hostnqn, const char *subsysnqn,
+		int version, int hmac,
+		unsigned char *configured_key, int key_len,
+		char **identity);
 
 /**
  * nvme_generate_tls_key_identity_compat() - Generate the TLS key identity
+ * @ctx:	struct nvme_global_ctx object
  * @hostnqn:	Host NVMe Qualified Name
  * @subsysnqn:	Subsystem NVMe Qualified Name
  * @version:	Key version to use
@@ -608,25 +635,26 @@ int nvme_generate_tls_key_identity(const char *hostnqn, const char *subsysnqn,
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_generate_tls_key_identity_compat(const char *hostnqn,
-					  const char *subsysnqn,
-					  int version, int hmac,
-					  unsigned char *configured_key,
-					  int key_len, char **identity);
+int nvme_generate_tls_key_identity_compat(struct nvme_global_ctx *ctx,
+		const char *hostnqn, const char *subsysnqn,
+		int version, int hmac, unsigned char *configured_key,
+		int key_len, char **identity);
 
 /**
  * nvme_revoke_tls_key() - Revoke TLS key from keyring
+ * @ctx:	struct nvme_global_ctx object
  * @keyring:    Keyring to use
  * @key_type:    Type of the key to revoke
  * @identity:    Key identity string
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_revoke_tls_key(const char *keyring, const char *key_type,
-			const char *identity);
+int nvme_revoke_tls_key(struct nvme_global_ctx *ctx, const char *keyring,
+		const char *key_type, const char *identity);
 
 /**
  * nvme_export_tls_key() - Export a TLS key
+ * @ctx:	struct nvme_global_ctx object
  * @key_data:	Raw data of the key
  * @key_len:	Length of @key_data
  * @identity:	TLS identity
@@ -639,10 +667,12 @@ int nvme_revoke_tls_key(const char *keyring, const char *key_type,
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_export_tls_key(const unsigned char *key_data, int key_len, char **identity);
+int nvme_export_tls_key(struct nvme_global_ctx *ctx,
+		const unsigned char *key_data, int key_len, char **identity);
 
 /**
  * nvme_export_tls_key_versioned() - Export a TLS pre-shared key
+ * @ctx:	struct nvme_global_ctx object
  * @version:	Indicated the representation of the TLS PSK
  * @hmac:	HMAC algorithm used to transfor the configured PSK
  *		in a retained PSK
@@ -658,12 +688,14 @@ int nvme_export_tls_key(const unsigned char *key_data, int key_len, char **ident
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_export_tls_key_versioned(unsigned char version, unsigned char hmac,
-				  const unsigned char *key_data,
-				  size_t key_len, char **identity);
+int nvme_export_tls_key_versioned(struct nvme_global_ctx *ctx,
+		unsigned char version, unsigned char hmac,
+		const unsigned char *key_data,
+		size_t key_len, char **identity);
 
 /**
  * nvme_import_tls_key() - Import a TLS key
+ * @ctx:		struct nvme_global_ctx object
  * @encoded_key:	TLS key in PSK interchange format
  * @key_len:		Length of the resulting key data
  * @hmac:		HMAC algorithm
@@ -676,11 +708,12 @@ int nvme_export_tls_key_versioned(unsigned char version, unsigned char hmac,
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_import_tls_key(const char *encoded_key, int *key_len,
-			unsigned int *hmac, unsigned char **key);
+int nvme_import_tls_key(struct nvme_global_ctx *ctx, const char *encoded_key,
+		 int *key_len, unsigned int *hmac, unsigned char **key);
 
 /**
  * nvme_import_tls_key_versioned() - Import a TLS key
+ * @ctx:		struct nvme_global_ctx object
  * @encoded_key:	TLS key in PSK interchange format
  * @version:		Indicated the representation of the TLS PSK
  * @hmac:		HMAC algorithm used to transfor the configured
@@ -695,11 +728,9 @@ int nvme_import_tls_key(const char *encoded_key, int *key_len,
  *
  * Return: 0 on success or negative error code otherwise
  */
-int nvme_import_tls_key_versioned(const char *encoded_key,
-				  unsigned char *version,
-				  unsigned char *hmac,
-				  size_t *key_len,
-				  unsigned char **key);
+int nvme_import_tls_key_versioned(struct nvme_global_ctx *ctx,
+		const char *encoded_key, unsigned char *version,
+		unsigned char *hmac, size_t *key_len, unsigned char **key);
 
 /**
  * nvme_set_dry_run() - Set global dry run state
@@ -710,5 +741,17 @@ int nvme_import_tls_key_versioned(const char *encoded_key,
  * interface wont be executed.
  */
 void nvme_set_dry_run(struct nvme_global_ctx *ctx, bool enable);
+
+/**
+ * nvme_set_ioctl_probing() - Enable/disable 64-bit IOCTL probing
+ * @ctx:	struct nvme_global_ctx object
+ * @enable:	Enable/disable 64-bit IOCTL probing
+ *
+ * When IOCTL probing is enabled, a 64-bit IOCTL command is issued to
+ * figure out if the passthru interface supports it.
+ *
+ * IOCTL probing is enabled per default.
+ */
+void nvme_set_ioctl_probing(struct nvme_global_ctx *ctx, bool enable);
 
 #endif /* _LIBNVME_LINUX_H */

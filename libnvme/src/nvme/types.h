@@ -1099,6 +1099,22 @@ enum nvme_psd_ps {
 };
 
 /**
+ * enum nvme_power_measurement_type - Power measurement types.
+ * @NVME_PMT_NSS_TOTAL_POWER: NVM subsystem total power
+ * @NVME_PMT_RSVD_MIN:	      Reserved minimum value
+ * @NVME_PMT_RSVD_MAX:	      Reserved maximum value
+ * @NVME_PMT_VS_MIN:	      Vendor Specific minimum value
+ * @NVME_PMT_VS_MAX:	      Vendor Specific maximum value
+ */
+enum nvme_power_measurement_type {
+	NVME_PMT_NSS_TOTAL_POWER = 0x0,
+	NVME_PMT_RSVD_MIN	 = 0x1,
+	NVME_PMT_RSVD_MAX	 = 0xb,
+	NVME_PMT_VS_MIN		 = 0xc,
+	NVME_PMT_VS_MAX		 = 0xf,
+};
+
+/**
  * nvme_psd_power_scale() - power scale occupies the upper 3 bits
  * @ps: power scale value
  *
@@ -4555,6 +4571,36 @@ enum nvme_pel_ehai_pit {
 };
 
 /**
+ * enum nvme_pel_vsedt_code - Persistent Event Log - Vendor Specific Event Data Type Code
+ * @NVME_PEL_VSEDT_RSVD:		Reserved
+ * @NVME_PEL_VSEDT_EVENT_NAME:		Event Name
+ * @NVME_PEL_VSEDT_ASCII_STRING:	ASCII String
+ * @NVME_PEL_VSEDT_BINARY:		Binary
+ * @NVME_PEL_VSEDT_SIGNED_INT:		Signed Integer
+ */
+enum nvme_pel_vsedt_code {
+	NVME_PEL_VSEDT_RSVD		= 0,
+	NVME_PEL_VSEDT_EVENT_NAME	= 1,
+	NVME_PEL_VSEDT_ASCII_STRING	= 2,
+	NVME_PEL_VSEDT_BINARY		= 3,
+	NVME_PEL_VSEDT_SIGNED_INT	= 4,
+};
+
+/**
+ * struct nvme_vs_event_desc -  Vendor Specific Event Descriptor
+ * @vsec:	Vendor Specific Event Code
+ * @vsedt:	Vendor Specific Event Data Type
+ * @uidx:	UUID Index
+ * @vsedl:	Vendor Specific Event Data Length
+ */
+struct nvme_vs_event_desc {
+	__le16	vsec;
+	__u8	vsedt;
+	__u8	uidx;
+	__le16	vsedl;
+};
+
+/**
  * struct nvme_fw_commit_event - Firmware Commit Event Data
  * @old_fw_rev:			Old Firmware Revision
  * @new_fw_rev:			New Firmware Revision
@@ -5396,7 +5442,7 @@ enum nvme_resv_notify_rnlpt {
  *		sanitize operation. The value is a numerator of the fraction
  *		complete that has 65,536 (10000h) as its denominator. This value
  *		shall be set to FFFFh if the @sstat field is not set to
- *		%NVME_SANITIZE_SSTAT_STATUS_IN_PROGESS.
+ *		%NVME_SANITIZE_SSTAT_STATUS_IN_PROGRESS.
  * @sstat:	Sanitize Status (SSTAT): indicates the status associated with
  *		the most recent sanitize operation. See &enum nvme_sanitize_sstat.
  * @scdw10:	Sanitize Command Dword 10 Information (SCDW10): contains the value
@@ -5494,7 +5540,8 @@ struct nvme_sanitize_log_page {
  * @NVME_SANITIZE_SSTAT_STATUS_COMPLETE_SUCCESS: The most recent sanitize operation
  *					 completed successfully including any
  *					 additional media modification.
- * @NVME_SANITIZE_SSTAT_STATUS_IN_PROGESS: A sanitize operation is currently in progress.
+ * @NVME_SANITIZE_SSTAT_STATUS_IN_PROGRESS: A sanitize operation is currently in
+ *					 progress.
  * @NVME_SANITIZE_SSTAT_STATUS_COMPLETED_FAILED: The most recent sanitize operation
  *					 failed.
  * @NVME_SANITIZE_SSTAT_STATUS_ND_COMPLETE_SUCCESS: The most recent sanitize operation
@@ -5532,7 +5579,7 @@ enum nvme_sanitize_sstat {
 	NVME_SANITIZE_SSTAT_STATUS_MASK			= 0x7,
 	NVME_SANITIZE_SSTAT_STATUS_NEVER_SANITIZED	= 0,
 	NVME_SANITIZE_SSTAT_STATUS_COMPLETE_SUCCESS	= 1,
-	NVME_SANITIZE_SSTAT_STATUS_IN_PROGESS		= 2,
+	NVME_SANITIZE_SSTAT_STATUS_IN_PROGRESS		= 2,
 	NVME_SANITIZE_SSTAT_STATUS_COMPLETED_FAILED	= 3,
 	NVME_SANITIZE_SSTAT_STATUS_ND_COMPLETE_SUCCESS	= 4,
 	NVME_SANITIZE_SSTAT_COMPLETED_PASSES_SHIFT	= 3,
@@ -7952,6 +7999,7 @@ struct nvme_mi_vpd_hdr {
  *				      Maximum Time for Firmware Activation
  *				      (MTFA) value reported in Identify
  *				      Controller.
+ * @NVME_SC_EXCEEDS_MAX_NS_SANITIZE:  Exceeds Max NS Sanitize Operations
  * @NVME_SC_FW_ACTIVATE_PROHIBITED:   Firmware Activation Prohibited: The image
  *				      specified is being prohibited from
  *				      activation by the controller for vendor
@@ -8277,6 +8325,7 @@ enum nvme_status_field {
 	NVME_SC_FW_NEEDS_SUBSYS_RESET		= 0x10,
 	NVME_SC_FW_NEEDS_RESET			= 0x11,
 	NVME_SC_FW_NEEDS_MAX_TIME		= 0x12,
+	NVME_SC_EXCEEDS_MAX_NS_SANITIZE		= 0x12,
 	NVME_SC_FW_ACTIVATE_PROHIBITED		= 0x13,
 	NVME_SC_OVERLAPPING_RANGE		= 0x14,
 	NVME_SC_NS_INSUFFICIENT_CAP		= 0x15,
@@ -8541,6 +8590,7 @@ static inline __u32 nvme_status_equals(int status, enum nvme_status_type type,
  * @nvme_admin_get_lba_status:		Get LBA Status
  * @nvme_admin_program_act_mgmt:	Program Activation Management
  * @nvme_admin_mem_range_set_mgmt:	Memory Range Set Management
+ * @nvme_admin_sanitize_ns:		Sanitize Namespace
  */
 enum nvme_admin_opcode {
 	nvme_admin_delete_sq		= 0x00,
@@ -8592,6 +8642,7 @@ enum nvme_admin_opcode {
 	nvme_admin_get_lba_status	= 0x86,
 	nvme_admin_program_act_mgmt	= 0x88,
 	nvme_admin_mem_range_set_mgmt	= 0x89,
+	nvme_admin_sanitize_ns		= 0x8c,
 };
 
 /**
@@ -8703,14 +8754,19 @@ enum nvme_identify_cns {
  * @NVME_LOG_LID_REACHABILITY_GROUPS:		Reachability Groups
  * @NVME_LOG_LID_REACHABILITY_ASSOCIATIONS:	Reachability Associations
  * @NVME_LOG_LID_CHANGED_ALLOC_NS:		Changed Allocated Namespace List
+ * @NVME_LOG_LID_DEV_PERSONALITY:		Device Personalities
+ * @NVME_LOG_LID_CROSS_CTRL_RESET:		Cross-Controller Reset
+ * @NVME_LOG_LID_LOST_HOST_COMMUNICATION:	Lost Host Communication
  * @NVME_LOG_LID_FDP_CONFIGS:			FDP Configurations
  * @NVME_LOG_LID_FDP_RUH_USAGE:			Reclaim Unit Handle Usage
  * @NVME_LOG_LID_FDP_STATS:			FDP Statistics
  * @NVME_LOG_LID_FDP_EVENTS:			FDP Events
+ * @NVME_LOG_LID_POWER_MEASUREMENT:		Power Measurement
  * @NVME_LOG_LID_DISCOVERY:			Discovery
  * @NVME_LOG_LID_HOST_DISCOVERY:		Host Discovery
  * @NVME_LOG_LID_AVE_DISCOVERY:			AVE Discovery
  * @NVME_LOG_LID_PULL_MODEL_DDC_REQ:		Pull Model DDC Request
+ * @NVME_LOG_LID_SANITIZE_NS_STATUS_LIST:	Sanitize Namespace Status List
  * @NVME_LOG_LID_RESERVATION:			Reservation Notification
  * @NVME_LOG_LID_SANITIZE:			Sanitize Status
  * @NVME_LOG_LID_ZNS_CHANGED_ZONES:		Changed Zone List
@@ -8745,14 +8801,19 @@ enum nvme_cmd_get_log_lid {
 	NVME_LOG_LID_REACHABILITY_GROUPS			= 0x1a,
 	NVME_LOG_LID_REACHABILITY_ASSOCIATIONS			= 0x1b,
 	NVME_LOG_LID_CHANGED_ALLOC_NS				= 0x1c,
+	NVME_LOG_LID_DEV_PERSONALITY				= 0x1d,
+	NVME_LOG_LID_CROSS_CTRL_RESET				= 0x1e,
+	NVME_LOG_LID_LOST_HOST_COMMUNICATION			= 0x1f,
 	NVME_LOG_LID_FDP_CONFIGS				= 0x20,
 	NVME_LOG_LID_FDP_RUH_USAGE				= 0x21,
 	NVME_LOG_LID_FDP_STATS					= 0x22,
 	NVME_LOG_LID_FDP_EVENTS					= 0x23,
+	NVME_LOG_LID_POWER_MEASUREMENT				= 0x25,
 	NVME_LOG_LID_DISCOVERY					= 0x70,
 	NVME_LOG_LID_HOST_DISCOVERY				= 0x71,
 	NVME_LOG_LID_AVE_DISCOVERY				= 0x72,
 	NVME_LOG_LID_PULL_MODEL_DDC_REQ				= 0x73,
+	NVME_LOG_LID_SANITIZE_NS_STATUS_LIST			= 0x7f,
 	NVME_LOG_LID_RESERVATION				= 0x80,
 	NVME_LOG_LID_SANITIZE					= 0x81,
 	NVME_LOG_LID_ZNS_CHANGED_ZONES				= 0xbf,
@@ -8793,6 +8854,10 @@ enum nvme_cmd_get_log_lid {
  * @NVME_FEAT_FID_NS_ADMIN_LABEL:	Namespace Admin Label
  * @NVME_FEAT_FID_KEY_VALUE:		Key Value Configuration
  * @NVME_FEAT_FID_CTRL_DATA_QUEUE:	Controller Data Queue
+ * @NVME_FEAT_FID_CONF_DEV_PERSONALITY: Configurable Device Personality
+ * @NVME_FEAT_FID_POWER_LIMIT:		Power Limit
+ * @NVME_FEAT_FID_POWER_THRESH:		Power Threshold
+ * @NVME_FEAT_FID_POEWR_MEASUREMENT:	Power Measurement
  * @NVME_FEAT_FID_EMB_MGMT_CTRL_ADDR:	Embedded Management Controller Address
  * @NVME_FEAT_FID_HOST_MGMT_AGENT_ADDR:	Host Management Agent Address
  * @NVME_FEAT_FID_ENH_CTRL_METADATA:	Enhanced Controller Metadata
@@ -8839,6 +8904,10 @@ enum nvme_features_id {
 	NVME_FEAT_FID_NS_ADMIN_LABEL				= 0x1f,
 	NVME_FEAT_FID_KEY_VALUE					= 0x20,
 	NVME_FEAT_FID_CTRL_DATA_QUEUE				= 0x21,
+	NVME_FEAT_FID_CONF_DEV_PERSONALITY			= 0x22,
+	NVME_FEAT_FID_POWER_LIMIT				= 0x23,
+	NVME_FEAT_FID_POWER_THRESH				= 0x24,
+	NVME_FEAT_FID_POEWR_MEASUREMENT				= 0x25,
 	NVME_FEAT_FID_EMB_MGMT_CTRL_ADDR			= 0x78,
 	NVME_FEAT_FID_HOST_MGMT_AGENT_ADDR			= 0x79,
 	NVME_FEAT_FID_ENH_CTRL_METADATA				= 0x7d,
@@ -9006,6 +9075,18 @@ enum nvme_features_id {
  * @NVME_FEAT_RRL_NVMSETID_MASK:
  * @NVME_FEAT_PLM_NVMSETID_SHIFT:
  * @NVME_FEAT_PLM_NVMSETID_MASK:
+ * @NVME_FEAT_POWER_LIMIT_PLV_SHIFT:
+ * @NVME_FEAT_POWER_LIMIT_PLV_MASK:
+ * @NVME_FEAT_POWER_LIMIT_PLS_SHIFT:
+ * @NVME_FEAT_POWER_LIMIT_PLS_MASK:
+ * @NVME_FEAT_POWER_THRESH_PTV_SHIFT:
+ * @NVME_FEAT_POWER_THRESH_PTV_MASK:
+ * @NVME_FEAT_POWER_THRESH_PTS_SHIFT:
+ * @NVME_FEAT_POWER_THRESH_PTS_MASK:
+ * @NVME_FEAT_POWER_THRESH_PMTS_SHIFT:
+ * @NVME_FEAT_POWER_THRESH_PMTS_MASK:
+ * @NVME_FEAT_POWER_THRESH_EPT_SHIFT:
+ * @NVME_FEAT_POWER_THRESH_EPT_MASK:
  **/
 enum nvme_feat {
 	NVME_FEAT_ARBITRATION_BURST_SHIFT	= 0,
@@ -9160,6 +9241,18 @@ enum nvme_feat {
 	NVME_FEAT_SANITIZE_NODRM_MASK	= 0x1,
 	NVME_FEAT_RESP_PTPL_SHIFT	= 0,
 	NVME_FEAT_RESP_PTPL_MASK	= 0x1,
+	NVME_FEAT_POWER_LIMIT_PLV_SHIFT	= 0,
+	NVME_FEAT_POWER_LIMIT_PLV_MASK	= 0xffff,
+	NVME_FEAT_POWER_LIMIT_PLS_SHIFT	= 16,
+	NVME_FEAT_POWER_LIMIT_PLS_MASK	= 0x3,
+	NVME_FEAT_POWER_THRESH_PTV_SHIFT = 0,
+	NVME_FEAT_POWER_THRESH_PTV_MASK	= 0xffff,
+	NVME_FEAT_POWER_THRESH_PTS_SHIFT = 16,
+	NVME_FEAT_POWER_THRESH_PTS_MASK	= 0x3,
+	NVME_FEAT_POWER_THRESH_PMTS_SHIFT = 20,
+	NVME_FEAT_POWER_THRESH_PMTS_MASK = 0xf,
+	NVME_FEAT_POWER_THRESH_EPT_SHIFT = 31,
+	NVME_FEAT_POWER_THRESH_EPT_MASK	= 0x1,
 };
 
 /**

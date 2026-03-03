@@ -231,6 +231,13 @@ nvme_list_opts () {
 			;;
 		"fw-commit")
 		opts+=" --slot= -s --action= -a --bpid= -b --timeout= -t"
+		case $opt in
+			--action|-a)
+			vals+=" replace replace-and-activate set-active \
+				replace-and-activate-immediate
+				replace-boot-partition activate-boot-partition"
+				;;
+		esac
 			;;
 		"fw-download")
 		opts+=" --fw= -f --xfer= -x --offset= -O --timeout= -t"
@@ -1706,7 +1713,8 @@ _nvme_subcmds () {
 			vs-drive-info plugin-version cloud-SSD-plugin-version \
 			log-page-directory vs-fw-activate-history \
 			vs-error-reason-identifier vs-smart-add-log \
-			clear-fw-activate-history vs-smbus-option ocp-telemetry-log-parse"
+			clear-fw-activate-history vs-smbus-option ocp-telemetry-log-parse \
+			smart-log id-ctrl"
 		[seagate]="vs-temperature-stats vs-log-page-sup \
 			vs-smart-add-log vs-pcie-stats clear-pcie-correctable-errors \
 			get-host-tele get-ctrl-tele vs-internal-log \
