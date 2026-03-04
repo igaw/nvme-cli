@@ -8,7 +8,6 @@
  * This file implements basic logging functionality.
  */
 
-#include <sys/types.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>

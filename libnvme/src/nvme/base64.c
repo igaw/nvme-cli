@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/types.h>
 
 static const char base64_table[65] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

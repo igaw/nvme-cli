@@ -38,9 +38,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
-#include <string.h>
 #include <libgen.h>
-#include <stdio.h>
 #include <ctype.h>
 
 #ifdef NVME_HAVE_SENDFILE
