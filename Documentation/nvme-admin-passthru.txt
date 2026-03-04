@@ -19,7 +19,7 @@ SYNOPSIS
 			[--metadata-len=<len> | -m <len>]
 			[--input-file=<file> | -i <file>]
 			[--read | -r] [--write | -w]
-			[--timeout=<timeout> | -t <timeout>]
+			[--timeout=<timeout>]
 			[--show-command | -s]
 			[--dry-run | -d]
 			[--raw-binary | -b]
