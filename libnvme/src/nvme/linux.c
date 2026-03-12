@@ -9,6 +9,9 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#ifndef _GNU_SOURCE
+#include <libgen.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

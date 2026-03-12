@@ -5,11 +5,12 @@
  * Author: leonardo.da.cunha@solidigm.com
  */
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
+
 #include <json.h>
-#include <stdint.h>
 #include "config.h"
 
 // max 16 bit unsigned integer number 65535

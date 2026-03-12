@@ -22,8 +22,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <ccan/minmax/minmax.h>
 #include <ccan/endian/endian.h>
+#include <ccan/minmax/minmax.h>
 
 #include <libnvme.h>
 
@@ -980,4 +980,13 @@ const struct ifaddrs *nvme_getifaddrs(struct nvme_global_ctx *ctx)
 	}
 
 	return ctx->ifaddrs_cache;
+}
+
+/* This used instead of basename() due to behavioral differences between
+ * the POSIX and the GNU version. This is the glibc implementation.
+ * Original source: https://github.com/bminor/glibc/blob/master/string/basename.c */
+char *nvme_basename(const char *path)
+{
+	char *p = (char *) strrchr(path, '/');
+	return p ? p + 1 : (char *) path;
 }
