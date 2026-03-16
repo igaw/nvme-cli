@@ -41,7 +41,7 @@ static int nvme_verify_chr(struct nvme_transport_handle *hdl)
 	return 0;
 }
 
-int nvme_subsystem_reset(struct nvme_transport_handle *hdl)
+int nvme_reset_subsystem(struct nvme_transport_handle *hdl)
 {
 	int ret;
 
@@ -55,7 +55,7 @@ int nvme_subsystem_reset(struct nvme_transport_handle *hdl)
 	return ret;
 }
 
-int nvme_ctrl_reset(struct nvme_transport_handle *hdl)
+int nvme_reset_ctrl(struct nvme_transport_handle *hdl)
 {
 	int ret;
 
@@ -69,7 +69,7 @@ int nvme_ctrl_reset(struct nvme_transport_handle *hdl)
 	return ret;
 }
 
-int nvme_ns_rescan(struct nvme_transport_handle *hdl)
+int nvme_rescan_ns(struct nvme_transport_handle *hdl)
 {
 	int ret;
 
