@@ -370,29 +370,6 @@ int libnvmf_context_set_crypto(struct libnvmf_context *fctx,
 		const char *tls_key_identity);
 
 /**
- * libnvmf_context_set_persistent() - Set persistence for context
- * @fctx: Fabrics context
- * @persistent: Whether to enable persistent connections
- *
- * Sets whether the context should use persistent connections.
- *
- * Return: 0 on success, or a negative error code on failure.
- */
-
-int libnvmf_context_set_persistent(struct libnvmf_context *fctx, bool persistent);
-
-/**
- * libnvmf_context_set_device() - Set device for context
- * @fctx: Fabrics context
- * @device: Device path or identifier
- *
- * Sets the device to be used by the context.
- *
- * Return: 0 on success, or a negative error code on failure.
- */
-int libnvmf_context_set_device(struct libnvmf_context *fctx, const char *device);
-
-/**
  * libnvmf_context_get_fabrics_config() - Fabrics configuration of a fabrics
  * context
  * @fctx: Fabrics context
@@ -529,6 +506,18 @@ int libnvmf_connect_config_json(struct libnvme_global_ctx *ctx,
 
 /**
  * libnvmf_config_modify() - Modify and update the configurtion
+ * @ctx: Global context
+ * @fctx: Fabrics context
+ *
+ * Disconnects from the fabrics subsystem using the provided context.
+ *
+ * Return: 0 on success, or a negative error code on failure.
+ */
+int libnvmf_disconnect(struct libnvme_global_ctx *ctx,
+		struct libnvmf_context *fctx);
+
+/**
+ * nvmf_config_modify() - Modify and update the configurtion
  * @ctx: Global context
  * @fctx: Fabrics context
  *

@@ -28,8 +28,176 @@
 #include <nvme/types.h>
 
 /* Forward declarations. These are internal (opaque) structs. */
+struct libnvmf_context;
 struct libnvmf_discovery_args;
 struct libnvmf_uri;
+
+/****************************************************************************
+ * Accessors for: struct libnvmf_context
+ ****************************************************************************/
+
+/**
+ * libnvmf_context_set_default_max_discovery_retries() - Setter.
+ * @p: The &struct libnvmf_context instance to update.
+ * @default_max_discovery_retries: Value to assign to the default_max_discovery_retries field.
+ */
+void libnvmf_context_set_default_max_discovery_retries(
+		struct libnvmf_context *p,
+		int default_max_discovery_retries);
+
+/**
+ * libnvmf_context_get_default_max_discovery_retries() - Getter.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the default_max_discovery_retries field.
+ */
+int libnvmf_context_get_default_max_discovery_retries(
+		const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_set_default_keep_alive_timeout() - Setter.
+ * @p: The &struct libnvmf_context instance to update.
+ * @default_keep_alive_timeout: Value to assign to the default_keep_alive_timeout field.
+ */
+void libnvmf_context_set_default_keep_alive_timeout(
+		struct libnvmf_context *p,
+		int default_keep_alive_timeout);
+
+/**
+ * libnvmf_context_get_default_keep_alive_timeout() - Getter.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the default_keep_alive_timeout field.
+ */
+int libnvmf_context_get_default_keep_alive_timeout(
+		const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_set_device() - Set device.
+ * @p: The &struct libnvmf_context instance to update.
+ * @device: New string; a copy is stored. Pass NULL to clear.
+ */
+void libnvmf_context_set_device(struct libnvmf_context *p, const char *device);
+
+/**
+ * libnvmf_context_get_device() - Get device.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the device field, or NULL if not set.
+ */
+const char *libnvmf_context_get_device(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_set_persistent() - Set persistent.
+ * @p: The &struct libnvmf_context instance to update.
+ * @persistent: Value to assign to the persistent field.
+ */
+void libnvmf_context_set_persistent(struct libnvmf_context *p, bool persistent);
+
+/**
+ * libnvmf_context_get_persistent() - Get persistent.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the persistent field.
+ */
+bool libnvmf_context_get_persistent(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_subsysnqn() - Get subsysnqn.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the subsysnqn field, or NULL if not set.
+ */
+const char *libnvmf_context_get_subsysnqn(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_transport() - Get transport.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the transport field, or NULL if not set.
+ */
+const char *libnvmf_context_get_transport(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_traddr() - Get traddr.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the traddr field, or NULL if not set.
+ */
+const char *libnvmf_context_get_traddr(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_trsvcid() - Get trsvcid.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the trsvcid field, or NULL if not set.
+ */
+const char *libnvmf_context_get_trsvcid(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_host_traddr() - Get host_traddr.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the host_traddr field, or NULL if not set.
+ */
+const char *libnvmf_context_get_host_traddr(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_host_iface() - Get host_iface.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the host_iface field, or NULL if not set.
+ */
+const char *libnvmf_context_get_host_iface(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_hostnqn() - Get hostnqn.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the hostnqn field, or NULL if not set.
+ */
+const char *libnvmf_context_get_hostnqn(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_hostid() - Get hostid.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the hostid field, or NULL if not set.
+ */
+const char *libnvmf_context_get_hostid(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_hostkey() - Get hostkey.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the hostkey field, or NULL if not set.
+ */
+const char *libnvmf_context_get_hostkey(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_ctrlkey() - Get ctrlkey.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the ctrlkey field, or NULL if not set.
+ */
+const char *libnvmf_context_get_ctrlkey(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_keyring() - Get keyring.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the keyring field, or NULL if not set.
+ */
+const char *libnvmf_context_get_keyring(const struct libnvmf_context *p);
+
+/**
+ * libnvmf_context_get_tls_key_identity() - Get tls_key_identity.
+ * @p: The &struct libnvmf_context instance to query.
+ *
+ * Return: The value of the tls_key_identity field, or NULL if not set.
+ */
+const char *libnvmf_context_get_tls_key_identity(
+		const struct libnvmf_context *p);
 
 /****************************************************************************
  * Accessors for: struct libnvmf_discovery_args

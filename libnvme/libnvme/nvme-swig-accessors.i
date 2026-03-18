@@ -204,6 +204,28 @@
 	#define libnvme_fabric_options_transport_set          libnvme_fabric_options_set_transport
 	#define libnvme_fabric_options_trsvcid_set            libnvme_fabric_options_set_trsvcid
 
+	/* struct libnvmf_context */
+	#define libnvmf_context_default_max_discovery_retries_get libnvmf_context_get_default_max_discovery_retries
+	#define libnvmf_context_default_keep_alive_timeout_get    libnvmf_context_get_default_keep_alive_timeout
+	#define libnvmf_context_device_get                        libnvmf_context_get_device
+	#define libnvmf_context_persistent_get                    libnvmf_context_get_persistent
+	#define libnvmf_context_subsysnqn_get                     libnvmf_context_get_subsysnqn
+	#define libnvmf_context_transport_get                     libnvmf_context_get_transport
+	#define libnvmf_context_traddr_get                        libnvmf_context_get_traddr
+	#define libnvmf_context_trsvcid_get                       libnvmf_context_get_trsvcid
+	#define libnvmf_context_host_traddr_get                   libnvmf_context_get_host_traddr
+	#define libnvmf_context_host_iface_get                    libnvmf_context_get_host_iface
+	#define libnvmf_context_hostnqn_get                       libnvmf_context_get_hostnqn
+	#define libnvmf_context_hostid_get                        libnvmf_context_get_hostid
+	#define libnvmf_context_hostkey_get                       libnvmf_context_get_hostkey
+	#define libnvmf_context_ctrlkey_get                       libnvmf_context_get_ctrlkey
+	#define libnvmf_context_keyring_get                       libnvmf_context_get_keyring
+	#define libnvmf_context_tls_key_identity_get              libnvmf_context_get_tls_key_identity
+	#define libnvmf_context_default_max_discovery_retries_set libnvmf_context_set_default_max_discovery_retries
+	#define libnvmf_context_default_keep_alive_timeout_set    libnvmf_context_set_default_keep_alive_timeout
+	#define libnvmf_context_device_set                        libnvmf_context_set_device
+	#define libnvmf_context_persistent_set                    libnvmf_context_set_persistent
+
 	/* struct libnvmf_discovery_args */
 	#define libnvmf_discovery_args_max_retries_get libnvmf_discovery_args_get_max_retries
 	#define libnvmf_discovery_args_lsp_get         libnvmf_discovery_args_get_lsp

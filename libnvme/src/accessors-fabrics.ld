@@ -10,6 +10,26 @@
 
 LIBNVMF_ACCESSORS_3 {
 	global:
+		libnvmf_context_get_ctrlkey;
+		libnvmf_context_get_default_keep_alive_timeout;
+		libnvmf_context_get_default_max_discovery_retries;
+		libnvmf_context_get_device;
+		libnvmf_context_get_host_iface;
+		libnvmf_context_get_host_traddr;
+		libnvmf_context_get_hostid;
+		libnvmf_context_get_hostkey;
+		libnvmf_context_get_hostnqn;
+		libnvmf_context_get_keyring;
+		libnvmf_context_get_persistent;
+		libnvmf_context_get_subsysnqn;
+		libnvmf_context_get_tls_key_identity;
+		libnvmf_context_get_traddr;
+		libnvmf_context_get_transport;
+		libnvmf_context_get_trsvcid;
+		libnvmf_context_set_default_keep_alive_timeout;
+		libnvmf_context_set_default_max_discovery_retries;
+		libnvmf_context_set_device;
+		libnvmf_context_set_persistent;
 		libnvmf_discovery_args_free;
 		libnvmf_discovery_args_get_lsp;
 		libnvmf_discovery_args_get_max_retries;

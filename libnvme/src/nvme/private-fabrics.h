@@ -16,7 +16,7 @@
 
 #include "nvme/private.h"
 
-struct libnvmf_context {
+struct libnvmf_context {			 // !generate-accessors
 	struct libnvme_global_ctx *ctx;
 
 	/* common callbacks */
@@ -44,7 +44,7 @@ struct libnvmf_context {
 	int default_keep_alive_timeout;
 
 	/* common fabrics configuration */
-	const char *device;
+	char *device;
 	bool persistent;
 	struct libnvme_fabrics_config cfg;
 
@@ -64,7 +64,7 @@ struct libnvmf_context {
 	const char *hostkey;
 	const char *ctrlkey;
 	const char *keyring;
-	char *tls_key;
+	char *tls_key;			// !access:read=none,write=none
 	const char *tls_key_identity;
 
 	void *user_data;

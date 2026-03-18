@@ -373,6 +373,15 @@ endif
 
 conf.set('CONFIG_DBUS', libdbus_dep.found(), description: 'Enable dbus support?')
 
+if not want_fabrics or get_option('libsystemd').disabled()
+    libsystemd_dep = dependency('', required: false)
+else
+    libsystemd_dep = dependency('libsystemd')
+endif
+
+conf.set('CONFIG_LIBSYSTEMD', libsystemd_dep.found(),
+    description: 'Enable libsystemd support?')
+
 conf.set10(
     'HAVE_STATEMENT_EXPR',
     cc.compiles(
@@ -545,6 +554,7 @@ if want_nvme
         json_c_dep,
         libkmod_dep,
         libudev_dep,
+        libsystemd_dep,
     ]
 
     if host_system == 'windows'
@@ -701,6 +711,7 @@ dep_dict = {
     'liburing':         liburing_dep.found(),
     'libkmod':          libkmod_dep.found(),
     'libudev':          libudev_dep.found(),
+    'libsystemd':       libsystemd_dep.found(),
 }
 if host_system == 'windows'
     dep_dict += {

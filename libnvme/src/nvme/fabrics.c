@@ -372,20 +372,6 @@ __public int libnvmf_context_set_crypto(struct libnvmf_context *fctx,
 	return 0;
 }
 
-__public int libnvmf_context_set_persistent(struct libnvmf_context *fctx, bool persistent)
-{
-	fctx->persistent = persistent;
-
-	return 0;
-}
-
-__public int libnvmf_context_set_device(struct libnvmf_context *fctx, const char *device)
-{
-	fctx->device = device;
-
-	return 0;
-}
-
 __public struct libnvme_fabrics_config *libnvmf_context_get_fabrics_config(
 		struct libnvmf_context *fctx)
 {
@@ -1036,6 +1022,8 @@ static int __nvmf_add_ctrl(struct libnvme_global_ctx *ctx, const char *argstr)
 			return -ENVME_CONNECT_ADDRNOTAVAIL;
 		case ENOKEY:
 			return -ENVME_CONNECT_NOKEY;
+		case ENOENT:
+			return -ENVME_CONNECT_COMPNOTFOUND;
 		default:
 			return -ENVME_CONNECT_WRITE;
 		}
@@ -2524,8 +2512,8 @@ __public int libnvmf_discovery_config_file(struct libnvme_global_ctx *ctx,
 	return 0;
 }
 
-__public int libnvmf_config_modify(struct libnvme_global_ctx *ctx,
-		struct libnvmf_context *fctx)
+static int lookup_ctrl_from_fctx(struct libnvme_global_ctx *ctx,
+		struct libnvmf_context *fctx, struct libnvme_ctrl **ctrl)
 {
 	__cleanup_free char *hnqn = NULL;
 	__cleanup_free char *hid = NULL;
@@ -2540,7 +2528,8 @@ __public int libnvmf_config_modify(struct libnvme_global_ctx *ctx,
 
 	h = libnvme_lookup_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
-		libnvme_msg(ctx, LIBNVME_LOG_ERR, "Failed to lookup host '%s'\n",
+		libnvme_msg(ctx, LIBNVME_LOG_DEBUG,
+			"Failed to lookup host '%s'\n",
 			fctx->hostnqn);
 		return -ENODEV;
 	}
@@ -2550,16 +2539,46 @@ __public int libnvmf_config_modify(struct libnvme_global_ctx *ctx,
 
 	s = libnvme_lookup_subsystem(h, NULL, fctx->subsysnqn);
 	if (!s) {
-		libnvme_msg(ctx, LIBNVME_LOG_ERR, "Failed to lookup subsystem '%s'\n",
+		libnvme_msg(ctx, LIBNVME_LOG_DEBUG,
+			"Failed to lookup subsystem '%s'\n",
 			fctx->subsysnqn);
 		return -ENODEV;
 	}
 
 	c = libnvme_lookup_ctrl(s, fctx, NULL);
 	if (!c) {
-		libnvme_msg(ctx, LIBNVME_LOG_ERR, "Failed to lookup controller\n");
+		libnvme_msg(ctx, LIBNVME_LOG_DEBUG,
+			"Failed to lookup controller\n");
 		return -ENODEV;
 	}
+
+	*ctrl = c;
+	return 0;
+}
+
+__public int libnvmf_disconnect(struct libnvme_global_ctx *ctx,
+		struct libnvmf_context *fctx)
+{
+	struct libnvme_ctrl *c;
+	int err;
+
+	err = lookup_ctrl_from_fctx(ctx, fctx, &c);
+	if (!err)
+		err = libnvmf_disconnect_ctrl(c);
+
+	return err;
+}
+
+__public int libnvmf_config_modify(struct libnvme_global_ctx *ctx,
+		struct libnvmf_context *fctx)
+{
+	struct libnvme_ctrl *c;
+	int err;
+
+	err = lookup_ctrl_from_fctx(ctx, fctx, &c);
+	if (err)
+		return err;
+
 	if (fctx->ctrlkey)
 		libnvme_ctrl_set_dhchap_ctrl_key(c, fctx->ctrlkey);
 
