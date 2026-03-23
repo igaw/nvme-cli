@@ -528,7 +528,7 @@ static void nvme_show_cmd_err(const char *msg, bool admin,
 	if (!err)
 		return;
 	else if (err < 0)
-		nvme_show_error("%s: %s", msg, nvme_strerror(-err));
+		nvme_show_error("%s: %s", msg, libnvme_strerror(-err));
 	else if (cmd)
 		nvme_show_opcode_status(err, false, cmd->opcode);
 	else
@@ -1558,25 +1558,25 @@ void nvme_show_lba_status(struct nvme_lba_status *list, unsigned long len,
 	nvme_print(lba_status, flags, list, len);
 }
 
-void nvme_dev_full_path(nvme_ns_t n, char *path, size_t len)
+void nvme_dev_full_path(libnvme_ns_t n, char *path, size_t len)
 {
 	struct stat st;
 
-	snprintf(path, len, "%s", nvme_ns_get_name(n));
+	snprintf(path, len, "%s", libnvme_ns_get_name(n));
 	if (strncmp(path, "/dev/spdk/", 10) == 0 && stat(path, &st) == 0)
 		return;
 
-	snprintf(path, len, "/dev/%s", nvme_ns_get_name(n));
+	snprintf(path, len, "/dev/%s", libnvme_ns_get_name(n));
 	if (stat(path, &st) == 0)
 		return;
 	/*
 	 * We could start trying to search for it but let's make
 	 * it simple and just don't show the path at all.
 	 */
-	snprintf(path, len, "%s", nvme_ns_get_name(n));
+	snprintf(path, len, "%s", libnvme_ns_get_name(n));
 }
 
-void nvme_generic_full_path(nvme_ns_t n, char *path, size_t len)
+void nvme_generic_full_path(libnvme_ns_t n, char *path, size_t len)
 {
 	int head_instance;
 	int instance;
@@ -1586,11 +1586,11 @@ void nvme_generic_full_path(nvme_ns_t n, char *path, size_t len)
 	 * There is no block devices for SPDK, point generic path to existing
 	 * chardevice.
 	 */
-	snprintf(path, len, "%s", nvme_ns_get_name(n));
+	snprintf(path, len, "%s", libnvme_ns_get_name(n));
 	if (strncmp(path, "/dev/spdk/", 10) == 0 && stat(path, &st) == 0)
 		return;
 
-	sscanf(nvme_ns_get_name(n), "nvme%dn%d", &instance, &head_instance);
+	sscanf(libnvme_ns_get_name(n), "nvme%dn%d", &instance, &head_instance);
 	snprintf(path, len, "/dev/ng%dn%d", instance, head_instance);
 
 	if (stat(path, &st) == 0)
@@ -1602,7 +1602,7 @@ void nvme_generic_full_path(nvme_ns_t n, char *path, size_t len)
 	snprintf(path, len, "ng%dn%d", instance, head_instance);
 }
 
-void nvme_show_list_item(nvme_ns_t n, struct table *t)
+void nvme_show_list_item(libnvme_ns_t n, struct table *t)
 {
 	nvme_print(list_item, NORMAL, n, t);
 }
@@ -1683,7 +1683,7 @@ void nvme_show_discovery_log(struct nvmf_discovery_log *log, uint64_t numrec,
 	nvme_print(discovery_log, flags, log, numrec);
 }
 
-void nvme_show_connect_msg(nvme_ctrl_t c, nvme_print_flags_t flags)
+void nvme_show_connect_msg(libnvme_ctrl_t c, nvme_print_flags_t flags)
 {
 	nvme_print(connect_msg, flags, c);
 }

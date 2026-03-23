@@ -36,7 +36,7 @@ static int nvme_vucmd(struct nvme_transport_handle *hdl, unsigned char opcode,
 	cmd.nsid = 0xffffffff;
 	cmd.addr = (__u64)(__u64)(uintptr_t)data;
 	cmd.data_len = data_len;
-	return nvme_submit_admin_passthru(hdl, &cmd);
+	return libnvme_submit_admin_passthru(hdl, &cmd);
 }
 
 static int getlogpage(struct nvme_transport_handle *hdl, unsigned char ilogid,

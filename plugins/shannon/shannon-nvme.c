@@ -145,7 +145,7 @@ static int get_additional_smart_log(int argc, char **argv, struct command *acmd,
 		if (!cfg.raw_binary)
 			show_shannon_smart_log(
 				&smart_log, cfg.namespace_id,
-				nvme_transport_handle_get_name(hdl));
+				libnvme_transport_handle_get_name(hdl));
 		else
 			d_raw((unsigned char *)&smart_log, sizeof(smart_log));
 	} else if (err > 0) {

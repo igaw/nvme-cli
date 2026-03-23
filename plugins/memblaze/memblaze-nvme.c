@@ -447,7 +447,7 @@ static int mb_get_additional_smart_log(int argc, char **argv, struct command *ac
 	if (!err) {
 		if (!cfg.raw_binary)
 			err = show_memblaze_smart_log(hdl, cfg.namespace_id,
-						      nvme_transport_handle_get_name(hdl),
+						      libnvme_transport_handle_get_name(hdl),
 						      &smart_log);
 		else
 			d_raw((unsigned char *)&smart_log, sizeof(smart_log));
@@ -737,7 +737,7 @@ static int memblaze_fw_commit(struct nvme_transport_handle *hdl, int select)
 		.cdw12		= select,
 	};
 
-	return nvme_submit_admin_passthru(hdl, &cmd);
+	return libnvme_submit_admin_passthru(hdl, &cmd);
 }
 
 static int mb_selective_download(int argc, char **argv, struct command *acmd, struct plugin *plugin)
@@ -841,7 +841,7 @@ static int mb_selective_download(int argc, char **argv, struct command *acmd, st
 			perror("fw-download");
 			goto out_free;
 		}
-		err = nvme_submit_admin_passthru(hdl, &cmd);
+		err = libnvme_submit_admin_passthru(hdl, &cmd);
 		if (err < 0) {
 			perror("fw-download");
 			goto out_free;
@@ -1567,13 +1567,13 @@ static int mb_get_smart_log_add(int argc, char **argv, struct command *acmd, str
 	err = nvme_get_log_simple(hdl, LID_SMART_LOG_ADD, &log, sizeof(struct smart_log_add));
 	if (!err) {
 		if (!cfg.raw_binary)
-			smart_log_add_print(&log, nvme_transport_handle_get_name(hdl));
+			smart_log_add_print(&log, libnvme_transport_handle_get_name(hdl));
 		else
 			d_raw((unsigned char *)&log, sizeof(struct smart_log_add));
 	} else if (err > 0) {
 		nvme_show_status(err);
 	} else {
-		nvme_show_error("%s: %s", acmd->name, nvme_strerror(errno));
+		nvme_show_error("%s: %s", acmd->name, libnvme_strerror(errno));
 	}
 
 	return err;
@@ -1738,7 +1738,7 @@ static int mb_set_latency_feature(int argc, char **argv, struct command *acmd, s
 	else if (err > 0)
 		nvme_show_status(err);
 	else
-		nvme_show_error("%s: %s", acmd->name, nvme_strerror(errno));
+		nvme_show_error("%s: %s", acmd->name, libnvme_strerror(errno));
 
 	return err;
 }
@@ -1781,7 +1781,7 @@ static int mb_get_latency_feature(int argc, char **argv, struct command *acmd, s
 	} else if (err > 0) {
 		nvme_show_status(err);
 	} else {
-		nvme_show_error("%s: %s", acmd->name, nvme_strerror(errno));
+		nvme_show_error("%s: %s", acmd->name, libnvme_strerror(errno));
 	}
 
 	return err;
@@ -1918,13 +1918,13 @@ static int mb_get_latency_stats(int argc, char **argv, struct command *acmd, str
 	err = nvme_get_log_simple(hdl, LID_LATENCY_STATISTICS, &log, sizeof(struct latency_stats));
 	if (!err) {
 		if (!cfg.raw_binary)
-			latency_stats_print(&log, nvme_transport_handle_get_name(hdl));
+			latency_stats_print(&log, libnvme_transport_handle_get_name(hdl));
 		else
 			d_raw((unsigned char *)&log, sizeof(struct latency_stats));
 	} else if (err > 0) {
 		nvme_show_status(err);
 	} else {
-		nvme_show_error("%s: %s", acmd->name, nvme_strerror(errno));
+		nvme_show_error("%s: %s", acmd->name, libnvme_strerror(errno));
 	}
 
 	return err;
@@ -2023,13 +2023,13 @@ static int mb_get_high_latency_log(int argc, char **argv, struct command *acmd,
 				  &log, sizeof(struct high_latency_log));
 	if (!err) {
 		if (!cfg.raw_binary)
-			high_latency_log_print(&log, nvme_transport_handle_get_name(hdl));
+			high_latency_log_print(&log, libnvme_transport_handle_get_name(hdl));
 		else
 			d_raw((unsigned char *)&log, sizeof(struct high_latency_log));
 	} else if (err > 0) {
 		nvme_show_status(err);
 	} else {
-		nvme_show_error("%s: %s", acmd->name, nvme_strerror(errno));
+		nvme_show_error("%s: %s", acmd->name, libnvme_strerror(errno));
 	}
 
 	return err;
@@ -2280,13 +2280,13 @@ static int mb_get_performance_stats(int argc, char **argv, struct command *acmd,
 	err = nvme_get_log_simple(hdl, LID_PERFORMANCE_STATISTICS, &log, xfer_size);
 	if (!err) {
 		if (!cfg.raw_binary)
-			performance_stats_print(&log, nvme_transport_handle_get_name(hdl), cfg.duration);
+			performance_stats_print(&log, libnvme_transport_handle_get_name(hdl), cfg.duration);
 		else
 			d_raw((unsigned char *)&log, log_size);
 	} else if (err > 0) {
 		nvme_show_status(err);
 	} else {
-		nvme_show_error("%s: %s", acmd->name, nvme_strerror(errno));
+		nvme_show_error("%s: %s", acmd->name, libnvme_strerror(errno));
 	}
 
 	return err;

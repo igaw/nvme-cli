@@ -312,7 +312,7 @@ static int fdp_status(int argc, char **argv, struct command *acmd, struct plugin
 		flags = BINARY;
 
 	if (!cfg.nsid) {
-		err = nvme_get_nsid(hdl, &cfg.nsid);
+		err = libnvme_get_nsid(hdl, &cfg.nsid);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;
@@ -321,7 +321,7 @@ static int fdp_status(int argc, char **argv, struct command *acmd, struct plugin
 
 	nvme_init_fdp_reclaim_unit_handle_status(&cmd, cfg.nsid, &hdr,
 		sizeof(hdr));
-	err = nvme_submit_io_passthru(hdl, &cmd);
+	err = libnvme_submit_io_passthru(hdl, &cmd);
 	if (err) {
 		nvme_show_status(err);
 		return err;
@@ -334,7 +334,7 @@ static int fdp_status(int argc, char **argv, struct command *acmd, struct plugin
 		return -ENOMEM;
 
 	nvme_init_fdp_reclaim_unit_handle_status(&cmd, cfg.nsid, buf, len);
-	err = nvme_submit_io_passthru(hdl, &cmd);
+	err = libnvme_submit_io_passthru(hdl, &cmd);
 	if (err) {
 		nvme_show_status(err);
 		return err;
@@ -386,7 +386,7 @@ static int fdp_update(int argc, char **argv, struct command *acmd, struct plugin
 	}
 
 	if (!cfg.nsid) {
-		err = nvme_get_nsid(hdl, &cfg.nsid);
+		err = libnvme_get_nsid(hdl, &cfg.nsid);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;
@@ -397,7 +397,7 @@ static int fdp_update(int argc, char **argv, struct command *acmd, struct plugin
 		buf[i] = cpu_to_le16(pids[i]);
 
 	nvme_init_fdp_reclaim_unit_handle_status(&cmd, cfg.nsid, buf, npids);
-	err = nvme_submit_io_passthru(hdl, &cmd);
+	err = libnvme_submit_io_passthru(hdl, &cmd);
 	if (err) {
 		nvme_show_status(err);
 		return err;
@@ -461,10 +461,10 @@ static int fdp_set_events(int argc, char **argv, struct command *acmd, struct pl
 	}
 
 	if (!cfg.nsid) {
-		err = nvme_get_nsid(hdl, &cfg.nsid);
+		err = libnvme_get_nsid(hdl, &cfg.nsid);
 		if (err < 0) {
 			if (errno != ENOTTY) {
-				fprintf(stderr, "get-namespace-id: %s\n", nvme_strerror(errno));
+				fprintf(stderr, "get-namespace-id: %s\n", libnvme_strerror(errno));
 				return err;
 			}
 

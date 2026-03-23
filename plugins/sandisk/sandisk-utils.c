@@ -44,31 +44,31 @@ int sndk_get_pci_ids(struct nvme_global_ctx *ctx, struct nvme_transport_handle *
 			   uint32_t *device_id, uint32_t *vendor_id)
 {
 	char vid[256], did[256], id[32];
-	nvme_ctrl_t c = NULL;
-	nvme_ns_t n = NULL;
+	libnvme_ctrl_t c = NULL;
+	libnvme_ns_t n = NULL;
 	const char *name;
 	int fd, ret;
 
-	name = nvme_transport_handle_get_name(hdl);
-	ret = nvme_scan_ctrl(ctx, name, &c);
+	name = libnvme_transport_handle_get_name(hdl);
+	ret = libnvme_scan_ctrl(ctx, name, &c);
 	if (!ret) {
 		snprintf(vid, sizeof(vid), "%s/device/vendor",
-			nvme_ctrl_get_sysfs_dir(c));
+			libnvme_ctrl_get_sysfs_dir(c));
 		snprintf(did, sizeof(did), "%s/device/device",
-			nvme_ctrl_get_sysfs_dir(c));
-		nvme_free_ctrl(c);
+			libnvme_ctrl_get_sysfs_dir(c));
+		libnvme_free_ctrl(c);
 	} else {
-		ret = nvme_scan_namespace(ctx, name, &n);
+		ret = libnvme_scan_namespace(ctx, name, &n);
 		if (!ret) {
 			fprintf(stderr, "Unable to find %s\n", name);
 			return ret;
 		}
 
 		snprintf(vid, sizeof(vid), "%s/device/device/vendor",
-			nvme_ns_get_sysfs_dir(n));
+			libnvme_ns_get_sysfs_dir(n));
 		snprintf(did, sizeof(did), "%s/device/device/device",
-			nvme_ns_get_sysfs_dir(n));
-		nvme_free_ns(n);
+			libnvme_ns_get_sysfs_dir(n));
+		libnvme_free_ns(n);
 	}
 
 	fd = open(vid, O_RDONLY);
@@ -337,16 +337,16 @@ bool sndk_get_dev_mgment_data(struct nvme_global_ctx *ctx, struct nvme_transport
 	memset(&uuid_list, 0, sizeof(struct nvme_id_uuid_list));
 	if (!nvme_get_uuid_list(hdl, &uuid_list)) {
 		/* check for the Sandisk UUID first  */
-		uuid_index = nvme_find_uuid(&uuid_list, SNDK_UUID);
+		uuid_index = libnvme_find_uuid(&uuid_list, SNDK_UUID);
 
 		if (uuid_index < 0) {
 			/* The Sandisk UUID is not found;
 			 * check for the WDC UUID second.
 			 */
-			uuid_index = nvme_find_uuid(&uuid_list, WDC_UUID);
+			uuid_index = libnvme_find_uuid(&uuid_list, WDC_UUID);
 			if (uuid_index < 0)
 				/* Check for the UUID used on SN640 and SN655 drives */
-				uuid_index = nvme_find_uuid(&uuid_list, WDC_UUID_SN640_3);
+				uuid_index = libnvme_find_uuid(&uuid_list, WDC_UUID_SN640_3);
 		}
 
 		if (uuid_index >= 0)
@@ -452,7 +452,7 @@ bool sndk_get_dev_mgmt_log_page_data(struct nvme_transport_handle *hdl,
 
 	data = (__u8 *)malloc(sizeof(__u8) * SNDK_DEV_MGMNT_LOG_PAGE_LEN);
 	if (!data) {
-		fprintf(stderr, "ERROR: SNDK: malloc: %s\n", nvme_strerror(errno));
+		fprintf(stderr, "ERROR: SNDK: malloc: %s\n", libnvme_strerror(errno));
 		return false;
 	}
 
@@ -481,7 +481,7 @@ bool sndk_get_dev_mgmt_log_page_data(struct nvme_transport_handle *hdl,
 		free(data);
 		data = calloc(length, sizeof(__u8));
 		if (!data) {
-			fprintf(stderr, "ERROR: SNDK: malloc: %s\n", nvme_strerror(errno));
+			fprintf(stderr, "ERROR: SNDK: malloc: %s\n", libnvme_strerror(errno));
 			goto end;
 		}
 
@@ -506,7 +506,7 @@ bool sndk_get_dev_mgmt_log_page_data(struct nvme_transport_handle *hdl,
 		/* Ensure size of log data matches length in log header */
 		*log_data = calloc(length, sizeof(__u8));
 		if (!*log_data) {
-			fprintf(stderr, "ERROR: SNDK: calloc: %s\n", nvme_strerror(errno));
+			fprintf(stderr, "ERROR: SNDK: calloc: %s\n", libnvme_strerror(errno));
 			valid = false;
 			goto end;
 		}
@@ -684,16 +684,16 @@ __u64 sndk_get_enc_drive_capabilities(struct nvme_global_ctx *ctx,
 		memset(&uuid_list, 0, sizeof(struct nvme_id_uuid_list));
 		if (!nvme_get_uuid_list(hdl, &uuid_list)) {
 			/* check for the Sandisk UUID first  */
-			uuid_index = nvme_find_uuid(&uuid_list, SNDK_UUID);
+			uuid_index = libnvme_find_uuid(&uuid_list, SNDK_UUID);
 
 			if (uuid_index < 0) {
 				/* The Sandisk UUID is not found;
 				 * check for the WDC UUID second.
 				 */
-				uuid_index = nvme_find_uuid(&uuid_list, WDC_UUID);
+				uuid_index = libnvme_find_uuid(&uuid_list, WDC_UUID);
 				if (uuid_index < 0)
 					/* Check for the UUID used on SN640 and SN655 drives */
-					uuid_index = nvme_find_uuid(&uuid_list, WDC_UUID_SN640_3);
+					uuid_index = libnvme_find_uuid(&uuid_list, WDC_UUID_SN640_3);
 			}
 		} else {
 			/* UUID Lists not supported, Use default uuid index - 0 */

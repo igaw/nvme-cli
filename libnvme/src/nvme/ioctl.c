@@ -38,7 +38,7 @@ static int nvme_verify_chr(struct nvme_transport_handle *hdl)
 	return 0;
 }
 
-__public int nvme_reset_subsystem(struct nvme_transport_handle *hdl)
+__public int libnvme_reset_subsystem(struct nvme_transport_handle *hdl)
 {
 	int ret;
 
@@ -52,7 +52,7 @@ __public int nvme_reset_subsystem(struct nvme_transport_handle *hdl)
 	return ret;
 }
 
-__public int nvme_reset_ctrl(struct nvme_transport_handle *hdl)
+__public int libnvme_reset_ctrl(struct nvme_transport_handle *hdl)
 {
 	int ret;
 
@@ -66,7 +66,7 @@ __public int nvme_reset_ctrl(struct nvme_transport_handle *hdl)
 	return ret;
 }
 
-__public int nvme_rescan_ns(struct nvme_transport_handle *hdl)
+__public int libnvme_rescan_ns(struct nvme_transport_handle *hdl)
 {
 	int ret;
 
@@ -80,7 +80,7 @@ __public int nvme_rescan_ns(struct nvme_transport_handle *hdl)
 	return ret;
 }
 
-__public int nvme_get_nsid(struct nvme_transport_handle *hdl, __u32 *nsid)
+__public int libnvme_get_nsid(struct nvme_transport_handle *hdl, __u32 *nsid)
 {
 	__u32 tmp;
 
@@ -171,7 +171,7 @@ out:
 	return err;
 }
 
-__public int nvme_submit_io_passthru(struct nvme_transport_handle *hdl,
+__public int libnvme_submit_io_passthru(struct nvme_transport_handle *hdl,
 		struct nvme_passthru_cmd *cmd)
 {
 	if (hdl->ioctl_io64)
@@ -179,7 +179,7 @@ __public int nvme_submit_io_passthru(struct nvme_transport_handle *hdl,
 	return nvme_submit_passthru32(hdl, NVME_IOCTL_IO_CMD, cmd);
 }
 
-__public int nvme_submit_admin_passthru(struct nvme_transport_handle *hdl,
+__public int libnvme_submit_admin_passthru(struct nvme_transport_handle *hdl,
 		struct nvme_passthru_cmd *cmd)
 {
 	switch (hdl->type) {

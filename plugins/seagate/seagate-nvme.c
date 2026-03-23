@@ -1570,7 +1570,7 @@ static int get_host_tele(int argc, char **argv, struct command *acmd, struct plu
 
 		if (!cfg.raw_binary) {
 			printf("Device:%s log-id:%d namespace-id:%#x\n",
-				   nvme_transport_handle_get_name(hdl), cfg.log_id,
+				   libnvme_transport_handle_get_name(hdl), cfg.log_id,
 				   cfg.namespace_id);
 			printf("Data Block 1 Last Block:%d Data Block 2 Last Block:%d Data Block 3 Last Block:%d\n",
 				   tele_log.tele_data_area1, tele_log.tele_data_area2, tele_log.tele_data_area3);
@@ -1678,7 +1678,7 @@ static int get_ctrl_tele(int argc, char **argv, struct command *acmd, struct plu
 
 		if (!cfg.raw_binary) {
 			printf("Device:%s namespace-id:%#x\n",
-				   nvme_transport_handle_get_name(hdl), cfg.namespace_id);
+				   libnvme_transport_handle_get_name(hdl), cfg.namespace_id);
 			printf("Data Block 1 Last Block:%d Data Block 2 Last Block:%d Data Block 3 Last Block:%d\n",
 				   tele_log.tele_data_area1, tele_log.tele_data_area2, tele_log.tele_data_area3);
 

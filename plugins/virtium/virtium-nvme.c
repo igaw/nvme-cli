@@ -281,7 +281,7 @@ static int vt_add_entry_to_log(struct nvme_transport_handle *hdl,
 		filename = cfg->output_file;
 
 	smart.time_stamp = time(NULL);
-	ret = nvme_get_nsid(hdl, &nsid);
+	ret = libnvme_get_nsid(hdl, &nsid);
 
 	if (ret < 0) {
 		printf("Cannot read namespace-id\n");

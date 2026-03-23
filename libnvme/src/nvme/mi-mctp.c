@@ -652,7 +652,7 @@ static const struct nvme_mi_transport nvme_mi_transport_mctp = {
 	.aem_purge = nvme_mi_mctp_aem_purge,
 };
 
-int nvme_mi_aem_open(nvme_mi_ep_t ep)
+int libnvme_mi_aem_open(nvme_mi_ep_t ep)
 {
 	struct nvme_mi_transport_mctp *mctp;
 
@@ -675,7 +675,7 @@ int nvme_mi_aem_open(nvme_mi_ep_t ep)
 	return 0;
 }
 
-__public nvme_mi_ep_t nvme_mi_open_mctp(struct nvme_global_ctx *ctx,
+__public nvme_mi_ep_t libnvme_mi_open_mctp(struct nvme_global_ctx *ctx,
 			       unsigned int netid, __u8 eid)
 {
 	struct nvme_mi_transport_mctp *mctp;
@@ -740,7 +740,7 @@ err_free_mctp:
 err_close_ep:
 	/* the ep->transport is not set yet, so this will not call back
 	 * into nvme_mi_mctp_close() */
-	nvme_mi_close(ep);
+	libnvme_mi_close(ep);
 	errno = errno_save;
 	return NULL;
 }
@@ -762,7 +762,7 @@ static int nvme_mi_mctp_add(struct nvme_global_ctx *ctx, unsigned int netid, __u
 			return 0;
 	}
 
-	ep = nvme_mi_open_mctp(ctx, netid, eid);
+	ep = libnvme_mi_open_mctp(ctx, netid, eid);
 	if (!ep)
 		return -1;
 
@@ -945,7 +945,7 @@ static int handle_mctp_obj(struct nvme_global_ctx *ctx, DBusMessageIter *obj)
 	return 0;
 }
 
-__public struct nvme_global_ctx *nvme_mi_scan_mctp(void)
+__public struct nvme_global_ctx *libnvme_mi_scan_mctp(void)
 {
 	DBusMessage *msg, *resp = NULL;
 	DBusConnection *bus = NULL;
@@ -955,7 +955,7 @@ __public struct nvme_global_ctx *nvme_mi_scan_mctp(void)
 	dbus_bool_t drc;
 	DBusError berr;
 
-	ctx = nvme_create_global_ctx(NULL, DEFAULT_LOGLEVEL);
+	ctx = libnvme_create_global_ctx(NULL, DEFAULT_LOGLEVEL);
 	if (!ctx) {
 		errno = ENOMEM;
 		return NULL;
@@ -1029,7 +1029,7 @@ out:
 
 	if (rc < 0) {
 		if (ctx) {
-			nvme_free_global_ctx(ctx);
+			libnvme_free_global_ctx(ctx);
 		}
 		errno = errno_save;
 		ctx = NULL;
@@ -1039,7 +1039,7 @@ out:
 
 #else /* CONFIG_DBUS */
 
-__public struct nvme_global_ctx *nvme_mi_scan_mctp(void)
+__public struct nvme_global_ctx *libnvme_mi_scan_mctp(void)
 {
 	return NULL;
 }

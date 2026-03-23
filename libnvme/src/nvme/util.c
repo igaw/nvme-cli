@@ -175,7 +175,7 @@ static inline __u8 nvme_fabrics_status_to_errno(__u16 status)
 	return EIO;
 }
 
-__public __u8 nvme_status_to_errno(int status, bool fabrics)
+__public __u8 libnvme_status_to_errno(int status, bool fabrics)
 {
 	__u16 sc;
 
@@ -374,7 +374,7 @@ static const char *arg_str(const char * const *strings,
 	return "unrecognized";
 }
 
-__public const char *nvme_status_to_string(int status, bool fabrics)
+__public const char *libnvme_status_to_string(int status, bool fabrics)
 {
 	const char *s = "Unknown status";
 	__u16 sc, sct;
@@ -438,17 +438,17 @@ static const char * const libnvme_status[] = {
 	[ENVME_CONNECT_NOKEY] = "pre-shared TLS key is missing"
 };
 
-__public const char *nvme_errno_to_string(int status)
+__public const char *libnvme_errno_to_string(int status)
 {
 	const char *s = ARGSTR(libnvme_status, status);
 
 	return s;
 }
 
-__public const char *nvme_strerror(int errnum)
+__public const char *libnvme_strerror(int errnum)
 {
 	if (errnum >= ENVME_CONNECT_RESOLVE)
-		return nvme_errno_to_string(errnum);
+		return libnvme_errno_to_string(errnum);
 	return strerror(errnum);
 }
 
@@ -712,7 +712,7 @@ __public struct nvmf_ext_attr *nvmf_exat_ptr_next(struct nvmf_ext_attr *p)
 		((uintptr_t)p + (ptrdiff_t)nvmf_exat_size(le16_to_cpu(p->exatlen)));
 }
 
-__public const char *nvme_get_version(enum nvme_version type)
+__public const char *libnvme_get_version(enum nvme_version type)
 {
 	switch(type) {
 	case NVME_VERSION_PROJECT:
@@ -724,7 +724,7 @@ __public const char *nvme_get_version(enum nvme_version type)
 	}
 }
 
-__public int nvme_uuid_to_string(unsigned char uuid[NVME_UUID_LEN], char *str)
+__public int libnvme_uuid_to_string(unsigned char uuid[NVME_UUID_LEN], char *str)
 {
 	int n;
 	n = snprintf(str, NVME_UUID_LEN_STRING,
@@ -736,7 +736,7 @@ __public int nvme_uuid_to_string(unsigned char uuid[NVME_UUID_LEN], char *str)
 	return n != NVME_UUID_LEN_STRING - 1 ? -EINVAL : 0;
 }
 
-__public int nvme_uuid_from_string(const char *str, unsigned char uuid[NVME_UUID_LEN])
+__public int libnvme_uuid_from_string(const char *str, unsigned char uuid[NVME_UUID_LEN])
 {
 	int n;
 
@@ -750,7 +750,7 @@ __public int nvme_uuid_from_string(const char *str, unsigned char uuid[NVME_UUID
 
 }
 
-__public int nvme_random_uuid(unsigned char uuid[NVME_UUID_LEN])
+__public int libnvme_random_uuid(unsigned char uuid[NVME_UUID_LEN])
 {
 	_cleanup_fd_ int f = -1;
 	ssize_t n;
@@ -775,7 +775,7 @@ __public int nvme_random_uuid(unsigned char uuid[NVME_UUID_LEN])
 	return 0;
 }
 
-__public int nvme_find_uuid(struct nvme_id_uuid_list *uuid_list,
+__public int libnvme_find_uuid(struct nvme_id_uuid_list *uuid_list,
 		const unsigned char uuid[NVME_UUID_LEN])
 {
 	const unsigned char uuid_end[NVME_UUID_LEN] = {0};
@@ -987,7 +987,7 @@ const struct ifaddrs *nvme_getifaddrs(struct nvme_global_ctx *ctx)
 /* This used instead of basename() due to behavioral differences between
  * the POSIX and the GNU version. This is the glibc implementation.
  * Original source: https://github.com/bminor/glibc/blob/master/string/basename.c */
-char *nvme_basename(const char *path)
+char *libnvme_basename(const char *path)
 {
 	char *p = (char *) strrchr(path, '/');
 	return p ? p + 1 : (char *) path;

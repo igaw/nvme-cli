@@ -59,7 +59,7 @@ static int nvme_sct_op(struct nvme_transport_handle *hdl, __u32 opcode,
 		.data_len	= data_len,
 		.addr		= (__u64)(uintptr_t)data,
 	};
-	return nvme_submit_admin_passthru(hdl, &cmd);
+	return libnvme_submit_admin_passthru(hdl, &cmd);
 }
 
 static int nvme_get_sct_status(struct nvme_transport_handle *hdl, __u32 device_mask)
@@ -351,7 +351,7 @@ static void default_show_vendor_log_c0(struct nvme_transport_handle *hdl,
 				       struct nvme_xdn_smart_log_c0 *smart)
 {
 	printf("Vendor Log Page Directory 0xC0 for NVME device:%s namespace-id:%x\n",
-		nvme_transport_handle_get_name(hdl), nsid);
+		libnvme_transport_handle_get_name(hdl), nsid);
 	printf("Error Log          : %u\n", smart->items[ERROR_LOG_C0]);
 	printf("SMART Health Log   : %u\n", smart->items[SMART_HEALTH_LOG_C0]);
 	printf("Firmware Slot Info : %u\n", smart->items[FIRMWARE_SLOT_INFO_C0]);

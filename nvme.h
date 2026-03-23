@@ -93,13 +93,13 @@ struct nvme_args {
 		OPT_END()                                                              \
 	}
 
-static inline bool nvme_is_multipath(nvme_subsystem_t s)
+static inline bool nvme_is_multipath(libnvme_subsystem_t s)
 {
-	nvme_ns_t n;
-	nvme_path_t p;
+	libnvme_ns_t n;
+	libnvme_path_t p;
 
-	nvme_subsystem_for_each_ns(s, n)
-		nvme_namespace_for_each_path(n, p)
+	libnvme_subsystem_for_each_ns(s, n)
+		libnvme_namespace_for_each_path(n, p)
 			return true;
 
 	return false;
@@ -116,7 +116,7 @@ int parse_and_open(struct nvme_global_ctx **ctx,
 
 // TODO: unsure if we need a double ptr here
 static inline DEFINE_CLEANUP_FUNC(
-	cleanup_nvme_transport_handle, struct nvme_transport_handle *, nvme_close)
+	cleanup_nvme_transport_handle, struct nvme_transport_handle *, libnvme_close)
 #define _cleanup_nvme_transport_handle_ __cleanup__(cleanup_nvme_transport_handle)
 
 extern const char *uuid_index;
@@ -127,7 +127,7 @@ bool nvme_is_output_format_json(void);
 int __id_ctrl(int argc, char **argv, struct command *acmd,
 	struct plugin *plugin, void (*vs)(uint8_t *vs, struct json_object *root));
 
-const char *nvme_strerror(int errnum);
+const char *libnvme_strerror(int errnum);
 
 unsigned long long elapsed_utime(struct timeval start_time,
 					struct timeval end_time);

@@ -53,7 +53,7 @@ static int show_ymtc_smart_log(struct nvme_transport_handle *hdl, __u32 nsid,
 
 	/* Table Title */
 	printf("Additional Smart Log for NVME device:%s namespace-id:%x\n",
-	       nvme_transport_handle_get_name(hdl), nsid);
+	       libnvme_transport_handle_get_name(hdl), nsid);
 	/* Column Name*/
 	printf("key                               normalized raw\n");
 	/* 00 SI_VD_PROGRAM_FAIL */

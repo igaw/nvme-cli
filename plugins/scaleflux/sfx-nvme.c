@@ -58,8 +58,8 @@ int nvme_query_cap(struct nvme_transport_handle *hdl, __u32 nsid, __u32 data_len
 		.data_len	= data_len,
 	};
 
-	rc = ioctl(nvme_transport_handle_get_fd(hdl), SFX_GET_FREESPACE, data);
-	return rc ? nvme_submit_admin_passthru(hdl, &cmd) : 0;
+	rc = ioctl(libnvme_transport_handle_get_fd(hdl), SFX_GET_FREESPACE, data);
+	return rc ? libnvme_submit_admin_passthru(hdl, &cmd) : 0;
 }
 
 int nvme_change_cap(struct nvme_transport_handle *hdl, __u32 nsid, __u64 capacity)
@@ -71,7 +71,7 @@ int nvme_change_cap(struct nvme_transport_handle *hdl, __u32 nsid, __u64 capacit
 		.cdw11	= (capacity >> 32),
 	};
 
-	return nvme_submit_admin_passthru(hdl, &cmd);
+	return libnvme_submit_admin_passthru(hdl, &cmd);
 }
 
 int nvme_sfx_set_features(struct nvme_transport_handle *hdl, __u32 nsid, __u32 fid, __u32 value)
@@ -83,7 +83,7 @@ int nvme_sfx_set_features(struct nvme_transport_handle *hdl, __u32 nsid, __u32 f
 		.cdw11	= value,
 	};
 
-	return nvme_submit_admin_passthru(hdl, &cmd);
+	return libnvme_submit_admin_passthru(hdl, &cmd);
 }
 
 int nvme_sfx_get_features(struct nvme_transport_handle *hdl, __u32 nsid, __u32 fid, __u32 *result)
@@ -95,7 +95,7 @@ int nvme_sfx_get_features(struct nvme_transport_handle *hdl, __u32 nsid, __u32 f
 		.cdw10	= fid,
 	};
 
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (!err && result)
 		*result = cmd.result;
 
@@ -370,10 +370,10 @@ static int get_additional_smart_log(int argc, char **argv, struct command *acmd,
 	if (!err) {
 		if (flags & JSON || cfg.json)
 			show_sfx_smart_log_jsn(&smart_log, cfg.namespace_id,
-					       nvme_transport_handle_get_name(hdl));
+					       libnvme_transport_handle_get_name(hdl));
 		else if (!cfg.raw_binary)
 			show_sfx_smart_log(&smart_log, cfg.namespace_id,
-					   nvme_transport_handle_get_name(hdl));
+					   libnvme_transport_handle_get_name(hdl));
 		else
 			d_raw((unsigned char *)&smart_log, sizeof(smart_log));
 	} else if (err > 0) {
@@ -565,7 +565,7 @@ int sfx_nvme_get_log(struct nvme_transport_handle *hdl, __u32 nsid, __u8 log_id,
 	cmd.cdw10 = log_id | (numdl << 16);
 	cmd.cdw11 = numdu;
 
-	return nvme_submit_admin_passthru(hdl, &cmd);
+	return libnvme_submit_admin_passthru(hdl, &cmd);
 }
 
 /**
@@ -579,7 +579,7 @@ int sfx_nvme_get_log(struct nvme_transport_handle *hdl, __u32 nsid, __u8 log_id,
  */
 static int get_bb_table(struct nvme_transport_handle *hdl, __u32 nsid, unsigned char *buf, __u64 size)
 {
-	if (nvme_transport_handle_get_fd(hdl) < 0 || !buf || size != 256*4096*sizeof(unsigned char)) {
+	if (libnvme_transport_handle_get_fd(hdl) < 0 || !buf || size != 256*4096*sizeof(unsigned char)) {
 		fprintf(stderr, "Invalid Param \r\n");
 		return -EINVAL;
 	}
@@ -873,7 +873,7 @@ static int change_cap(int argc, char **argv, struct command *acmd, struct plugin
 		nvme_show_status(err);
 	} else {
 		printf("ScaleFlux change-capacity: success\n");
-		ioctl(nvme_transport_handle_get_fd(hdl), BLKRRPART);
+		ioctl(libnvme_transport_handle_get_fd(hdl), BLKRRPART);
 	}
 	return err;
 }
@@ -881,7 +881,7 @@ static int change_cap(int argc, char **argv, struct command *acmd, struct plugin
 static int sfx_verify_chr(struct nvme_transport_handle *hdl)
 {
 	static struct stat nvme_stat;
-	int err = fstat(nvme_transport_handle_get_fd(hdl), &nvme_stat);
+	int err = fstat(libnvme_transport_handle_get_fd(hdl), &nvme_stat);
 
 	if (err < 0) {
 		perror("fstat");
@@ -902,7 +902,7 @@ static int sfx_clean_card(struct nvme_transport_handle *hdl)
 	ret = sfx_verify_chr(hdl);
 	if (ret)
 		return ret;
-	ret = ioctl(nvme_transport_handle_get_fd(hdl), NVME_IOCTL_CLR_CARD);
+	ret = ioctl(libnvme_transport_handle_get_fd(hdl), NVME_IOCTL_CLR_CARD);
 	if (ret)
 		perror("Ioctl Fail.");
 	else
@@ -1417,12 +1417,12 @@ static int nvme_expand_cap(struct nvme_transport_handle *hdl, __u32 namespace_id
 		__u8  reserve1[5];
 	} __packed;
 
-	if (nvme_transport_handle_is_chardev(hdl))
-		snprintf(dev_name, 32, "%sn%u", nvme_transport_handle_get_name(hdl), namespace_id);
+	if (libnvme_transport_handle_is_chardev(hdl))
+		snprintf(dev_name, 32, "%sn%u", libnvme_transport_handle_get_name(hdl), namespace_id);
 	else
-		strcpy(dev_name, nvme_transport_handle_get_name(hdl));
+		strcpy(dev_name, libnvme_transport_handle_get_name(hdl));
 
-	num = scandir("/dev", &devices, nvme_filter_namespace, alphasort);
+	num = scandir("/dev", &devices, libnvme_filter_namespace, alphasort);
 	if (num <= 0) {
 		err = num;
 		goto ret;
@@ -1453,7 +1453,7 @@ static int nvme_expand_cap(struct nvme_transport_handle *hdl, __u32 namespace_id
 		.cdw10       = 0x0e,
 	};
 
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (err) {
 		fprintf(stderr, "Create ns failed\n");
 		nvme_show_status(err);
@@ -1507,11 +1507,11 @@ static int sfx_expand_cap(int argc, char **argv, struct command *acmd, struct pl
 		return err;
 
 	if (cfg.namespace_id == NVME_NSID_ALL) {
-		if (nvme_transport_handle_is_chardev(hdl)) {
+		if (libnvme_transport_handle_is_chardev(hdl)) {
 			fprintf(stderr, "namespace_id or blk device required\n");
 			return -EINVAL;
 		} else {
-			cfg.namespace_id = atoi(&nvme_transport_handle_get_name(hdl)[strlen(nvme_transport_handle_get_name(hdl)) - 1]);
+			cfg.namespace_id = atoi(&libnvme_transport_handle_get_name(hdl)[strlen(libnvme_transport_handle_get_name(hdl)) - 1]);
 		}
 	}
 
@@ -1579,7 +1579,7 @@ static int sfx_status(int argc, char **argv, struct command *acmd, struct plugin
 
 	//Calculate formatted capacity, not concerned with errors, we may have a char device
 	memset(&path, 0, 512);
-	snprintf(path, 512, "/dev/%s", nvme_transport_handle_get_name(hdl));
+	snprintf(path, 512, "/dev/%s", libnvme_transport_handle_get_name(hdl));
 	fd = open(path, O_RDONLY | O_NONBLOCK);
 	if (fd >= 0) {
 		err = ioctl(fd, BLKSSZGET, &sector_size);
@@ -1596,7 +1596,7 @@ static int sfx_status(int argc, char **argv, struct command *acmd, struct plugin
 		capacity = capacity / (1000 * 1000 * 1000); //B --> GB
 
 	memset(&chr_dev, 0, 8);
-	strcpy(chr_dev, nvme_transport_handle_get_name(hdl));
+	strcpy(chr_dev, libnvme_transport_handle_get_name(hdl));
 	for (len = 2; len < 8; len++) {
 		if (chr_dev[len] == 'n')
 			chr_dev[len] = '\0';
@@ -1903,7 +1903,7 @@ static int sfx_status(int argc, char **argv, struct command *acmd, struct plugin
 
 	if (flags & JSON || cfg.json) {
 		root = json_create_object();
-		json_object_add_value_string(root, "ScaleFlux Status", nvme_transport_handle_get_name(hdl));
+		json_object_add_value_string(root, "ScaleFlux Status", libnvme_transport_handle_get_name(hdl));
 
 		dev_stats = json_create_object();
 		link_stats = json_create_object();
@@ -1983,7 +1983,7 @@ static int sfx_status(int argc, char **argv, struct command *acmd, struct plugin
 		if (len < 11)
 			strcpy(path, "None");
 
-		printf("%-35s%s%s\n",	"ScaleFlux Drive:",					"/dev/", nvme_transport_handle_get_name(hdl));
+		printf("%-35s%s%s\n",	"ScaleFlux Drive:",					"/dev/", libnvme_transport_handle_get_name(hdl));
 		printf("%-35s%s\n",		"PCIe Vendor ID:",				pci_vid);
 		printf("%-35s%s\n",		"PCIe Subsystem Vendor ID:",	pci_ssvid);
 		printf("%-35s%s\n",		"Manufacturer:",				vendor);

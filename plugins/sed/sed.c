@@ -74,7 +74,7 @@ static int sed_opal_open_device(struct nvme_global_ctx **ctx, struct nvme_transp
 	if (err)
 		return err;
 
-	if (!nvme_transport_handle_is_blkdev(*hdl)) {
+	if (!libnvme_transport_handle_is_blkdev(*hdl)) {
 		fprintf(stderr,
 			"ERROR : The NVMe block device must be specified\n");
 		err = -EINVAL;
@@ -95,7 +95,7 @@ static int sed_opal_discover(int argc, char **argv, struct command *acmd,
 	if (err)
 		return err;
 
-	err = sedopal_cmd_discover(nvme_transport_handle_get_fd(hdl));
+	err = sedopal_cmd_discover(libnvme_transport_handle_get_fd(hdl));
 
 	return err;
 }
@@ -112,7 +112,7 @@ static int sed_opal_initialize(int argc, char **argv, struct command *acmd,
 	if (err)
 		return err;
 
-	err = sedopal_cmd_initialize(nvme_transport_handle_get_fd(hdl));
+	err = sedopal_cmd_initialize(libnvme_transport_handle_get_fd(hdl));
 	if ((err != 0) && (err != -EOPNOTSUPP))
 		fprintf(stderr, "initialize: SED error -  %s\n",
 				sedopal_error_to_text(err));
@@ -132,7 +132,7 @@ static int sed_opal_revert(int argc, char **argv, struct command *acmd,
 	if (err)
 		return err;
 
-	err = sedopal_cmd_revert(nvme_transport_handle_get_fd(hdl));
+	err = sedopal_cmd_revert(libnvme_transport_handle_get_fd(hdl));
 	if ((err != 0) && (err != -EOPNOTSUPP) && (err != EPERM))
 		fprintf(stderr, "revert: SED error -  %s\n",
 				sedopal_error_to_text(err));
@@ -152,7 +152,7 @@ static int sed_opal_lock(int argc, char **argv, struct command *acmd,
 	if (err)
 		return err;
 
-	err = sedopal_cmd_lock(nvme_transport_handle_get_fd(hdl));
+	err = sedopal_cmd_lock(libnvme_transport_handle_get_fd(hdl));
 	if ((err != 0) && (err != -EOPNOTSUPP))
 		fprintf(stderr, "lock: SED error -  %s\n",
 				sedopal_error_to_text(err));
@@ -172,7 +172,7 @@ static int sed_opal_unlock(int argc, char **argv, struct command *acmd,
 	if (err)
 		return err;
 
-	err = sedopal_cmd_unlock(nvme_transport_handle_get_fd(hdl));
+	err = sedopal_cmd_unlock(libnvme_transport_handle_get_fd(hdl));
 	if ((err != 0) && (err != -EOPNOTSUPP))
 		fprintf(stderr, "unlock: SED error -  %s\n",
 				sedopal_error_to_text(err));
@@ -192,7 +192,7 @@ static int sed_opal_password(int argc, char **argv, struct command *acmd,
 	if (err)
 		return err;
 
-	err = sedopal_cmd_password(nvme_transport_handle_get_fd(hdl));
+	err = sedopal_cmd_password(libnvme_transport_handle_get_fd(hdl));
 	if ((err != 0) && (err != EPERM))
 		fprintf(stderr, "password: SED error -  %s\n",
 				sedopal_error_to_text(err));

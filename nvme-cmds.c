@@ -18,7 +18,7 @@ static int nvme_ns_attachment(struct nvme_transport_handle *hdl, bool ish,
 	struct nvme_passthru_cmd cmd;
 
 	nvme_init_ctrl_list(&cntlist, num_ctrls, ctrlist);
-	if (ish && nvme_transport_handle_is_mi(hdl))
+	if (ish && libnvme_transport_handle_is_mi(hdl))
 		nvme_init_mi_cmd_flags(&cmd, ish);
 
 	if (attach)
@@ -26,7 +26,7 @@ static int nvme_ns_attachment(struct nvme_transport_handle *hdl, bool ish,
 	else
 		nvme_init_ns_detach_ctrls(&cmd, nsid, &cntlist);
 
-	return nvme_submit_admin_passthru(hdl, &cmd);
+	return libnvme_submit_admin_passthru(hdl, &cmd);
 }
 
 int nvme_namespace_attach_ctrls(struct nvme_transport_handle *hdl, bool ish,

@@ -29,7 +29,7 @@ static size_t safe_strlen(const char *p) {
 
 static bool test_nvme_get_version(enum nvme_version type, const char * exp_str) {
 	const char * str;
-	str = nvme_get_version(type);
+	str = libnvme_get_version(type);
 	return !strcmp(str, exp_str);
 }
 
@@ -147,19 +147,19 @@ int main(int argc, char *argv[]) {
 
 	printf("\n------------------------------------------------------------------------------\n");
 	pass = test_nvme_get_version(NVME_VERSION_PROJECT, LIBNVME_VERSION);
-	printf("nvme_get_version(NVME_VERSION_PROJECT) %s\n", pass ? "[PASS]" : "[FAIL]");
+	printf("libnvme_get_version(NVME_VERSION_PROJECT) %s\n", pass ? "[PASS]" : "[FAIL]");
 	if (!pass)
 		exit_val = EXIT_FAILURE;
 
 	printf("\n------------------------------------------------------------------------------\n");
 	pass = test_nvme_get_version(NVME_VERSION_GIT, GIT_VERSION);
-	printf("nvme_get_version(NVME_VERSION_GIT) %s\n", pass ? "[PASS]" : "[FAIL]");
+	printf("libnvme_get_version(NVME_VERSION_GIT) %s\n", pass ? "[PASS]" : "[FAIL]");
 	if (!pass)
 		exit_val = EXIT_FAILURE;
 
 	printf("\n------------------------------------------------------------------------------\n");
 	pass = test_nvme_get_version(-1, "n/a");
-	printf("nvme_get_version(-1) %s\n", pass ? "[PASS]" : "[FAIL]");
+	printf("libnvme_get_version(-1) %s\n", pass ? "[PASS]" : "[FAIL]");
 	if (!pass)
 		exit_val = EXIT_FAILURE;
 

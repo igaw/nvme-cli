@@ -24,14 +24,14 @@
 
 static const char *namespace_id = "Namespace identifier to use";
 
-static int detect_zns(nvme_ns_t ns, int *out_supported)
+static int detect_zns(libnvme_ns_t ns, int *out_supported)
 {
 	int err = 0;
 	char *zoned;
 
 	*out_supported = 0;
 
-	zoned = nvme_get_attr(nvme_ns_get_sysfs_dir(ns), "queue/zoned");
+	zoned = libnvme_get_attr(libnvme_ns_get_sysfs_dir(ns), "queue/zoned");
 	if (!zoned) {
 		*out_supported = 0;
 		return err;
@@ -43,7 +43,7 @@ static int detect_zns(nvme_ns_t ns, int *out_supported)
 	return err;
 }
 
-static int print_zns_list_ns(nvme_ns_t ns, struct table *t)
+static int print_zns_list_ns(libnvme_ns_t ns, struct table *t)
 {
 	int supported;
 	int err = 0;
@@ -63,21 +63,21 @@ static int print_zns_list_ns(nvme_ns_t ns, struct table *t)
 static int print_zns_list(struct nvme_global_ctx *ctx, struct table *t)
 {
 	int err = 0;
-	nvme_host_t h;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
-	nvme_ns_t n;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
+	libnvme_ns_t n;
 
-	nvme_for_each_host(ctx, h) {
-		nvme_for_each_subsystem(h, s) {
-			nvme_subsystem_for_each_ns(s, n) {
+	libnvme_for_each_host(ctx, h) {
+		libnvme_for_each_subsystem(h, s) {
+			libnvme_subsystem_for_each_ns(s, n) {
 				err = print_zns_list_ns(n, t);
 				if (err)
 					return err;
 			}
 
-			nvme_subsystem_for_each_ctrl(s, c) {
-				nvme_ctrl_for_each_ns(c, n) {
+			libnvme_subsystem_for_each_ctrl(s, c) {
+				libnvme_ctrl_for_each_ns(c, n) {
 					err = print_zns_list_ns(n, t);
 					if (err)
 						return err;
@@ -106,13 +106,13 @@ static int list(int argc, char **argv, struct command *acmd,
 	};
 	struct table *t = table_init_with_columns(columns, ARRAY_SIZE(columns));
 
-	ctx = nvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
+	ctx = libnvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
 	if (ctx) {
 		fprintf(stderr, "Failed to create root object\n");
 		return -ENOMEM;
 	}
 
-	err = nvme_scan_topology(ctx, NULL, NULL);
+	err = libnvme_scan_topology(ctx, NULL, NULL);
 	if (err) {
 		fprintf(stderr, "Failed to scan nvme subsystems\n");
 		return err;
@@ -151,7 +151,7 @@ static int id_ctrl(int argc, char **argv, struct command *acmd, struct plugin *p
 		return err;
 
 	nvme_init_zns_identify_ctrl(&cmd, &ctrl);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (!err)
 		nvme_show_zns_id_ctrl(&ctrl, flags);
 	else if (err > 0)
@@ -203,7 +203,7 @@ static int id_ns(int argc, char **argv, struct command *acmd, struct plugin *plu
 		flags |= VERBOSE;
 
 	if (!cfg.namespace_id) {
-		err = nvme_get_nsid(hdl, &cfg.namespace_id);
+		err = libnvme_get_nsid(hdl, &cfg.namespace_id);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;
@@ -260,7 +260,7 @@ static int zns_mgmt_send(int argc, char **argv, struct command *acmd, struct plu
 		return err;
 
 	if (!cfg.namespace_id) {
-		err = nvme_get_nsid(hdl, &cfg.namespace_id);
+		err = libnvme_get_nsid(hdl, &cfg.namespace_id);
 		if (err < 0) {
 			perror("get-namespace-id");
 			goto free;
@@ -269,7 +269,7 @@ static int zns_mgmt_send(int argc, char **argv, struct command *acmd, struct plu
 
 	nvme_init_zns_mgmt_send(&cmd, cfg.namespace_id, cfg.zslba, zsa,
 				cfg.select_all, 0, 0, NULL, 0);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (!err) {
 		if (zsa == NVME_ZNS_ZSA_RESET)
 			zcapc = cmd.result & 0x1;
@@ -359,7 +359,7 @@ static int zone_mgmt_send(int argc, char **argv, struct command *acmd, struct pl
 		return errno;
 
 	if (!cfg.namespace_id) {
-		err = nvme_get_nsid(hdl, &cfg.namespace_id);
+		err = libnvme_get_nsid(hdl, &cfg.namespace_id);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;
@@ -413,7 +413,7 @@ static int zone_mgmt_send(int argc, char **argv, struct command *acmd, struct pl
 	nvme_init_zns_mgmt_send(&cmd, cfg.namespace_id, cfg.zslba, cfg.zsa,
 				cfg.select_all, cfg.zsaso, 0, buf,
 				cfg.data_len);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (!err)
 		printf("zone-mgmt-send: Success, action:%d zone:%"PRIx64" all:%d nsid:%d\n",
 		       cfg.zsa, (uint64_t)cfg.zslba, (int)cfg.select_all, cfg.namespace_id);
@@ -476,7 +476,7 @@ static int open_zone(int argc, char **argv, struct command *acmd, struct plugin 
 		return errno;
 
 	if (!cfg.namespace_id) {
-		err = nvme_get_nsid(hdl, &cfg.namespace_id);
+		err = libnvme_get_nsid(hdl, &cfg.namespace_id);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;
@@ -486,7 +486,7 @@ static int open_zone(int argc, char **argv, struct command *acmd, struct plugin 
 	nvme_init_zns_mgmt_send(&cmd, cfg.namespace_id, cfg.zslba,
 				NVME_ZNS_ZSA_OPEN, cfg.select_all, cfg.zrwaa, 0,
 				NULL, 0);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (!err)
 		printf("zns-open-zone: Success zone slba:%"PRIx64" nsid:%d\n",
 		       (uint64_t)cfg.zslba, cfg.namespace_id);
@@ -546,7 +546,7 @@ static int set_zone_desc(int argc, char **argv, struct command *acmd, struct plu
 		return errno;
 
 	if (!cfg.namespace_id) {
-		err = nvme_get_nsid(hdl, &cfg.namespace_id);
+		err = libnvme_get_nsid(hdl, &cfg.namespace_id);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;
@@ -585,7 +585,7 @@ static int set_zone_desc(int argc, char **argv, struct command *acmd, struct plu
 	nvme_init_zns_mgmt_send(&cmd, cfg.namespace_id, cfg.zslba,
 				NVME_ZNS_ZSA_SET_DESC_EXT, 0, cfg.zrwaa, 0, buf,
 				data_len);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (!err)
 		printf("set-zone-desc: Success, zone:%"PRIx64" nsid:%d\n",
 		       (uint64_t)cfg.zslba, cfg.namespace_id);
@@ -628,7 +628,7 @@ static int zrwa_flush_zone(int argc, char **argv, struct command *acmd, struct p
 		return errno;
 
 	if (!cfg.namespace_id) {
-		err = nvme_get_nsid(hdl, &cfg.namespace_id);
+		err = libnvme_get_nsid(hdl, &cfg.namespace_id);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;
@@ -637,7 +637,7 @@ static int zrwa_flush_zone(int argc, char **argv, struct command *acmd, struct p
 
 	nvme_init_zns_mgmt_send(&cmd, cfg.namespace_id, cfg.lba,
 				NVME_ZNS_ZSA_ZRWA_FLUSH, 0, 0, 0, NULL, 0);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (!err)
 		printf("zrwa-flush-zone: Success, lba:%"PRIx64" nsid:%d\n",
 		       (uint64_t)cfg.lba, cfg.namespace_id);
@@ -693,7 +693,7 @@ static int zone_mgmt_recv(int argc, char **argv, struct command *acmd, struct pl
 		return err;
 
 	if (!cfg.namespace_id) {
-		err = nvme_get_nsid(hdl, &cfg.namespace_id);
+		err = libnvme_get_nsid(hdl, &cfg.namespace_id);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;
@@ -714,7 +714,7 @@ static int zone_mgmt_recv(int argc, char **argv, struct command *acmd, struct pl
 
 	nvme_init_zns_mgmt_recv(&cmd, cfg.namespace_id, cfg.zslba, cfg.zra,
 				cfg.zrasf, cfg.partial, data, cfg.data_len);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (!err)
 		printf("zone-mgmt-recv: Success, action:%d zone:%"PRIx64" nsid:%d\n",
 		       cfg.zra, (uint64_t)cfg.zslba, cfg.namespace_id);
@@ -793,7 +793,7 @@ static int report_zones(int argc, char **argv, struct command *acmd, struct plug
 		flags |= VERBOSE;
 
 	if (!cfg.namespace_id) {
-		err = nvme_get_nsid(hdl, &cfg.namespace_id);
+		err = libnvme_get_nsid(hdl, &cfg.namespace_id);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;
@@ -830,7 +830,7 @@ static int report_zones(int argc, char **argv, struct command *acmd, struct plug
 
 	nvme_init_zns_report_zones(&cmd, cfg.namespace_id, 0, cfg.state, false,
 				   false, buff, log_len);
-	err = nvme_submit_io_passthru(hdl, &cmd);
+	err = libnvme_submit_io_passthru(hdl, &cmd);
 	if (err > 0) {
 		nvme_show_status(err);
 		goto free_buff;
@@ -873,7 +873,7 @@ static int report_zones(int argc, char **argv, struct command *acmd, struct plug
 		nvme_init_zns_report_zones(&cmd, cfg.namespace_id, offset,
 					   cfg.state, cfg.extended, cfg.partial,
 					   report, log_len);
-		err = nvme_submit_io_passthru(hdl, &cmd);
+		err = libnvme_submit_io_passthru(hdl, &cmd);
 		if (err > 0) {
 			nvme_show_status(err);
 			break;
@@ -966,7 +966,7 @@ static int zone_append(int argc, char **argv, struct command *acmd, struct plugi
 	}
 
 	if (!cfg.namespace_id) {
-		err = nvme_get_nsid(hdl, &cfg.namespace_id);
+		err = libnvme_get_nsid(hdl, &cfg.namespace_id);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;;
@@ -1061,7 +1061,7 @@ static int zone_append(int argc, char **argv, struct command *acmd, struct plugi
 	nvme_init_zns_append(&cmd, cfg.namespace_id, cfg.zslba, nblocks,
 			     control, cev, dspec, buf, cfg.data_size, mbuf,
 			     cfg.metadata_size);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	gettimeofday(&end_time, NULL);
 	if (cfg.latency)
 		printf(" latency: zone append: %llu us\n",
@@ -1120,7 +1120,7 @@ static int changed_zone_list(int argc, char **argv, struct command *acmd, struct
 		return err;
 
 	if (!cfg.namespace_id) {
-		err = nvme_get_nsid(hdl, &cfg.namespace_id);
+		err = libnvme_get_nsid(hdl, &cfg.namespace_id);
 		if (err < 0) {
 			perror("get-namespace-id");
 			return err;

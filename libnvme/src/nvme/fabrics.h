@@ -203,7 +203,7 @@ void nvmf_default_config(struct nvme_fabrics_config *cfg);
  * Updates the values from @c with the configuration values from @cfg;
  * all non-default values from @cfg will overwrite the values in @c.
  */
-void nvmf_update_config(nvme_ctrl_t c, const struct nvme_fabrics_config *cfg);
+void nvmf_update_config(libnvme_ctrl_t c, const struct nvme_fabrics_config *cfg);
 
 /**
  * nvmf_add_ctrl() - Connect a controller and update topology
@@ -217,7 +217,7 @@ void nvmf_update_config(nvme_ctrl_t c, const struct nvme_fabrics_config *cfg);
  *
  * Return: 0 on success, or an error code on failure.
  */
-int nvmf_add_ctrl(nvme_host_t h, nvme_ctrl_t c,
+int nvmf_add_ctrl(libnvme_host_t h, libnvme_ctrl_t c,
 		  const struct nvme_fabrics_config *cfg);
 
 /**
@@ -229,7 +229,7 @@ int nvmf_add_ctrl(nvme_host_t h, nvme_ctrl_t c,
  *
  * Return: 0 on success, or an error code on failure.
  */
-int nvmf_connect_ctrl(nvme_ctrl_t c);
+int nvmf_connect_ctrl(libnvme_ctrl_t c);
 
 /**
  * nvmf_get_discovery_log() - Return the discovery log page
@@ -244,7 +244,7 @@ int nvmf_connect_ctrl(nvme_ctrl_t c);
  *
  * Return: 0 on success, or an error code on failure.
  */
-int nvmf_get_discovery_log(nvme_ctrl_t c, struct nvmf_discovery_log **logp,
+int nvmf_get_discovery_log(libnvme_ctrl_t c, struct nvmf_discovery_log **logp,
 			   int max_retries);
 
 /**
@@ -257,7 +257,7 @@ int nvmf_get_discovery_log(nvme_ctrl_t c, struct nvmf_discovery_log **logp,
  * @lsp:		Log specific field (See enum nvmf_log_discovery_lsp)
  */
 struct nvme_get_discovery_args {
-	nvme_ctrl_t c;
+	libnvme_ctrl_t c;
 	int args_size;
 	int max_retries;
 	__u32 *result;
@@ -296,7 +296,7 @@ int nvmf_get_discovery_wargs(struct nvme_get_discovery_args *args,
  * Return: true if controller supports explicit registration. false
  * otherwise.
  */
-bool nvmf_is_registration_supported(nvme_ctrl_t c);
+bool nvmf_is_registration_supported(libnvme_ctrl_t c);
 
 /**
  * nvmf_register_ctrl() - Perform registration task with a DC
@@ -311,10 +311,10 @@ bool nvmf_is_registration_supported(nvme_ctrl_t c);
  *
  * Return: 0 on success, or an error code on failure.
  */
-int nvmf_register_ctrl(nvme_ctrl_t c, enum nvmf_dim_tas tas, __u32 *result);
+int nvmf_register_ctrl(libnvme_ctrl_t c, enum nvmf_dim_tas tas, __u32 *result);
 
 /**
- * nvme_parse_uri() - Parse the URI string
+ * libnvme_parse_uri() - Parse the URI string
  * @str:	URI string
  * @uri:	URI object to return
  *
@@ -326,7 +326,7 @@ int nvmf_register_ctrl(nvme_ctrl_t c, enum nvmf_dim_tas tas, __u32 *result);
  * Return: &nvme_fabrics_uri structure on success; NULL on failure with errno
  * set.
  */
-int nvme_parse_uri(const char *str, struct nvme_fabrics_uri **uri);
+int libnvme_parse_uri(const char *str, struct nvme_fabrics_uri **uri);
 
 /**
  * nvmf_free_uri() - Free the URI structure
@@ -374,9 +374,9 @@ int nvmf_context_create(struct nvme_global_ctx *ctx,
 		bool (*decide_retry)(struct nvmf_context *fctx, int err,
 			void *user_data),
 		void (*connected)(struct nvmf_context *fctx,
-			struct nvme_ctrl *c, void *user_data),
+			struct libnvme_ctrl *c, void *user_data),
 		void (*already_connected)(struct nvmf_context *fctx,
-			struct nvme_host *host, const char *subsysnqn,
+			struct libnvme_host *host, const char *subsysnqn,
 			const char *transport, const char *traddr,
 			const char *trsvcid, void *user_data),
 		void *user_data, struct nvmf_context **fctxp);

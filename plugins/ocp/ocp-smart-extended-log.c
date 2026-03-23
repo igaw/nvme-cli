@@ -44,7 +44,7 @@ static int get_c0_log_page(struct nvme_transport_handle *hdl, char *format,
 
 	data = malloc(sizeof(__u8) * C0_SMART_CLOUD_ATTR_LEN);
 	if (!data) {
-		fprintf(stderr, "ERROR : OCP : malloc : %s\n", nvme_strerror(errno));
+		fprintf(stderr, "ERROR : OCP : malloc : %s\n", libnvme_strerror(errno));
 		return -1;
 	}
 	memset(data, 0, sizeof(__u8) * C0_SMART_CLOUD_ATTR_LEN);
@@ -60,7 +60,7 @@ static int get_c0_log_page(struct nvme_transport_handle *hdl, char *format,
 
 	if (strcmp(format, "json"))
 		fprintf(stderr, "NVMe Status:%s(%x)\n",
-			nvme_status_to_string(ret, false), ret);
+			libnvme_status_to_string(ret, false), ret);
 
 	if (ret == 0) {
 		/* check log page guid */
