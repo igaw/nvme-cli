@@ -22,7 +22,7 @@
 #define JSON_UPDATE_BOOL_OPTION(c, k, a, o)				\
 	if (!strcmp(# a, k ) && !c->a) c->a = json_object_get_boolean(o);
 
-static void json_update_attributes(nvme_ctrl_t c,
+static void json_update_attributes(libnvme_ctrl_t c,
 				   struct json_object *ctrl_obj)
 {
 	struct nvme_fabrics_config *cfg = libnvme_ctrl_get_config(c);
@@ -79,9 +79,9 @@ static void json_update_attributes(nvme_ctrl_t c,
 	}
 }
 
-static void json_parse_port(nvme_subsystem_t s, struct json_object *port_obj)
+static void json_parse_port(libnvme_subsystem_t s, struct json_object *port_obj)
 {
-	nvme_ctrl_t c;
+	libnvme_ctrl_t c;
 	struct json_object *attr_obj;
 	struct nvmf_context fctx = {};
 
@@ -126,10 +126,10 @@ static void json_parse_port(nvme_subsystem_t s, struct json_object *port_obj)
 	}
 }
 
-static void json_parse_subsys(nvme_host_t h, struct json_object *subsys_obj)
+static void json_parse_subsys(libnvme_host_t h, struct json_object *subsys_obj)
 {
 	struct json_object *nqn_obj, *app_obj, *port_array;
-	nvme_subsystem_t s;
+	libnvme_subsystem_t s;
 	const char *nqn;
 	int p;
 
@@ -159,7 +159,7 @@ static void json_parse_subsys(nvme_host_t h, struct json_object *subsys_obj)
 static void json_parse_host(struct nvme_global_ctx *ctx, struct json_object *host_obj)
 {
 	struct json_object *attr_obj, *subsys_array, *subsys_obj;
-	nvme_host_t h;
+	libnvme_host_t h;
 	const char *hostnqn, *hostid = NULL;
 	int s;
 
@@ -272,7 +272,7 @@ int json_read_config(struct nvme_global_ctx *ctx, const char *config_file)
 		json_object_object_add((p), # o ,			\
 				       json_object_new_boolean((c)->o))
 
-static void json_update_port(struct json_object *ctrl_array, nvme_ctrl_t c)
+static void json_update_port(struct json_object *ctrl_array, libnvme_ctrl_t c)
 {
 	struct nvme_fabrics_config *cfg = libnvme_ctrl_get_config(c);
 	struct json_object *port_obj = json_object_new_object();
@@ -351,9 +351,9 @@ static void json_update_port(struct json_object *ctrl_array, nvme_ctrl_t c)
 }
 
 static void json_update_subsys(struct json_object *subsys_array,
-			       nvme_subsystem_t s)
+			       libnvme_subsystem_t s)
 {
-	nvme_ctrl_t c;
+	libnvme_ctrl_t c;
 	const char *subsysnqn = libnvme_subsystem_get_subsysnqn(s), *app;
 	struct json_object *subsys_obj = json_object_new_object();
 	struct json_object *port_array;
@@ -383,14 +383,14 @@ static void json_update_subsys(struct json_object *subsys_array,
 
 int json_update_config(struct nvme_global_ctx *ctx, int fd)
 {
-	nvme_host_t h;
+	libnvme_host_t h;
 	struct json_object *json_root, *host_obj;
 	struct json_object *subsys_array;
 	int ret = 0;
 
 	json_root = json_object_new_array();
 	libnvme_for_each_host(ctx, h) {
-		nvme_subsystem_t s;
+		libnvme_subsystem_t s;
 		const char *hostnqn, *hostid, *dhchap_key, *hostsymname;
 
 		host_obj = json_object_new_object();
@@ -440,7 +440,7 @@ int json_update_config(struct nvme_global_ctx *ctx, int fd)
 	return ret;
 }
 
-static void json_dump_ctrl(struct json_object *ctrl_array, nvme_ctrl_t c)
+static void json_dump_ctrl(struct json_object *ctrl_array, libnvme_ctrl_t c)
 {
 	struct nvme_fabrics_config *cfg = libnvme_ctrl_get_config(c);
 	struct json_object *ctrl_obj = json_object_new_object();
@@ -519,11 +519,11 @@ static void json_dump_ctrl(struct json_object *ctrl_array, nvme_ctrl_t c)
 	json_object_array_add(ctrl_array, ctrl_obj);
 }
 
-static unsigned int json_dump_subsys_multipath(nvme_subsystem_t s,
+static unsigned int json_dump_subsys_multipath(libnvme_subsystem_t s,
 				struct json_object *ns_array)
 {
-	nvme_ns_t n;
-	nvme_path_t p;
+	libnvme_ns_t n;
+	libnvme_path_t p;
 	unsigned int i = 0;
 
 	libnvme_subsystem_for_each_ns(s, n) {
@@ -540,7 +540,7 @@ static unsigned int json_dump_subsys_multipath(nvme_subsystem_t s,
 		libnvme_namespace_for_each_path(n, p) {
 			struct json_object *path_obj;
 			struct json_object *ctrl_array;
-			nvme_ctrl_t c;
+			libnvme_ctrl_t c;
 
 			path_obj = json_object_new_object();
 			json_object_object_add(path_obj, "path",
@@ -565,11 +565,11 @@ static unsigned int json_dump_subsys_multipath(nvme_subsystem_t s,
 	return i;
 }
 
-static void json_dump_subsys_non_multipath(nvme_subsystem_t s,
+static void json_dump_subsys_non_multipath(libnvme_subsystem_t s,
 		struct json_object *ns_array)
 {
-	nvme_ctrl_t c;
-	nvme_ns_t n;
+	libnvme_ctrl_t c;
+	libnvme_ns_t n;
 
 	libnvme_subsystem_for_each_ctrl(s, c) {
 		libnvme_ctrl_for_each_ns(c, n) {
@@ -592,7 +592,7 @@ static void json_dump_subsys_non_multipath(nvme_subsystem_t s,
 }
 
 static void json_dump_subsys(struct json_object *subsys_array,
-			       nvme_subsystem_t s)
+			       libnvme_subsystem_t s)
 {
 	struct json_object *subsys_obj = json_object_new_object();
 	struct json_object *ns_array;
@@ -615,7 +615,7 @@ static void json_dump_subsys(struct json_object *subsys_array,
 
 int json_dump_tree(struct nvme_global_ctx *ctx)
 {
-	nvme_host_t h;
+	libnvme_host_t h;
 	struct json_object *json_root, *host_obj;
 	struct json_object *host_array, *subsys_array;
 	int ret = 0;
@@ -623,7 +623,7 @@ int json_dump_tree(struct nvme_global_ctx *ctx)
 	json_root = json_object_new_object();
 	host_array = json_object_new_array();
 	libnvme_for_each_host(ctx, h) {
-		nvme_subsystem_t s;
+		libnvme_subsystem_t s;
 		const char *hostid, *dhchap_key;
 
 		host_obj = json_object_new_object();

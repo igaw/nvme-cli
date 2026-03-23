@@ -44,32 +44,32 @@ static struct print_ops stdout_print_ops;
 
 static const char *subsys_key(const struct libnvme_subsystem *s)
 {
-	return libnvme_subsystem_get_name((nvme_subsystem_t)s);
+	return libnvme_subsystem_get_name((libnvme_subsystem_t)s);
 }
 
 static const char *ctrl_key(const struct libnvme_ctrl *c)
 {
-	return libnvme_ctrl_get_name((nvme_ctrl_t)c);
+	return libnvme_ctrl_get_name((libnvme_ctrl_t)c);
 }
 
 static const char *ns_key(const struct libnvme_ns *n)
 {
-	return libnvme_ns_get_name((nvme_ns_t)n);
+	return libnvme_ns_get_name((libnvme_ns_t)n);
 }
 
 static bool subsys_cmp(const struct libnvme_subsystem *s, const char *name)
 {
-	return !strcmp(libnvme_subsystem_get_name((nvme_subsystem_t)s), name);
+	return !strcmp(libnvme_subsystem_get_name((libnvme_subsystem_t)s), name);
 }
 
 static bool ctrl_cmp(const struct libnvme_ctrl *c, const char *name)
 {
-	return !strcmp(libnvme_ctrl_get_name((nvme_ctrl_t)c), name);
+	return !strcmp(libnvme_ctrl_get_name((libnvme_ctrl_t)c), name);
 }
 
 static bool ns_cmp(const struct libnvme_ns *n, const char *name)
 {
-	return !strcmp(libnvme_ns_get_name((nvme_ns_t)n), name);
+	return !strcmp(libnvme_ns_get_name((libnvme_ns_t)n), name);
 }
 
 HTABLE_DEFINE_TYPE(struct libnvme_subsystem, subsys_key, hash_string,
@@ -79,7 +79,7 @@ HTABLE_DEFINE_TYPE(struct libnvme_ctrl, ctrl_key, hash_string,
 HTABLE_DEFINE_TYPE(struct libnvme_ns, ns_key, hash_string,
 		   ns_cmp, htable_ns);
 
-static void htable_ctrl_add_unique(struct htable_ctrl *ht, nvme_ctrl_t c)
+static void htable_ctrl_add_unique(struct htable_ctrl *ht, libnvme_ctrl_t c)
 {
 	if (htable_ctrl_get(ht, libnvme_ctrl_get_name(c)))
 		return;
@@ -87,10 +87,10 @@ static void htable_ctrl_add_unique(struct htable_ctrl *ht, nvme_ctrl_t c)
 	htable_ctrl_add(ht, c);
 }
 
-static void htable_ns_add_unique(struct htable_ns *ht, nvme_ns_t n)
+static void htable_ns_add_unique(struct htable_ns *ht, libnvme_ns_t n)
 {
 	struct htable_ns_iter it;
-	nvme_ns_t _n;
+	libnvme_ns_t _n;
 
 	/*
 	 * Test if namespace pointer is already in the hash, and thus avoid
@@ -123,11 +123,11 @@ struct nvme_resources_table {
 
 static int nvme_resources_init(struct nvme_global_ctx *ctx, struct nvme_resources *res)
 {
-	nvme_host_t h;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
-	nvme_ns_t n;
-	nvme_path_t p;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
+	libnvme_ns_t n;
+	libnvme_path_t p;
 
 	res->ctx = ctx;
 	htable_subsys_init(&res->ht_s);
@@ -1171,10 +1171,10 @@ static void stdout_supported_cap_config_log(struct nvme_supported_cap_config_lis
 	}
 }
 
-static unsigned int stdout_subsystem_multipath(nvme_subsystem_t s)
+static unsigned int stdout_subsystem_multipath(libnvme_subsystem_t s)
 {
-	nvme_ns_t n;
-	nvme_path_t p;
+	libnvme_ns_t n;
+	libnvme_path_t p;
 	unsigned int i = 0;
 
 	n = libnvme_subsystem_first_ns(s);
@@ -1182,7 +1182,7 @@ static unsigned int stdout_subsystem_multipath(nvme_subsystem_t s)
 		return 0;
 
 	libnvme_namespace_for_each_path(n, p) {
-		nvme_ctrl_t c = libnvme_path_get_ctrl(p);
+		libnvme_ctrl_t c = libnvme_path_get_ctrl(p);
 		const char *ana_state = ana_state = libnvme_path_get_ana_state(p);
 
 		printf(" +- %s %s %s %s %s\n",
@@ -1197,9 +1197,9 @@ static unsigned int stdout_subsystem_multipath(nvme_subsystem_t s)
 	return i;
 }
 
-static void stdout_subsystem_ctrls(nvme_subsystem_t s)
+static void stdout_subsystem_ctrls(libnvme_subsystem_t s)
 {
-	nvme_ctrl_t c;
+	libnvme_ctrl_t c;
 
 	libnvme_subsystem_for_each_ctrl(s, c) {
 		printf(" +- %s %s %s %s\n",
@@ -1210,7 +1210,7 @@ static void stdout_subsystem_ctrls(nvme_subsystem_t s)
 	}
 }
 
-static void stdout_subsys_config(nvme_subsystem_t s, bool show_iopolicy)
+static void stdout_subsys_config(libnvme_subsystem_t s, bool show_iopolicy)
 {
 	int len = strlen(libnvme_subsystem_get_name(s));
 
@@ -1236,15 +1236,15 @@ static void stdout_subsys_config(nvme_subsystem_t s, bool show_iopolicy)
 
 static void stdout_subsystem(struct nvme_global_ctx *ctx, bool show_ana)
 {
-	nvme_host_t h;
+	libnvme_host_t h;
 	bool first = true;
 
 	libnvme_for_each_host(ctx, h) {
-		nvme_subsystem_t s;
+		libnvme_subsystem_t s;
 
 		libnvme_for_each_subsystem(h, s) {
 			bool no_ctrl = true;
-			nvme_ctrl_t c;
+			libnvme_ctrl_t c;
 
 			libnvme_subsystem_for_each_ctrl(s, c)
 				no_ctrl = false;
@@ -5548,7 +5548,7 @@ static void stdout_lba_status(struct nvme_lba_status *list,
 	}
 }
 
-static void stdout_dev_full_path(nvme_ns_t n, char *path, size_t len)
+static void stdout_dev_full_path(libnvme_ns_t n, char *path, size_t len)
 {
 	struct stat st;
 
@@ -5567,7 +5567,7 @@ static void stdout_dev_full_path(nvme_ns_t n, char *path, size_t len)
 	snprintf(path, len, "%s", libnvme_ns_get_name(n));
 }
 
-static void stdout_generic_full_path(nvme_ns_t n, char *path, size_t len)
+static void stdout_generic_full_path(libnvme_ns_t n, char *path, size_t len)
 {
 	int head_instance;
 	int instance;
@@ -5596,7 +5596,7 @@ static void stdout_generic_full_path(nvme_ns_t n, char *path, size_t len)
 	snprintf(path, len, "ng%dn%d", instance, head_instance);
 }
 
-static void list_item(nvme_ns_t n, struct table *t)
+static void list_item(libnvme_ns_t n, struct table *t)
 {
 	char usage[128] = { 0 }, format[128] = { 0 };
 	char devname[128] = { 0 }; char genname[128] = { 0 };
@@ -5663,12 +5663,12 @@ static void list_item(nvme_ns_t n, struct table *t)
 	table_add_row(t, row);
 }
 
-static void stdout_list_item(nvme_ns_t n, struct table *t)
+static void stdout_list_item(libnvme_ns_t n, struct table *t)
 {
 	list_item(n, t);
 }
 
-static void stdout_list_item_table(nvme_ns_t n, struct table *t)
+static void stdout_list_item_table(libnvme_ns_t n, struct table *t)
 {
 	list_item(n, t);
 }
@@ -5677,7 +5677,7 @@ static bool stdout_simple_ns(const char *name, void *arg)
 {
 	struct nvme_resources_table *rst_t = arg;
 	struct nvme_resources *res = rst_t->res;
-	nvme_ns_t n;
+	libnvme_ns_t n;
 
 	n = htable_ns_get(&res->ht_n, name);
 	stdout_list_item_table(n, rst_t->t);
@@ -5716,7 +5716,7 @@ static void stdout_simple_list(struct nvme_global_ctx *ctx)
 	table_free(t);
 }
 
-static void stdout_ns_details(nvme_ns_t n)
+static void stdout_ns_details(libnvme_ns_t n)
 {
 	char usage[128] = { 0 }, format[128] = { 0 }, usage_binary[128] = { 0 };
 	char devname[128] = { 0 }, genname[128] = { 0 };
@@ -5763,8 +5763,8 @@ static bool stdout_detailed_subsys(const char *name, void *arg)
 	struct nvme_resources *res = arg;
 	struct htable_subsys_iter it;
 	struct strset ctrls;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
 	bool first;
 
 	strset_init(&ctrls);
@@ -5794,9 +5794,9 @@ static bool stdout_detailed_ctrl(const char *name, void *arg)
 {
 	struct nvme_resources *res = arg;
 	struct strset namespaces;
-	nvme_ctrl_t c;
-	nvme_path_t p;
-	nvme_ns_t n;
+	libnvme_ctrl_t c;
+	libnvme_path_t p;
+	libnvme_ns_t n;
 	bool first;
 
 	c = htable_ctrl_get(&res->ht_c, name);
@@ -5838,9 +5838,9 @@ static bool stdout_detailed_ns(const char *name, void *arg)
 	struct nvme_resources *res = arg;
 	struct htable_ns_iter it;
 	struct strset ctrls;
-	nvme_ctrl_t c;
-	nvme_path_t p;
-	nvme_ns_t n;
+	libnvme_ctrl_t c;
+	libnvme_path_t p;
+	libnvme_ns_t n;
 	bool first;
 
 	strset_init(&ctrls);
@@ -5910,7 +5910,7 @@ static void stdout_list_items(struct nvme_global_ctx *ctx)
 
 static bool subsystem_iopolicy_filter(const char *name, void *arg)
 {
-	nvme_subsystem_t s = arg;
+	libnvme_subsystem_t s = arg;
 	const char *iopolicy = libnvme_subsystem_get_iopolicy(s);
 
 	if (!strcmp(iopolicy, "queue-depth")) {
@@ -5930,11 +5930,11 @@ static bool subsystem_iopolicy_filter(const char *name, void *arg)
 	return true;
 }
 
-static void stdout_tabular_subsystem_topology_multipath(nvme_subsystem_t s)
+static void stdout_tabular_subsystem_topology_multipath(libnvme_subsystem_t s)
 {
-	nvme_ns_t n;
-	nvme_path_t p;
-	nvme_ctrl_t c;
+	libnvme_ns_t n;
+	libnvme_path_t p;
+	libnvme_ctrl_t c;
 	int row, col;
 	bool first;
 	struct table *t;
@@ -6029,12 +6029,12 @@ free_tbl:
 	table_free(t);
 }
 
-static void stdout_subsystem_topology_multipath(nvme_subsystem_t s,
+static void stdout_subsystem_topology_multipath(libnvme_subsystem_t s,
 						     enum nvme_cli_topo_ranking ranking)
 {
-	nvme_ns_t n;
-	nvme_path_t p;
-	nvme_ctrl_t c;
+	libnvme_ns_t n;
+	libnvme_path_t p;
+	libnvme_ctrl_t c;
 	const char *iopolicy = libnvme_subsystem_get_iopolicy(s);
 
 	if (ranking == NVME_CLI_TOPO_NAMESPACE) {
@@ -6133,10 +6133,10 @@ static void stdout_subsystem_topology_multipath(nvme_subsystem_t s,
 	}
 }
 
-static void stdout_tabular_subsystem_topology(nvme_subsystem_t s)
+static void stdout_tabular_subsystem_topology(libnvme_subsystem_t s)
 {
-	nvme_ctrl_t c;
-	nvme_ns_t n;
+	libnvme_ctrl_t c;
+	libnvme_ns_t n;
 	int row;
 	struct table *t;
 	struct table_column columns[] = {
@@ -6196,11 +6196,11 @@ free_tbl:
 	table_free(t);
 }
 
-static void stdout_subsystem_topology(nvme_subsystem_t s,
+static void stdout_subsystem_topology(libnvme_subsystem_t s,
 					   enum nvme_cli_topo_ranking ranking)
 {
-	nvme_ctrl_t c;
-	nvme_ns_t n;
+	libnvme_ctrl_t c;
+	libnvme_ns_t n;
 
 	if (ranking == NVME_CLI_TOPO_NAMESPACE) {
 		libnvme_subsystem_for_each_ctrl(s, c) {
@@ -6250,14 +6250,14 @@ static void stdout_subsystem_topology(nvme_subsystem_t s,
 
 static void stdout_topology_tabular(struct nvme_global_ctx *ctx)
 {
-	nvme_host_t h;
-	nvme_subsystem_t s;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
 	bool first = true;
 
 	libnvme_for_each_host(ctx, h) {
 		libnvme_for_each_subsystem(h, s) {
 			bool no_ctrl = true;
-			nvme_ctrl_t c;
+			libnvme_ctrl_t c;
 
 			libnvme_subsystem_for_each_ctrl(s, c)
 				no_ctrl = false;
@@ -6283,14 +6283,14 @@ static void stdout_topology_tabular(struct nvme_global_ctx *ctx)
 static void stdout_simple_topology(struct nvme_global_ctx *ctx,
 				   enum nvme_cli_topo_ranking ranking)
 {
-	nvme_host_t h;
-	nvme_subsystem_t s;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
 	bool first = true;
 
 	libnvme_for_each_host(ctx, h) {
 		libnvme_for_each_subsystem(h, s) {
 			bool no_ctrl = true;
-			nvme_ctrl_t c;
+			libnvme_ctrl_t c;
 
 			libnvme_subsystem_for_each_ctrl(s, c)
 				no_ctrl = false;
@@ -6402,7 +6402,7 @@ static void stdout_discovery_log(struct nvmf_discovery_log *log, int numrec)
 static void stdout_discovery_log(struct nvmf_discovery_log *log, int numrec) {}
 #endif
 
-static void stdout_connect_msg(nvme_ctrl_t c)
+static void stdout_connect_msg(libnvme_ctrl_t c)
 {
 	printf("connecting to device: %s\n", libnvme_ctrl_get_name(c));
 }
@@ -6628,9 +6628,9 @@ static void stdout_relatives(struct nvme_global_ctx *ctx, const char *name)
 	struct htable_ns_iter it;
 	bool block = true;
 	bool first = true;
-	nvme_ctrl_t c;
-	nvme_path_t p;
-	nvme_ns_t n;
+	libnvme_ctrl_t c;
+	libnvme_path_t p;
+	libnvme_ns_t n;
 	int nsid;
 	int ret;
 	int id;

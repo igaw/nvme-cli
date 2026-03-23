@@ -1558,7 +1558,7 @@ void nvme_show_lba_status(struct nvme_lba_status *list, unsigned long len,
 	nvme_print(lba_status, flags, list, len);
 }
 
-void nvme_dev_full_path(nvme_ns_t n, char *path, size_t len)
+void nvme_dev_full_path(libnvme_ns_t n, char *path, size_t len)
 {
 	struct stat st;
 
@@ -1576,7 +1576,7 @@ void nvme_dev_full_path(nvme_ns_t n, char *path, size_t len)
 	snprintf(path, len, "%s", libnvme_ns_get_name(n));
 }
 
-void nvme_generic_full_path(nvme_ns_t n, char *path, size_t len)
+void nvme_generic_full_path(libnvme_ns_t n, char *path, size_t len)
 {
 	int head_instance;
 	int instance;
@@ -1602,7 +1602,7 @@ void nvme_generic_full_path(nvme_ns_t n, char *path, size_t len)
 	snprintf(path, len, "ng%dn%d", instance, head_instance);
 }
 
-void nvme_show_list_item(nvme_ns_t n, struct table *t)
+void nvme_show_list_item(libnvme_ns_t n, struct table *t)
 {
 	nvme_print(list_item, NORMAL, n, t);
 }
@@ -1683,7 +1683,7 @@ void nvme_show_discovery_log(struct nvmf_discovery_log *log, uint64_t numrec,
 	nvme_print(discovery_log, flags, log, numrec);
 }
 
-void nvme_show_connect_msg(nvme_ctrl_t c, nvme_print_flags_t flags)
+void nvme_show_connect_msg(libnvme_ctrl_t c, nvme_print_flags_t flags)
 {
 	nvme_print(connect_msg, flags, c);
 }

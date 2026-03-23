@@ -122,22 +122,22 @@ __public char *libnvme_get_attr(const char *dir, const char *attr)
 	return __nvme_get_attr(path);
 }
 
-__public char *libnvme_get_subsys_attr(nvme_subsystem_t s, const char *attr)
+__public char *libnvme_get_subsys_attr(libnvme_subsystem_t s, const char *attr)
 {
 	return libnvme_get_attr(libnvme_subsystem_get_sysfs_dir(s), attr);
 }
 
-__public char *libnvme_get_ctrl_attr(nvme_ctrl_t c, const char *attr)
+__public char *libnvme_get_ctrl_attr(libnvme_ctrl_t c, const char *attr)
 {
 	return libnvme_get_attr(libnvme_ctrl_get_sysfs_dir(c), attr);
 }
 
-__public char *libnvme_get_ns_attr(nvme_ns_t n, const char *attr)
+__public char *libnvme_get_ns_attr(libnvme_ns_t n, const char *attr)
 {
 	return libnvme_get_attr(libnvme_ns_get_sysfs_dir(n), attr);
 }
 
-__public char *libnvme_get_path_attr(nvme_path_t p, const char *attr)
+__public char *libnvme_get_path_attr(libnvme_path_t p, const char *attr)
 {
 	return libnvme_get_attr(libnvme_path_get_sysfs_dir(p), attr);
 }
@@ -1224,7 +1224,7 @@ static int __nvme_import_tls_key(struct nvme_global_ctx *ctx, long keyring_id,
 			      key_data, key_len, keyp);
 }
 
-int __nvme_import_keys_from_config(nvme_host_t h, nvme_ctrl_t c,
+int __nvme_import_keys_from_config(libnvme_host_t h, libnvme_ctrl_t c,
 		long *keyring_id, long *key_id)
 {
 	const char *hostnqn = libnvme_host_get_hostnqn(h);
@@ -1384,7 +1384,7 @@ __public int libnvme_revoke_tls_key(struct nvme_global_ctx *ctx,
 	return -ENOTSUP;
 }
 
-int __nvme_import_keys_from_config(nvme_host_t h, nvme_ctrl_t c,
+int __nvme_import_keys_from_config(libnvme_host_t h, libnvme_ctrl_t c,
 				   long *keyring_id, long *key_id)
 {
 	*keyring_id = 0;

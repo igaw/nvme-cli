@@ -15,7 +15,7 @@
 #include "nvme/linux.h"
 #include "nvme/tree.h"
 
-static bool import_export_key(struct nvme_global_ctx *ctx, nvme_ctrl_t c)
+static bool import_export_key(struct nvme_global_ctx *ctx, libnvme_ctrl_t c)
 {
 	unsigned char version, hmac, *key;
 	char *encoded_key;
@@ -51,9 +51,9 @@ static bool psk_json_test(char *file)
 {
 	struct nvme_global_ctx *ctx;
 	bool pass = false;
-	nvme_host_t h;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
 	int err;
 
 	ctx = libnvme_create_global_ctx(stderr, LOG_ERR);

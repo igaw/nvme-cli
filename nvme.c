@@ -3459,9 +3459,9 @@ parse_lba:
 	return err;
 }
 
-static bool nvme_match_devname(char *devname, nvme_ns_t ns)
+static bool nvme_match_devname(char *devname, libnvme_ns_t ns)
 {
-	nvme_ctrl_t c = libnvme_ns_get_ctrl(ns);
+	libnvme_ctrl_t c = libnvme_ns_get_ctrl(ns);
 
 	if (!strcmp(devname, libnvme_ns_get_name(ns)) ||
 	    (c && !strcmp(devname, libnvme_ctrl_get_name(c))) ||
@@ -3471,11 +3471,11 @@ static bool nvme_match_devname(char *devname, nvme_ns_t ns)
 	return false;
 }
 
-static bool nvme_match_device_filter(nvme_subsystem_t s,
-		nvme_ctrl_t c, nvme_ns_t ns, void *f_args)
+static bool nvme_match_device_filter(libnvme_subsystem_t s,
+		libnvme_ctrl_t c, libnvme_ns_t ns, void *f_args)
 {
 	char *devname = f_args;
-	nvme_ns_t n;
+	libnvme_ns_t n;
 
 	if (ns && nvme_match_devname(devname, ns))
 		return true;
@@ -3503,7 +3503,7 @@ static int list_subsys(int argc, char **argv, struct command *acmd,
 	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
 	nvme_print_flags_t flags;
 	const char *desc = "Retrieve information for subsystems";
-	nvme_scan_filter_t filter = NULL;
+	libnvme_scan_filter_t filter = NULL;
 	char *devname;
 	int err;
 	int nsid = NVME_NSID_ALL;
@@ -10356,7 +10356,7 @@ static int show_topology_cmd(int argc, char **argv, struct command *acmd, struct
 	nvme_print_flags_t flags;
 	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
 	char *devname = NULL;
-	nvme_scan_filter_t filter = NULL;
+	libnvme_scan_filter_t filter = NULL;
 	enum nvme_cli_topo_ranking rank;
 	int err;
 

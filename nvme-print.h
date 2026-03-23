@@ -104,7 +104,7 @@ struct print_ops {
 	void (*log)(const char *devname, struct nvme_get_log_args *args);
 
 	/* libnvme tree print functions */
-	void (*list_item)(nvme_ns_t n, struct table *t);
+	void (*list_item)(libnvme_ns_t n, struct table *t);
 	void (*list_items)(struct nvme_global_ctx *ctx);
 	void (*print_nvme_subsystem_list)(struct nvme_global_ctx *ctx, bool show_ana);
 	void (*topology_ctrl)(struct nvme_global_ctx *ctx);
@@ -113,7 +113,7 @@ struct print_ops {
 	void (*topology_tabular)(struct nvme_global_ctx *ctx);
 
 	/* status and error messages */
-	void (*connect_msg)(nvme_ctrl_t c);
+	void (*connect_msg)(libnvme_ctrl_t c);
 	void (*show_message)(bool error, const char *msg, va_list ap);
 	void (*show_perror)(const char *msg, va_list ap);
 	void (*show_status)(int status);
@@ -291,7 +291,7 @@ void nvme_show_zns_report_zones(void *report, __u32 descs,
 				nvme_print_flags_t flags);
 void json_nvme_finish_zone_list(__u64 nr_zones, 
 	struct json_object *zone_list);
-void nvme_show_list_item(nvme_ns_t n, struct table *t);
+void nvme_show_list_item(libnvme_ns_t n, struct table *t);
 
 void nvme_show_fdp_configs(struct nvme_fdp_config_log *configs, size_t len,
 		nvme_print_flags_t flags);
@@ -306,7 +306,7 @@ void nvme_show_fdp_ruh_status(struct nvme_fdp_ruh_status *status, size_t len,
 
 void nvme_show_discovery_log(struct nvmf_discovery_log *log, uint64_t numrec,
 			     nvme_print_flags_t flags);
-void nvme_show_connect_msg(nvme_ctrl_t c, nvme_print_flags_t flags);
+void nvme_show_connect_msg(libnvme_ctrl_t c, nvme_print_flags_t flags);
 
 const char *nvme_ana_state_to_string(enum nvme_ana_state state);
 const char *nvme_cmd_to_string(int admin, __u8 opcode);
@@ -346,8 +346,8 @@ const char *nvme_feature_power_limit_scale_to_string(__u8 pls);
 const char *nvme_power_measurement_type_to_string(__u8 pmt);
 const char *nvme_power_measurement_action_to_string(__u8 act);
 
-void nvme_dev_full_path(nvme_ns_t n, char *path, size_t len);
-void nvme_generic_full_path(nvme_ns_t n, char *path, size_t len);
+void nvme_dev_full_path(libnvme_ns_t n, char *path, size_t len);
+void nvme_generic_full_path(libnvme_ns_t n, char *path, size_t len);
 void nvme_show_message(bool error, const char *msg, ...);
 void nvme_show_perror(const char *msg, ...);
 void nvme_show_error_status(int status, const char *msg, ...);

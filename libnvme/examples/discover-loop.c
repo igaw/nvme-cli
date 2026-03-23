@@ -53,8 +53,8 @@ int main()
 {
 	struct nvmf_discovery_log *log;
 	struct nvme_global_ctx *ctx;
-	nvme_host_t h;
-	nvme_ctrl_t c;
+	libnvme_host_t h;
+	libnvme_ctrl_t c;
 	int ret;
 	struct nvme_fabrics_config cfg;
 

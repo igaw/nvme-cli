@@ -1479,8 +1479,8 @@ static int wdc_get_pci_ids(struct nvme_global_ctx *ctx, struct nvme_transport_ha
 {
 	const char *name = libnvme_transport_handle_get_name(hdl);
 	char vid[256], did[256], id[32];
-	nvme_ctrl_t c = NULL;
-	nvme_ns_t n = NULL;
+	libnvme_ctrl_t c = NULL;
+	libnvme_ns_t n = NULL;
 	int fd, ret;
 
 	ret = libnvme_scan_ctrl(ctx, name, &c);

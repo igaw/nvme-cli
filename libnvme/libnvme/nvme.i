@@ -462,7 +462,7 @@ struct libnvme_ctrl {
 
 		/**
 		 * We are remapping the following members of the C code's
-		 * nvme_ctrl_t to different names in Python. Here's the mapping:
+		 * libnvme_ctrl_t to different names in Python. Here's the mapping:
 		 *
 		 * C code                 Python (SWIG)
 		 * =====================  =====================
@@ -555,7 +555,7 @@ struct libnvme_ns {
 		  const char *hostid = NULL,
 		  const char *hostkey = NULL,
 		  const char *hostsymname = NULL) {
-		nvme_host_t h;
+		libnvme_host_t h;
 		if (libnvme_get_host(ctx, hostnqn, hostid, &h))
 			return NULL;
 		if (hostsymname)
@@ -892,7 +892,7 @@ struct libnvme_ns {
 		libnvme_ctrl_set_dhchap_host_key(c, key);
 	}
 
-	const char *libnvme_ctrl_cntlid_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_cntlid_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_cntlid(c);
 	}
 
@@ -903,55 +903,55 @@ struct libnvme_ns {
 		libnvme_ctrl_set_persistent(c, persistent);
 	}
 
-	const char *libnvme_ctrl_phy_slot_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_phy_slot_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_phy_slot(c);
 	}
 
-	const char *libnvme_ctrl_trsvcid_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_trsvcid_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_trsvcid(c);
 	}
 
-	const char *libnvme_ctrl_traddr_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_traddr_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_traddr(c);
 	}
 
-	const char *libnvme_ctrl_subsysnqn_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_subsysnqn_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_subsysnqn(c);
 	}
 
-	const char *libnvme_ctrl_transport_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_transport_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_transport(c);
 	}
 
-	const char *libnvme_ctrl_sqsize_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_sqsize_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_sqsize(c);
 	}
 
-	const char *libnvme_ctrl_serial_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_serial_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_serial(c);
 	}
 
-	const char *libnvme_ctrl_queue_count_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_queue_count_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_queue_count(c);
 	}
 
-	const char *libnvme_ctrl_numa_node_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_numa_node_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_numa_node(c);
 	}
 
-	const char *libnvme_ctrl_model_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_model_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_model(c);
 	}
 
-	const char *libnvme_ctrl_firmware_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_firmware_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_firmware(c);
 	}
 
-	const char *libnvme_ctrl_address_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_address_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_traddr(c);
 	}
 
-	const char *libnvme_ctrl_sysfs_dir_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_sysfs_dir_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_sysfs_dir(c);
 	}
 
@@ -962,31 +962,31 @@ struct libnvme_ns {
 		libnvme_ctrl_set_discovery_ctrl(c, discovery);
 	}
 
-	bool libnvme_ctrl_unique_discovery_ctrl_get(nvme_ctrl_t c) {
+	bool libnvme_ctrl_unique_discovery_ctrl_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_unique_discovery_ctrl(c);
 	}
-	void libnvme_ctrl_unique_discovery_ctrl_set(nvme_ctrl_t c, bool unique) {
+	void libnvme_ctrl_unique_discovery_ctrl_set(libnvme_ctrl_t c, bool unique) {
 		libnvme_ctrl_set_unique_discovery_ctrl(c, unique);
 	}
 
-	const char *libnvme_ctrl_keyring_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_keyring_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_keyring(c);
 	}
-	void libnvme_ctrl_keyring_set(nvme_ctrl_t c, const char *keyring) {
+	void libnvme_ctrl_keyring_set(libnvme_ctrl_t c, const char *keyring) {
 		libnvme_ctrl_set_keyring(c, keyring);
 	}
 
-	const char *libnvme_ctrl_tls_key_identity_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_tls_key_identity_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_tls_key_identity(c);
 	}
-	void libnvme_ctrl_tls_key_identity_set(nvme_ctrl_t c, const char *identity) {
+	void libnvme_ctrl_tls_key_identity_set(libnvme_ctrl_t c, const char *identity) {
 		libnvme_ctrl_set_tls_key_identity(c, identity);
 	}
 
-	const char *libnvme_ctrl_tls_key_get(nvme_ctrl_t c) {
+	const char *libnvme_ctrl_tls_key_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_tls_key(c);
 	}
-	void libnvme_ctrl_tls_key_set(nvme_ctrl_t c, const char *key) {
+	void libnvme_ctrl_tls_key_set(libnvme_ctrl_t c, const char *key) {
 		libnvme_ctrl_set_tls_key(c, key);
 	}
 %}

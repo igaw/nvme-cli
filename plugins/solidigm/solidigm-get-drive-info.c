@@ -16,8 +16,8 @@ int sldgm_get_drive_info(int argc, char **argv, struct command *acmd, struct plu
 	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
 	_cleanup_nvme_transport_handle_ struct nvme_transport_handle *hdl = NULL;
 	nvme_print_flags_t flags;
-	nvme_ctrl_t c;
-	nvme_ns_t n;
+	libnvme_ctrl_t c;
+	libnvme_ns_t n;
 	struct nvme_id_ns ns = { 0 };
 	__u8 flbaf_inUse;
 	__u16 lba_size;

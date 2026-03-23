@@ -66,7 +66,7 @@ int libnvme_scan_subsystems(struct dirent ***subsys);
  *
  * Return: number of entries in @ns or a negative error code
  */
-int libnvme_scan_subsystem_namespaces(nvme_subsystem_t s, struct dirent ***ns);
+int libnvme_scan_subsystem_namespaces(libnvme_subsystem_t s, struct dirent ***ns);
 
 /**
  * libnvme_scan_ctrls() - Scan for controllers
@@ -83,7 +83,7 @@ int libnvme_scan_ctrls(struct dirent ***ctrls);
  *
  * Return: number of entries in @paths or a negative error code
  */
-int libnvme_scan_ctrl_namespace_paths(nvme_ctrl_t c, struct dirent ***paths);
+int libnvme_scan_ctrl_namespace_paths(libnvme_ctrl_t c, struct dirent ***paths);
 
 /**
  * libnvme_scan_ctrl_namespaces() - Scan for namespaces in a controller
@@ -92,7 +92,7 @@ int libnvme_scan_ctrl_namespace_paths(nvme_ctrl_t c, struct dirent ***paths);
  *
  * Return: number of entries in @ns or a negative error code
  */
-int libnvme_scan_ctrl_namespaces(nvme_ctrl_t c, struct dirent ***ns);
+int libnvme_scan_ctrl_namespaces(libnvme_ctrl_t c, struct dirent ***ns);
 
 /**
  * libnvme_scan_ns_head_paths() - Scan for namespace paths
@@ -101,6 +101,6 @@ int libnvme_scan_ctrl_namespaces(nvme_ctrl_t c, struct dirent ***ns);
  *
  * Return: number of entries in @ents or a negative error code
  */
-int libnvme_scan_ns_head_paths(nvme_ns_head_t head, struct dirent ***paths);
+int libnvme_scan_ns_head_paths(libnvme_ns_head_t head, struct dirent ***paths);
 
 #endif /* _LIBNVME_FILTERS_H */

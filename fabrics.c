@@ -589,7 +589,7 @@ int fabrics_connect(const char *desc, int argc, char **argv)
 	char *context = NULL;
 	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
 	_cleanup_free_ struct nvmf_context *fctx = NULL;
-	_cleanup_nvme_ctrl_ nvme_ctrl_t c = NULL;
+	_cleanup_nvme_ctrl_ libnvme_ctrl_t c = NULL;
 	int ret;
 	nvme_print_flags_t flags;
 	struct nvme_fabrics_config cfg = { 0 };
@@ -684,12 +684,12 @@ do_connect:
 	return 0;
 }
 
-static nvme_ctrl_t lookup_nvme_ctrl(struct nvme_global_ctx *ctx,
+static libnvme_ctrl_t lookup_nvme_ctrl(struct nvme_global_ctx *ctx,
 				    const char *name)
 {
-	nvme_host_t h;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
 
 	libnvme_for_each_host(ctx, h) {
 		libnvme_for_each_subsystem(h, s) {
@@ -707,9 +707,9 @@ static void nvmf_disconnect_nqn(struct nvme_global_ctx *ctx, char *nqn)
 	int i = 0;
 	char *n = nqn;
 	char *p;
-	nvme_host_t h;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
 
 	while ((p = strsep(&n, ",")) != NULL) {
 		if (!strlen(p))
@@ -732,7 +732,7 @@ int fabrics_disconnect(const char *desc, int argc, char **argv)
 {
 	const char *device = "nvme device handle";
 	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
-	nvme_ctrl_t c;
+	libnvme_ctrl_t c;
 	char *p;
 	int ret;
 
@@ -816,9 +816,9 @@ int fabrics_disconnect(const char *desc, int argc, char **argv)
 int fabrics_disconnect_all(const char *desc, int argc, char **argv)
 {
 	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
-	nvme_host_t h;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
 	int ret;
 
 	struct config {
@@ -966,7 +966,7 @@ int fabrics_config(const char *desc, int argc, char **argv)
 	return 0;
 }
 
-static int dim_operation(nvme_ctrl_t c, enum nvmf_dim_tas tas, const char *name)
+static int dim_operation(libnvme_ctrl_t c, enum nvmf_dim_tas tas, const char *name)
 {
 	static const char * const task[] = {
 		[NVMF_DIM_TAS_REGISTER]   = "register",
@@ -995,7 +995,7 @@ int fabrics_dim(const char *desc, int argc, char **argv)
 {
 	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
 	enum nvmf_dim_tas tas;
-	nvme_ctrl_t c;
+	libnvme_ctrl_t c;
 	char *p;
 	int ret;
 
@@ -1053,8 +1053,8 @@ int fabrics_dim(const char *desc, int argc, char **argv)
 	}
 
 	if (cfg.nqn) {
-		nvme_host_t h;
-		nvme_subsystem_t s;
+		libnvme_host_t h;
+		libnvme_subsystem_t s;
 		char *n = cfg.nqn;
 
 		while ((p = strsep(&n, ",")) != NULL) {

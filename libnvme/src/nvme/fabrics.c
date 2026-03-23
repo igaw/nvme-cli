@@ -336,7 +336,7 @@ static const struct libnvme_fabric_options default_supported_options = {
 
 #define MERGE_CFG_OPTION(c, n, o, d)			\
 	if ((c)->o == d) (c)->o = (n)->o
-static struct nvme_fabrics_config *merge_config(nvme_ctrl_t c,
+static struct nvme_fabrics_config *merge_config(libnvme_ctrl_t c,
 		const struct nvme_fabrics_config *cfg)
 {
 	struct nvme_fabrics_config *ctrl_cfg = libnvme_ctrl_get_config(c);
@@ -365,7 +365,7 @@ static struct nvme_fabrics_config *merge_config(nvme_ctrl_t c,
 
 #define UPDATE_CFG_OPTION(c, n, o, d)			\
 	if ((n)->o != d) (c)->o = (n)->o
-__public void nvmf_update_config(nvme_ctrl_t c, const struct nvme_fabrics_config *cfg)
+__public void nvmf_update_config(libnvme_ctrl_t c, const struct nvme_fabrics_config *cfg)
 {
 	struct nvme_fabrics_config *ctrl_cfg = libnvme_ctrl_get_config(c);
 
@@ -656,7 +656,7 @@ static int inet_pton_with_scope(struct nvme_global_ctx *ctx, int af,
 	return ret;
 }
 
-static bool traddr_is_hostname(struct nvme_global_ctx *ctx, nvme_ctrl_t c)
+static bool traddr_is_hostname(struct nvme_global_ctx *ctx, libnvme_ctrl_t c)
 {
 	struct sockaddr_storage addr;
 
@@ -669,7 +669,7 @@ static bool traddr_is_hostname(struct nvme_global_ctx *ctx, nvme_ctrl_t c)
 	return true;
 }
 
-static int build_options(nvme_host_t h, nvme_ctrl_t c, char **argstr)
+static int build_options(libnvme_host_t h, libnvme_ctrl_t c, char **argstr)
 {
 	struct nvme_fabrics_config *cfg = libnvme_ctrl_get_config(c);
 	const char *transport = libnvme_ctrl_get_transport(c);
@@ -960,11 +960,11 @@ static int __nvmf_add_ctrl(struct nvme_global_ctx *ctx, const char *argstr)
 	return -ENVME_CONNECT_PARSE;
 }
 
-static const char *lookup_context(struct nvme_global_ctx *ctx, nvme_ctrl_t c)
+static const char *lookup_context(struct nvme_global_ctx *ctx, libnvme_ctrl_t c)
 {
 
-	nvme_host_t h;
-	nvme_subsystem_t s;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
 
 	libnvme_for_each_host(ctx, h) {
 		libnvme_for_each_subsystem(h, s) {
@@ -984,10 +984,10 @@ static const char *lookup_context(struct nvme_global_ctx *ctx, nvme_ctrl_t c)
 	return NULL;
 }
 
-__public int nvmf_add_ctrl(nvme_host_t h, nvme_ctrl_t c,
+__public int nvmf_add_ctrl(libnvme_host_t h, libnvme_ctrl_t c,
 		  const struct nvme_fabrics_config *cfg)
 {
-	nvme_subsystem_t s;
+	libnvme_subsystem_t s;
 	const char *root_app, *app;
 	_cleanup_free_ char *argstr = NULL;
 	int ret;
@@ -998,7 +998,7 @@ __public int nvmf_add_ctrl(nvme_host_t h, nvme_ctrl_t c,
 	/* apply configuration from config file (JSON) */
 	s = nvme_lookup_subsystem(h, NULL, libnvme_ctrl_get_subsysnqn(c));
 	if (s) {
-		nvme_ctrl_t fc;
+		libnvme_ctrl_t fc;
 		struct nvmf_context fctx = {
 			.transport = libnvme_ctrl_get_transport(c),
 			.traddr = libnvme_ctrl_get_traddr(c),
@@ -1080,7 +1080,7 @@ __public int nvmf_add_ctrl(nvme_host_t h, nvme_ctrl_t c,
 	return libnvme_init_ctrl(h, c, ret);
 }
 
-__public int nvmf_connect_ctrl(nvme_ctrl_t c)
+__public int nvmf_connect_ctrl(libnvme_ctrl_t c)
 {
 	_cleanup_free_ char *argstr = NULL;
 	int ret;
@@ -1096,13 +1096,13 @@ __public int nvmf_connect_ctrl(nvme_ctrl_t c)
 	return 0;
 }
 
-static int nvmf_connect_disc_entry(nvme_host_t h,
+static int nvmf_connect_disc_entry(libnvme_host_t h,
 		struct nvmf_disc_log_entry *e,
 		struct nvmf_context *fctx,
 		const struct nvme_fabrics_config *cfg,
-		bool *discover, nvme_ctrl_t *cp)
+		bool *discover, libnvme_ctrl_t *cp)
 {
-	nvme_ctrl_t c;
+	libnvme_ctrl_t c;
 	int ret;
 
 	switch (e->trtype) {
@@ -1347,7 +1347,7 @@ static void sanitize_discovery_log_entry(struct nvmf_disc_log_entry *e)
 	}
 }
 
-__public int nvmf_get_discovery_log(nvme_ctrl_t c, struct nvmf_discovery_log **logp,
+__public int nvmf_get_discovery_log(libnvme_ctrl_t c, struct nvmf_discovery_log **logp,
 			   int max_retries)
 {
 	struct nvme_get_discovery_args args = {
@@ -1480,7 +1480,7 @@ static void nvmf_fill_die(struct nvmf_ext_die *die, struct libnvme_host *h,
  *
  * Return: 0 on success; on failure -1 is returned and errno is set
  */
-static int nvmf_dim(nvme_ctrl_t c, enum nvmf_dim_tas tas, __u8 trtype,
+static int nvmf_dim(libnvme_ctrl_t c, enum nvmf_dim_tas tas, __u8 trtype,
 		    __u8 adrfam, const char *reg_addr, union nvmf_tsas *tsas,
 		    __u32 *result)
 {
@@ -1579,7 +1579,7 @@ static int nvmf_dim(nvme_ctrl_t c, enum nvmf_dim_tas tas, __u8 trtype,
  * Return: The address family of the source address associated with the
  *   socket connected to the DC.
  */
-static __u8 nvme_get_adrfam(nvme_ctrl_t c)
+static __u8 nvme_get_adrfam(libnvme_ctrl_t c)
 {
 	struct sockaddr_storage addr;
 	__u8 adrfam = NVMF_ADDR_FAMILY_IP4;
@@ -1614,7 +1614,7 @@ static const char *dctype_str[] = {
  * sysfs. We must get them directly from the controller by performing an
  * identify command.
  */
-static int nvme_fetch_cntrltype_dctype_from_id(nvme_ctrl_t c)
+static int nvme_fetch_cntrltype_dctype_from_id(libnvme_ctrl_t c)
 {
 	_cleanup_free_ struct nvme_id_ctrl *id = NULL;
 	int ret;
@@ -1643,7 +1643,7 @@ static int nvme_fetch_cntrltype_dctype_from_id(nvme_ctrl_t c)
 	return 0;
 }
 
-__public bool nvmf_is_registration_supported(nvme_ctrl_t c)
+__public bool nvmf_is_registration_supported(libnvme_ctrl_t c)
 {
 	if (!c->cntrltype || !c->dctype)
 		if (nvme_fetch_cntrltype_dctype_from_id(c))
@@ -1652,7 +1652,7 @@ __public bool nvmf_is_registration_supported(nvme_ctrl_t c)
 	return !strcmp(c->dctype, "ddc") || !strcmp(c->dctype, "cdc");
 }
 
-__public int nvmf_register_ctrl(nvme_ctrl_t c, enum nvmf_dim_tas tas, __u32 *result)
+__public int nvmf_register_ctrl(libnvme_ctrl_t c, enum nvmf_dim_tas tas, __u32 *result)
 {
 	if (!nvmf_is_registration_supported(c))
 		return -ENOTSUP;
@@ -1808,10 +1808,10 @@ __public void nvmf_free_uri(struct nvme_fabrics_uri *uri)
 	free(uri);
 }
 
-static nvme_ctrl_t lookup_ctrl(nvme_host_t h, struct nvmf_context *fctx)
+static libnvme_ctrl_t lookup_ctrl(libnvme_host_t h, struct nvmf_context *fctx)
 {
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
 
 	libnvme_for_each_subsystem(h, s) {
 		c = nvme_ctrl_find(s, fctx);
@@ -1874,7 +1874,7 @@ static int set_discovery_kato(struct nvmf_context *fctx,
 
 static void nvme_parse_tls_args(const char *keyring, const char *tls_key,
 				const char *tls_key_identity,
-				struct nvme_fabrics_config *cfg, nvme_ctrl_t c)
+				struct nvme_fabrics_config *cfg, libnvme_ctrl_t c)
 {
 	if (keyring) {
 		char *endptr;
@@ -1906,8 +1906,8 @@ static int _nvmf_discovery(struct nvme_global_ctx *ctx,
 		struct libnvme_ctrl *c)
 {
 	_cleanup_free_ struct nvmf_discovery_log *log = NULL;
-	nvme_subsystem_t s = libnvme_ctrl_get_subsystem(c);
-	nvme_host_t h = libnvme_subsystem_get_host(s);
+	libnvme_subsystem_t s = libnvme_ctrl_get_subsystem(c);
+	libnvme_host_t h = libnvme_subsystem_get_host(s);
 	uint64_t numrec;
 	int err;
 
@@ -1936,10 +1936,10 @@ static int _nvmf_discovery(struct nvme_global_ctx *ctx,
 
 	for (int i = 0; i < numrec; i++) {
 		struct nvmf_disc_log_entry *e = &log->entries[i];
-		nvme_ctrl_t cl;
+		libnvme_ctrl_t cl;
 		bool discover = false;
 		bool disconnect;
-		nvme_ctrl_t child = { 0 };
+		libnvme_ctrl_t child = { 0 };
 		int tmo = fctx->cfg->keep_alive_tmo;
 		struct nvmf_context nfctx = *fctx;
 
@@ -2036,7 +2036,7 @@ __public const char *nvmf_get_default_trsvcid(const char *transport,
 	return NULL;
 }
 
-static bool is_persistent_discovery_ctrl(nvme_host_t h, nvme_ctrl_t c)
+static bool is_persistent_discovery_ctrl(libnvme_host_t h, libnvme_ctrl_t c)
 {
 	if (libnvme_host_is_pdc_enabled(h, DEFAULT_PDC_ENABLED))
 		return libnvme_ctrl_get_unique_discovery_ctrl(c);
@@ -2061,10 +2061,10 @@ retry:
 }
 
 static int __create_discovery_ctrl(struct nvme_global_ctx *ctx,
-		struct nvmf_context *fctx, nvme_host_t h,
+		struct nvmf_context *fctx, libnvme_host_t h,
 		struct nvme_fabrics_config *cfg, struct libnvme_ctrl **ctrl)
 {
-	nvme_ctrl_t c;
+	libnvme_ctrl_t c;
 	int tmo, ret;
 
 	ret = _nvme_create_ctrl(ctx, fctx, &c);
@@ -2094,7 +2094,7 @@ static int __create_discovery_ctrl(struct nvme_global_ctx *ctx,
 }
 
 static int nvmf_create_discovery_ctrl(struct nvme_global_ctx *ctx,
-		struct nvmf_context *fctx, nvme_host_t h,
+		struct nvmf_context *fctx, libnvme_host_t h,
 		struct nvme_fabrics_config *cfg,
 		struct libnvme_ctrl **ctrl)
 {
@@ -2156,12 +2156,12 @@ static int nvmf_create_discovery_ctrl(struct nvme_global_ctx *ctx,
 }
 
 int _discovery_config_json(struct nvme_global_ctx *ctx,
-		struct nvmf_context *fctx, nvme_host_t h, nvme_ctrl_t c,
+		struct nvmf_context *fctx, libnvme_host_t h, libnvme_ctrl_t c,
 		bool connect, bool force)
 {
 	struct nvmf_context nfctx = *fctx;
 	struct nvme_fabrics_config cfg;
-	nvme_ctrl_t cn;
+	libnvme_ctrl_t cn;
 	int ret = 0;
 
 	nfctx.transport = libnvme_ctrl_get_transport(c);
@@ -2286,9 +2286,9 @@ __public int nvmf_connect_config_json(struct nvme_global_ctx *ctx,
 {
 	const char *hnqn, *hid;
 	const char *transport;
-	nvme_host_t h;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c, _c;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c, _c;
 	int ret = 0, err;
 
 	err = lookup_host(ctx, fctx, &h);
@@ -2531,7 +2531,7 @@ static int nbft_connect(struct nvme_global_ctx *ctx,
 		struct nbft_info_subsystem_ns *ss,
 		struct nvme_fabrics_config *cfg)
 {
-	nvme_ctrl_t c;
+	libnvme_ctrl_t c;
 	int saved_log_level;
 	bool saved_log_tstamp;
 	bool saved_log_pid;
@@ -2617,7 +2617,7 @@ static int nbft_discovery(struct nvme_global_ctx *ctx,
 	for (i = 0; i < le64_to_cpu(log->numrec); i++) {
 		struct nvmf_disc_log_entry *e = &log->entries[i];
 		struct nvmf_context nfctx = *fctx;
-		nvme_ctrl_t cl;
+		libnvme_ctrl_t cl;
 		int tmo = defcfg->keep_alive_tmo;
 
 		nfctx.subsysnqn = e->subnqn;
@@ -2639,7 +2639,7 @@ static int nbft_discovery(struct nvme_global_ctx *ctx,
 			continue;
 
 		if (e->subtype == NVME_NQN_DISC) {
-			nvme_ctrl_t child;
+			libnvme_ctrl_t child;
 
 			ret = nvmf_connect_disc_entry(h, e, &nfctx,
 				defcfg, NULL, &child);
@@ -2817,7 +2817,7 @@ __public int nvmf_discovery_nbft(struct nvme_global_ctx *ctx,
 			struct nvmf_context nfctx = *fctx;
 			bool persistent = false;
 			bool linked = false;
-			nvme_ctrl_t c;
+			libnvme_ctrl_t c;
 
 			/* only perform discovery when no SSNS record references it */
 			for (ss = entry->nbft->subsystem_ns_list;

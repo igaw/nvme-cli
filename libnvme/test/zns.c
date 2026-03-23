@@ -21,7 +21,7 @@
 
 #include "nvme/private.h"
 
-static void show_zns_properties(nvme_ns_t n)
+static void show_zns_properties(libnvme_ns_t n)
 {
 	struct nvme_transport_handle *hdl;
 	struct nvme_passthru_cmd cmd;
@@ -75,10 +75,10 @@ static void show_zns_properties(nvme_ns_t n)
 int main()
 {
 	struct nvme_global_ctx *ctx;
-	nvme_subsystem_t s;
-	nvme_host_t h;
-	nvme_ctrl_t c;
-	nvme_ns_t n;
+	libnvme_subsystem_t s;
+	libnvme_host_t h;
+	libnvme_ctrl_t c;
+	libnvme_ns_t n;
 	int err;
 
 	ctx = libnvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);

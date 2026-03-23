@@ -93,10 +93,10 @@ struct nvme_args {
 		OPT_END()                                                              \
 	}
 
-static inline bool nvme_is_multipath(nvme_subsystem_t s)
+static inline bool nvme_is_multipath(libnvme_subsystem_t s)
 {
-	nvme_ns_t n;
-	nvme_path_t p;
+	libnvme_ns_t n;
+	libnvme_path_t p;
 
 	libnvme_subsystem_for_each_ns(s, n)
 		libnvme_namespace_for_each_path(n, p)

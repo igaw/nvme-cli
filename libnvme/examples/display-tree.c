@@ -17,11 +17,11 @@
 int main()
 {
 	struct nvme_global_ctx *ctx;
-	nvme_host_t h;
-	nvme_subsystem_t s, _s;
-	nvme_ctrl_t c, _c;
-	nvme_path_t p, _p;
-	nvme_ns_t n, _n;
+	libnvme_host_t h;
+	libnvme_subsystem_t s, _s;
+	libnvme_ctrl_t c, _c;
+	libnvme_path_t p, _p;
+	libnvme_ns_t n, _n;
 	int err;
 
 	ctx = libnvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);

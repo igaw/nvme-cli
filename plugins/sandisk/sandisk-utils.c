@@ -44,8 +44,8 @@ int sndk_get_pci_ids(struct nvme_global_ctx *ctx, struct nvme_transport_handle *
 			   uint32_t *device_id, uint32_t *vendor_id)
 {
 	char vid[256], did[256], id[32];
-	nvme_ctrl_t c = NULL;
-	nvme_ns_t n = NULL;
+	libnvme_ctrl_t c = NULL;
+	libnvme_ns_t n = NULL;
 	const char *name;
 	int fd, ret;
 

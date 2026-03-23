@@ -27,8 +27,8 @@
 
 #include "nvme/private.h"
 
-static bool nvme_match_subsysnqn_filter(nvme_subsystem_t s,
-		nvme_ctrl_t c, nvme_ns_t ns, void *f_args)
+static bool nvme_match_subsysnqn_filter(libnvme_subsystem_t s,
+		libnvme_ctrl_t c, libnvme_ns_t ns, void *f_args)
 {
 	char *nqn_match = f_args;
 
@@ -37,7 +37,7 @@ static bool nvme_match_subsysnqn_filter(nvme_subsystem_t s,
 	return true;
 }
 
-static int test_ctrl(nvme_ctrl_t c)
+static int test_ctrl(libnvme_ctrl_t c)
 {
 	static __u8 buf[0x1000];
 
@@ -320,7 +320,7 @@ static int test_ctrl(nvme_ctrl_t c)
 	return 0;
 }
 
-static int test_namespace(nvme_ns_t n)
+static int test_namespace(libnvme_ns_t n)
 {
 	int ret, nsid = libnvme_ns_get_nsid(n);
 	struct nvme_transport_handle *hdl;
@@ -381,11 +381,11 @@ static void print_hex(const uint8_t *x, int len)
 int main(int argc, char **argv)
 {
 	struct nvme_global_ctx *ctx;
-	nvme_host_t h;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
-	nvme_path_t p;
-	nvme_ns_t n;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
+	libnvme_path_t p;
+	libnvme_ns_t n;
 	int err;
 	const char *ctrl = "nvme4";
 	const char *nqn_match = "testnqn";

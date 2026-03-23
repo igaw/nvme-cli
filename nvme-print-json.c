@@ -2661,10 +2661,10 @@ static void json_nvme_fdp_ruh_status(struct nvme_fdp_ruh_status *status, size_t 
 	json_print(r);
 }
 
-static unsigned int json_print_nvme_subsystem_multipath(nvme_subsystem_t s, json_object *paths)
+static unsigned int json_print_nvme_subsystem_multipath(libnvme_subsystem_t s, json_object *paths)
 {
-	nvme_ns_t n;
-	nvme_path_t p;
+	libnvme_ns_t n;
+	libnvme_path_t p;
 	unsigned int i = 0;
 
 	n = libnvme_subsystem_first_ns(s);
@@ -2673,7 +2673,7 @@ static unsigned int json_print_nvme_subsystem_multipath(nvme_subsystem_t s, json
 
 	libnvme_namespace_for_each_path(n, p) {
 		struct json_object *path_attrs;
-		nvme_ctrl_t c = libnvme_path_get_ctrl(p);
+		libnvme_ctrl_t c = libnvme_path_get_ctrl(p);
 
 		path_attrs = json_create_object();
 		obj_add_str(path_attrs, "Name", libnvme_ctrl_get_name(c));
@@ -2688,10 +2688,10 @@ static unsigned int json_print_nvme_subsystem_multipath(nvme_subsystem_t s, json
 	return i;
 }
 
-static void json_print_nvme_subsystem_ctrls(nvme_subsystem_t s,
+static void json_print_nvme_subsystem_ctrls(libnvme_subsystem_t s,
 					    json_object *paths)
 {
-	nvme_ctrl_t c;
+	libnvme_ctrl_t c;
 
 	libnvme_subsystem_for_each_ctrl(s, c) {
 		struct json_object *path_attrs;
@@ -2711,10 +2711,10 @@ static void json_print_nvme_subsystem_list(struct nvme_global_ctx *ctx,
 	struct json_object *host_attrs, *subsystem_attrs;
 	struct json_object *subsystems, *paths;
 	struct json_object *a = json_create_array();
-	nvme_host_t h;
+	libnvme_host_t h;
 
 	libnvme_for_each_host(ctx, h) {
-		nvme_subsystem_t s;
+		libnvme_subsystem_t s;
 		const char *hostid;
 
 		host_attrs = json_create_object();
@@ -2724,7 +2724,7 @@ static void json_print_nvme_subsystem_list(struct nvme_global_ctx *ctx,
 			obj_add_str(host_attrs, "HostID", hostid);
 		subsystems = json_create_array();
 		libnvme_for_each_subsystem(h, s) {
-			nvme_ctrl_t c;
+			libnvme_ctrl_t c;
 			bool no_ctrl = true;
 
 			libnvme_subsystem_for_each_ctrl(s, c)
@@ -4621,11 +4621,11 @@ static void json_support_log(struct nvme_supported_log_pages *support_log,
 	json_print(r);
 }
 
-static void json_print_detail_list_multipath(nvme_subsystem_t s,
+static void json_print_detail_list_multipath(libnvme_subsystem_t s,
 		struct json_object *jss)
 {
-	nvme_ns_t n;
-	nvme_path_t p;
+	libnvme_ns_t n;
+	libnvme_path_t p;
 	struct json_object *jnss = json_create_array();
 
 	libnvme_subsystem_for_each_ns(s, n) {
@@ -4645,7 +4645,7 @@ static void json_print_detail_list_multipath(nvme_subsystem_t s,
 		obj_add_int(jns, "SectorSize", lba);
 
 		libnvme_namespace_for_each_path(n, p) {
-			nvme_ctrl_t c;
+			libnvme_ctrl_t c;
 			struct json_object *jpath = json_create_object();
 
 			obj_add_str(jpath, "Path", libnvme_path_get_name(p));
@@ -4675,10 +4675,10 @@ static void json_print_detail_list_multipath(nvme_subsystem_t s,
 	obj_add_obj(jss, "Namespaces", jnss);
 }
 
-static void json_print_detail_list(nvme_subsystem_t s, struct json_object *jss)
+static void json_print_detail_list(libnvme_subsystem_t s, struct json_object *jss)
 {
-	nvme_ctrl_t c;
-	nvme_ns_t n;
+	libnvme_ctrl_t c;
+	libnvme_ns_t n;
 	struct json_object *jctrls = json_create_array();
 
 	libnvme_subsystem_for_each_ctrl(s, c) {
@@ -4723,8 +4723,8 @@ static void json_detail_list_v2(struct nvme_global_ctx *ctx)
 	struct json_object *r = json_create_object();
 	struct json_object *jdev = json_create_array();
 
-	nvme_host_t h;
-	nvme_subsystem_t s;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
 
 	libnvme_for_each_host(ctx, h) {
 		struct json_object *hss = json_create_object();
@@ -4764,11 +4764,11 @@ static void json_detail_list(struct nvme_global_ctx *ctx)
 	struct json_object *r = json_create_object();
 	struct json_object *jdev = json_create_array();
 
-	nvme_host_t h;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
-	nvme_path_t p;
-	nvme_ns_t n;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
+	libnvme_path_t p;
+	libnvme_ns_t n;
 
 	libnvme_for_each_host(ctx, h) {
 		struct json_object *hss = json_create_object();
@@ -4865,7 +4865,7 @@ static void json_detail_list(struct nvme_global_ctx *ctx)
 	json_print(r);
 }
 
-static struct json_object *json_list_item_obj(nvme_ns_t n)
+static struct json_object *json_list_item_obj(libnvme_ns_t n)
 {
 	struct json_object *r = json_create_object();
 	char devname[NAME_LEN] = { 0 };
@@ -4896,10 +4896,10 @@ static void json_simple_list(struct nvme_global_ctx *ctx)
 	struct json_object *r = json_create_object();
 	struct json_object *jdevices = json_create_array();
 
-	nvme_host_t h;
-	nvme_subsystem_t s;
-	nvme_ctrl_t c;
-	nvme_ns_t n;
+	libnvme_host_t h;
+	libnvme_subsystem_t s;
+	libnvme_ctrl_t c;
+	libnvme_ns_t n;
 
 	libnvme_for_each_host(ctx, h) {
 		libnvme_for_each_subsystem(h, s) {
@@ -4918,7 +4918,7 @@ static void json_simple_list(struct nvme_global_ctx *ctx)
 	json_print(r);
 }
 
-static void json_list_item(nvme_ns_t n, struct table *t)
+static void json_list_item(libnvme_ns_t n, struct table *t)
 {
 	struct json_object *r = json_list_item_obj(n);
 
@@ -4936,11 +4936,11 @@ static void json_print_list_items(struct nvme_global_ctx *ctx)
 		json_simple_list(ctx);
 }
 
-static unsigned int json_subsystem_topology_multipath(nvme_subsystem_t s,
+static unsigned int json_subsystem_topology_multipath(libnvme_subsystem_t s,
 						      json_object *namespaces)
 {
-	nvme_ns_t n;
-	nvme_path_t p;
+	libnvme_ns_t n;
+	libnvme_path_t p;
 	unsigned int i = 0;
 	const char *iopolicy = libnvme_subsystem_get_iopolicy(s);
 
@@ -4956,7 +4956,7 @@ static unsigned int json_subsystem_topology_multipath(nvme_subsystem_t s,
 		libnvme_namespace_for_each_path(n, p) {
 			struct json_object *path_attrs;
 			struct json_object *ctrls, *ctrl_attrs;
-			nvme_ctrl_t c;
+			libnvme_ctrl_t c;
 
 			path_attrs = json_create_object();
 			obj_add_str(path_attrs, "Path", libnvme_path_get_name(p));
@@ -4994,11 +4994,11 @@ static unsigned int json_subsystem_topology_multipath(nvme_subsystem_t s,
 	return i;
 }
 
-static void json_print_nvme_subsystem_topology(nvme_subsystem_t s,
+static void json_print_nvme_subsystem_topology(libnvme_subsystem_t s,
 					       json_object *namespaces)
 {
-	nvme_ctrl_t c;
-	nvme_ns_t n;
+	libnvme_ctrl_t c;
+	libnvme_ns_t n;
 
 	libnvme_subsystem_for_each_ctrl(s, c) {
 		libnvme_ctrl_for_each_ns(c, n) {
@@ -5033,10 +5033,10 @@ static void json_simple_topology(struct nvme_global_ctx *ctx)
 	struct json_object *host_attrs, *subsystem_attrs;
 	struct json_object *subsystems, *namespaces;
 	struct json_object *a = json_create_array();
-	nvme_host_t h;
+	libnvme_host_t h;
 
 	libnvme_for_each_host(ctx, h) {
-		nvme_subsystem_t s;
+		libnvme_subsystem_t s;
 		const char *hostid;
 
 		host_attrs = json_create_object();
@@ -5247,7 +5247,7 @@ static void json_discovery_log(struct nvmf_discovery_log *log, int numrec)
 static void json_discovery_log(struct nvmf_discovery_log *log, int numrec) {}
 #endif
 
-static void json_connect_msg(nvme_ctrl_t c)
+static void json_connect_msg(libnvme_ctrl_t c)
 {
 	struct json_object *r = json_create_object();
 
