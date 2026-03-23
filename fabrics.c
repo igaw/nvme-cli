@@ -192,7 +192,7 @@ static bool cb_decide_retry(struct nvmf_context *fctx, int err,
 }
 
 static void cb_connected(struct nvmf_context *fctx,
-		struct nvme_ctrl *c, void *user_data)
+		struct libnvme_ctrl *c, void *user_data)
 {
 	struct cb_fabrics_data *cfd = user_data;
 
@@ -218,7 +218,7 @@ static void cb_connected(struct nvmf_context *fctx,
 }
 
 static void cb_already_connected(struct nvmf_context *fctx,
-		struct nvme_host *host, const char *subsysnqn,
+		struct libnvme_host *host, const char *subsysnqn,
 		const char *transport, const char *traddr,
 		const char *trsvcid, void *user_data)
 {

@@ -5,7 +5,7 @@
 
 libnvme tree object interface
 
-.. c:function:: void libnvme_set_application (struct nvme_global_ctx *ctx, const char *a)
+.. c:function:: void nvme_set_application (struct nvme_global_ctx *ctx, const char *a)
 
    Specify managing application
 
@@ -22,7 +22,7 @@ libnvme tree object interface
 Sets the managing application string for **r**.
 
 
-.. c:function:: const char * libnvme_get_application (struct nvme_global_ctx *ctx)
+.. c:function:: const char * nvme_get_application (struct nvme_global_ctx *ctx)
 
    Get managing application
 
@@ -36,7 +36,7 @@ Sets the managing application string for **r**.
 Returns the managing application string for **r** or NULL if not set.
 
 
-.. c:function:: void libnvme_skip_namespaces (struct nvme_global_ctx *ctx)
+.. c:function:: void nvme_skip_namespaces (struct nvme_global_ctx *ctx)
 
    Skip namespace scanning
 
@@ -50,7 +50,7 @@ Returns the managing application string for **r** or NULL if not set.
 Sets a flag to skip namespaces during scanning.
 
 
-.. c:function:: void libnvme_release_fds (struct nvme_global_ctx *ctx)
+.. c:function:: void nvme_release_fds (struct nvme_global_ctx *ctx)
 
    Close all opened file descriptors in the tree
 
@@ -66,7 +66,7 @@ of opened nvme devices. This API can be used to close and
 clear all cached fds in the tree.
 
 
-.. c:function:: nvme_host_t libnvme_first_host (struct nvme_global_ctx *ctx)
+.. c:function:: nvme_host_t nvme_first_host (struct nvme_global_ctx *ctx)
 
    Start host iterator
 
@@ -80,7 +80,7 @@ clear all cached fds in the tree.
 First :c:type:`nvme_host_t` object in an iterator
 
 
-.. c:function:: nvme_host_t libnvme_next_host (struct nvme_global_ctx *ctx, nvme_host_t h)
+.. c:function:: nvme_host_t nvme_next_host (struct nvme_global_ctx *ctx, nvme_host_t h)
 
    Next host iterator
 
@@ -97,7 +97,7 @@ First :c:type:`nvme_host_t` object in an iterator
 Next :c:type:`nvme_host_t` object in an iterator
 
 
-.. c:function:: struct nvme_global_ctx * libnvme_host_get_global_ctx (nvme_host_t h)
+.. c:function:: struct nvme_global_ctx * nvme_host_get_global_ctx (nvme_host_t h)
 
    Returns nvme_global_ctx object
 
@@ -138,7 +138,7 @@ DH-HMAC-CHAP host key or NULL if not set
   DH-HMAC-CHAP Key to set or NULL to clear existing key
 
 
-.. c:function:: void libnvme_host_set_pdc_enabled (nvme_host_t h, bool enabled)
+.. c:function:: void nvme_host_set_pdc_enabled (nvme_host_t h, bool enabled)
 
    Set Persistent Discovery Controller flag
 
@@ -152,12 +152,12 @@ DH-HMAC-CHAP host key or NULL if not set
 
 **Description**
 
-When libnvme_host_set_pdc_enabled() is not used to set the PDC flag,
-libnvme_host_is_pdc_enabled() will return the default value which was
+When nvme_host_set_pdc_enabled() is not used to set the PDC flag,
+nvme_host_is_pdc_enabled() will return the default value which was
 passed into the function and not the undefined flag value.
 
 
-.. c:function:: bool libnvme_host_is_pdc_enabled (nvme_host_t h, bool fallback)
+.. c:function:: bool nvme_host_is_pdc_enabled (nvme_host_t h, bool fallback)
 
    Is Persistenct Discovery Controller enabled
 
@@ -168,7 +168,7 @@ passed into the function and not the undefined flag value.
 
 ``bool fallback``
   The fallback default value of the flag when
-  **libnvme_host_set_pdc_enabled** has not be used
+  **nvme_host_set_pdc_enabled** has not be used
   to set the flag.
 
 **Return**
@@ -204,7 +204,7 @@ hostnqn/hostid are NULL.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int libnvme_host_get_ids (struct nvme_global_ctx *ctx, const char *hostnqn_arg, const char *hostid_arg, char **hostnqn, char **hostid)
+.. c:function:: int nvme_host_get_ids (struct nvme_global_ctx *ctx, const char *hostnqn_arg, const char *hostid_arg, char **hostnqn, char **hostid)
 
    Retrieve host ids from various sources
 
@@ -227,7 +227,7 @@ hostnqn/hostid are NULL.
 
 **Description**
 
-libnvme_host_get_ids figures out which hostnqn/hostid is to be used.
+nvme_host_get_ids figures out which hostnqn/hostid is to be used.
 There are several sources where this information can be retrieved.
 
 The order is:
@@ -252,7 +252,7 @@ The order is:
  which the caller needs to free), or negative error code otherwise.
 
 
-.. c:function:: nvme_subsystem_t libnvme_first_subsystem (nvme_host_t h)
+.. c:function:: nvme_subsystem_t nvme_first_subsystem (nvme_host_t h)
 
    Start subsystem iterator
 
@@ -266,7 +266,7 @@ The order is:
 first :c:type:`nvme_subsystem_t` object in an iterator
 
 
-.. c:function:: nvme_subsystem_t libnvme_next_subsystem (nvme_host_t h, nvme_subsystem_t s)
+.. c:function:: nvme_subsystem_t nvme_next_subsystem (nvme_host_t h, nvme_subsystem_t s)
 
    Next subsystem iterator
 
@@ -310,7 +310,7 @@ Returns an :c:type:`nvme_subsystem_t` object in **h** base on **name** (if prese
 and **subsysnqn** or create one if not found.
 
 
-.. c:function:: void libnvme_free_subsystem (struct nvme_subsystem *s)
+.. c:function:: void nvme_free_subsystem (struct nvme_subsystem *s)
 
    Free a subsystem
 
@@ -324,7 +324,7 @@ and **subsysnqn** or create one if not found.
 Frees **s** and all related objects.
 
 
-.. c:function:: nvme_host_t libnvme_subsystem_get_host (nvme_subsystem_t s)
+.. c:function:: nvme_host_t nvme_subsystem_get_host (nvme_subsystem_t s)
 
    Returns nvme_host_t object
 
@@ -338,7 +338,7 @@ Frees **s** and all related objects.
 :c:type:`nvme_host_t` object from **s**
 
 
-.. c:function:: nvme_ns_t libnvme_ctrl_first_ns (nvme_ctrl_t c)
+.. c:function:: nvme_ns_t nvme_ctrl_first_ns (nvme_ctrl_t c)
 
    Start namespace iterator
 
@@ -352,7 +352,7 @@ Frees **s** and all related objects.
 First :c:type:`nvme_ns_t` object of an **c** iterator
 
 
-.. c:function:: nvme_ns_t libnvme_ctrl_next_ns (nvme_ctrl_t c, nvme_ns_t n)
+.. c:function:: nvme_ns_t nvme_ctrl_next_ns (nvme_ctrl_t c, nvme_ns_t n)
 
    Next namespace iterator
 
@@ -369,7 +369,7 @@ First :c:type:`nvme_ns_t` object of an **c** iterator
 Next nvme_ns_t object of an **c** iterator
 
 
-.. c:function:: nvme_path_t libnvme_ctrl_first_path (nvme_ctrl_t c)
+.. c:function:: nvme_path_t nvme_ctrl_first_path (nvme_ctrl_t c)
 
    Start path iterator
 
@@ -383,7 +383,7 @@ Next nvme_ns_t object of an **c** iterator
 First :c:type:`nvme_path_t` object of an **c** iterator
 
 
-.. c:function:: nvme_path_t libnvme_ctrl_next_path (nvme_ctrl_t c, nvme_path_t p)
+.. c:function:: nvme_path_t nvme_ctrl_next_path (nvme_ctrl_t c, nvme_path_t p)
 
    Next path iterator
 
@@ -400,7 +400,7 @@ First :c:type:`nvme_path_t` object of an **c** iterator
 Next :c:type:`nvme_path_t` object of an **c** iterator
 
 
-.. c:function:: nvme_ctrl_t libnvme_subsystem_first_ctrl (nvme_subsystem_t s)
+.. c:function:: nvme_ctrl_t nvme_subsystem_first_ctrl (nvme_subsystem_t s)
 
    First ctrl iterator
 
@@ -414,7 +414,7 @@ Next :c:type:`nvme_path_t` object of an **c** iterator
 First controller of an **s** iterator
 
 
-.. c:function:: nvme_ctrl_t libnvme_subsystem_next_ctrl (nvme_subsystem_t s, nvme_ctrl_t c)
+.. c:function:: nvme_ctrl_t nvme_subsystem_next_ctrl (nvme_subsystem_t s, nvme_ctrl_t c)
 
    Next ctrl iterator
 
@@ -431,7 +431,7 @@ First controller of an **s** iterator
 Next controller of an **s** iterator
 
 
-.. c:function:: nvme_path_t libnvme_namespace_first_path (nvme_ns_t ns)
+.. c:function:: nvme_path_t nvme_namespace_first_path (nvme_ns_t ns)
 
    Start path iterator
 
@@ -445,7 +445,7 @@ Next controller of an **s** iterator
 First :c:type:`nvme_path_t` object of an **ns** iterator
 
 
-.. c:function:: nvme_path_t libnvme_namespace_next_path (nvme_ns_t ns, nvme_path_t p)
+.. c:function:: nvme_path_t nvme_namespace_next_path (nvme_ns_t ns, nvme_path_t p)
 
    Next path iterator
 
@@ -500,7 +500,7 @@ to NULL will be ignored.
 true if there's a match, false otherwise.
 
 
-.. c:function:: int libnvme_create_ctrl (struct nvme_global_ctx *ctx, const char *subsysnqn, const char *transport, const char *traddr, const char *host_traddr, const char *host_iface, const char *trsvcid, nvme_ctrl_t *c)
+.. c:function:: int nvme_create_ctrl (struct nvme_global_ctx *ctx, const char *subsysnqn, const char *transport, const char *traddr, const char *host_traddr, const char *host_iface, const char *trsvcid, nvme_ctrl_t *c)
 
    Allocate an unconnected NVMe controller
 
@@ -532,14 +532,14 @@ true if there's a match, false otherwise.
 
 **Description**
 
-Creates an unconnected controller to be used for libnvme_add_ctrl().
+Creates an unconnected controller to be used for nvme_add_ctrl().
 
 **Return**
 
 0 on success or negative error code otherwise
 
 
-.. c:function:: nvme_ns_t libnvme_subsystem_first_ns (nvme_subsystem_t s)
+.. c:function:: nvme_ns_t nvme_subsystem_first_ns (nvme_subsystem_t s)
 
    Start namespace iterator
 
@@ -553,7 +553,7 @@ Creates an unconnected controller to be used for libnvme_add_ctrl().
 First :c:type:`nvme_ns_t` object of an **s** iterator
 
 
-.. c:function:: nvme_ns_t libnvme_subsystem_next_ns (nvme_subsystem_t s, nvme_ns_t n)
+.. c:function:: nvme_ns_t nvme_subsystem_next_ns (nvme_subsystem_t s, nvme_ns_t n)
 
    Next namespace iterator
 
@@ -570,9 +570,9 @@ First :c:type:`nvme_ns_t` object of an **s** iterator
 Next :c:type:`nvme_ns_t` object of an **s** iterator
 
 
-.. c:macro:: libnvme_for_each_host_safe
+.. c:macro:: nvme_for_each_host_safe
 
-``libnvme_for_each_host_safe (r, h, _h)``
+``nvme_for_each_host_safe (r, h, _h)``
 
    Traverse host list
 
@@ -588,9 +588,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   Temporary :c:type:`nvme_host_t` object
 
 
-.. c:macro:: libnvme_for_each_host
+.. c:macro:: nvme_for_each_host
 
-``libnvme_for_each_host (r, h)``
+``nvme_for_each_host (r, h)``
 
    Traverse host list
 
@@ -603,9 +603,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   :c:type:`nvme_host_t` object
 
 
-.. c:macro:: libnvme_for_each_subsystem_safe
+.. c:macro:: nvme_for_each_subsystem_safe
 
-``libnvme_for_each_subsystem_safe (h, s, _s)``
+``nvme_for_each_subsystem_safe (h, s, _s)``
 
    Traverse subsystems
 
@@ -621,9 +621,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   Temporary :c:type:`nvme_subsystem_t` object
 
 
-.. c:macro:: libnvme_for_each_subsystem
+.. c:macro:: nvme_for_each_subsystem
 
-``libnvme_for_each_subsystem (h, s)``
+``nvme_for_each_subsystem (h, s)``
 
    Traverse subsystems
 
@@ -636,9 +636,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   :c:type:`nvme_subsystem_t` object
 
 
-.. c:macro:: libnvme_subsystem_for_each_ctrl_safe
+.. c:macro:: nvme_subsystem_for_each_ctrl_safe
 
-``libnvme_subsystem_for_each_ctrl_safe (s, c, _c)``
+``nvme_subsystem_for_each_ctrl_safe (s, c, _c)``
 
    Traverse controllers
 
@@ -654,9 +654,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   A :c:type:`nvme_ctrl_t_node` to use as temporary storage
 
 
-.. c:macro:: libnvme_subsystem_for_each_ctrl
+.. c:macro:: nvme_subsystem_for_each_ctrl
 
-``libnvme_subsystem_for_each_ctrl (s, c)``
+``nvme_subsystem_for_each_ctrl (s, c)``
 
    Traverse controllers
 
@@ -669,9 +669,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   Controller instance
 
 
-.. c:macro:: libnvme_ctrl_for_each_ns_safe
+.. c:macro:: nvme_ctrl_for_each_ns_safe
 
-``libnvme_ctrl_for_each_ns_safe (c, n, _n)``
+``nvme_ctrl_for_each_ns_safe (c, n, _n)``
 
    Traverse namespaces
 
@@ -687,9 +687,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   A :c:type:`nvme_ns_t_node` to use as temporary storage
 
 
-.. c:macro:: libnvme_ctrl_for_each_ns
+.. c:macro:: nvme_ctrl_for_each_ns
 
-``libnvme_ctrl_for_each_ns (c, n)``
+``nvme_ctrl_for_each_ns (c, n)``
 
    Traverse namespaces
 
@@ -702,9 +702,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   :c:type:`nvme_ns_t` object
 
 
-.. c:macro:: libnvme_ctrl_for_each_path_safe
+.. c:macro:: nvme_ctrl_for_each_path_safe
 
-``libnvme_ctrl_for_each_path_safe (c, p, _p)``
+``nvme_ctrl_for_each_path_safe (c, p, _p)``
 
    Traverse paths
 
@@ -720,9 +720,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   A :c:type:`nvme_path_t_node` to use as temporary storage
 
 
-.. c:macro:: libnvme_ctrl_for_each_path
+.. c:macro:: nvme_ctrl_for_each_path
 
-``libnvme_ctrl_for_each_path (c, p)``
+``nvme_ctrl_for_each_path (c, p)``
 
    Traverse paths
 
@@ -735,9 +735,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   :c:type:`nvme_path_t` object
 
 
-.. c:macro:: libnvme_subsystem_for_each_ns_safe
+.. c:macro:: nvme_subsystem_for_each_ns_safe
 
-``libnvme_subsystem_for_each_ns_safe (s, n, _n)``
+``nvme_subsystem_for_each_ns_safe (s, n, _n)``
 
    Traverse namespaces
 
@@ -753,9 +753,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   A :c:type:`nvme_ns_t_node` to use as temporary storage
 
 
-.. c:macro:: libnvme_subsystem_for_each_ns
+.. c:macro:: nvme_subsystem_for_each_ns
 
-``libnvme_subsystem_for_each_ns (s, n)``
+``nvme_subsystem_for_each_ns (s, n)``
 
    Traverse namespaces
 
@@ -768,9 +768,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   :c:type:`nvme_ns_t` object
 
 
-.. c:macro:: libnvme_namespace_for_each_path_safe
+.. c:macro:: nvme_namespace_for_each_path_safe
 
-``libnvme_namespace_for_each_path_safe (n, p, _p)``
+``nvme_namespace_for_each_path_safe (n, p, _p)``
 
    Traverse paths
 
@@ -786,9 +786,9 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   A :c:type:`nvme_path_t_node` to use as temporary storage
 
 
-.. c:macro:: libnvme_namespace_for_each_path
+.. c:macro:: nvme_namespace_for_each_path
 
-``libnvme_namespace_for_each_path (n, p)``
+``nvme_namespace_for_each_path (n, p)``
 
    Traverse paths
 
@@ -801,7 +801,7 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
   :c:type:`nvme_path_t` object
 
 
-.. c:function:: int libnvme_ns_get_nsid (nvme_ns_t n)
+.. c:function:: int nvme_ns_get_nsid (nvme_ns_t n)
 
    NSID of a namespace
 
@@ -815,7 +815,7 @@ Next :c:type:`nvme_ns_t` object of an **s** iterator
 NSID of **n**
 
 
-.. c:function:: int libnvme_ns_get_lba_size (nvme_ns_t n)
+.. c:function:: int nvme_ns_get_lba_size (nvme_ns_t n)
 
    LBA size of a namespace
 
@@ -829,7 +829,7 @@ NSID of **n**
 LBA size of **n**
 
 
-.. c:function:: int libnvme_ns_get_meta_size (nvme_ns_t n)
+.. c:function:: int nvme_ns_get_meta_size (nvme_ns_t n)
 
    Metadata size of a namespace
 
@@ -843,7 +843,7 @@ LBA size of **n**
 Metadata size of **n**
 
 
-.. c:function:: uint64_t libnvme_ns_get_lba_count (nvme_ns_t n)
+.. c:function:: uint64_t nvme_ns_get_lba_count (nvme_ns_t n)
 
    LBA count of a namespace
 
@@ -857,7 +857,7 @@ Metadata size of **n**
 LBA count of **n**
 
 
-.. c:function:: uint64_t libnvme_ns_get_lba_util (nvme_ns_t n)
+.. c:function:: uint64_t nvme_ns_get_lba_util (nvme_ns_t n)
 
    LBA utilization of a namespace
 
@@ -871,7 +871,7 @@ LBA count of **n**
 LBA utilization of **n**
 
 
-.. c:function:: enum nvme_csi libnvme_ns_get_csi (nvme_ns_t n)
+.. c:function:: enum nvme_csi nvme_ns_get_csi (nvme_ns_t n)
 
    Command set identifier of a namespace
 
@@ -885,7 +885,7 @@ LBA utilization of **n**
 The namespace's command set identifier in use
 
 
-.. c:function:: const uint8_t * libnvme_ns_get_eui64 (nvme_ns_t n)
+.. c:function:: const uint8_t * nvme_ns_get_eui64 (nvme_ns_t n)
 
    64-bit eui of a namespace
 
@@ -899,7 +899,7 @@ The namespace's command set identifier in use
 A pointer to the 64-bit eui
 
 
-.. c:function:: const uint8_t * libnvme_ns_get_nguid (nvme_ns_t n)
+.. c:function:: const uint8_t * nvme_ns_get_nguid (nvme_ns_t n)
 
    128-bit nguid of a namespace
 
@@ -913,7 +913,7 @@ A pointer to the 64-bit eui
 A pointer to the 128-bit nguid
 
 
-.. c:function:: void libnvme_ns_get_uuid (nvme_ns_t n, unsigned char out[NVME_UUID_LEN])
+.. c:function:: void nvme_ns_get_uuid (nvme_ns_t n, unsigned char out[NVME_UUID_LEN])
 
    UUID of a namespace
 
@@ -930,7 +930,7 @@ A pointer to the 128-bit nguid
 Copies the namespace's uuid into **out**
 
 
-.. c:function:: const char * libnvme_ns_get_sysfs_dir (nvme_ns_t n)
+.. c:function:: const char * nvme_ns_get_sysfs_dir (nvme_ns_t n)
 
    sysfs directory of a namespace
 
@@ -944,7 +944,7 @@ Copies the namespace's uuid into **out**
 sysfs directory name of **n**
 
 
-.. c:function:: const char * libnvme_ns_get_name (nvme_ns_t n)
+.. c:function:: const char * nvme_ns_get_name (nvme_ns_t n)
 
    sysfs name of a namespace
 
@@ -958,7 +958,7 @@ sysfs directory name of **n**
 sysfs name of **n**
 
 
-.. c:function:: const char * libnvme_ns_get_generic_name (nvme_ns_t n)
+.. c:function:: const char * nvme_ns_get_generic_name (nvme_ns_t n)
 
    Returns name of generic namespace chardev.
 
@@ -972,7 +972,7 @@ sysfs name of **n**
 Name of generic namespace chardev
 
 
-.. c:function:: const char * libnvme_ns_get_firmware (nvme_ns_t n)
+.. c:function:: const char * nvme_ns_get_firmware (nvme_ns_t n)
 
    Firmware string of a namespace
 
@@ -986,7 +986,7 @@ Name of generic namespace chardev
 Firmware string of **n**
 
 
-.. c:function:: const char * libnvme_ns_get_serial (nvme_ns_t n)
+.. c:function:: const char * nvme_ns_get_serial (nvme_ns_t n)
 
    Serial number of a namespace
 
@@ -1000,7 +1000,7 @@ Firmware string of **n**
 Serial number string of **n**
 
 
-.. c:function:: const char * libnvme_ns_get_model (nvme_ns_t n)
+.. c:function:: const char * nvme_ns_get_model (nvme_ns_t n)
 
    Model of a namespace
 
@@ -1014,7 +1014,7 @@ Serial number string of **n**
 Model string of **n**
 
 
-.. c:function:: nvme_subsystem_t libnvme_ns_get_subsystem (nvme_ns_t n)
+.. c:function:: nvme_subsystem_t nvme_ns_get_subsystem (nvme_ns_t n)
 
    :c:type:`nvme_subsystem_t` of a namespace
 
@@ -1028,7 +1028,7 @@ Model string of **n**
 nvme_subsystem_t object of **n**
 
 
-.. c:function:: nvme_ctrl_t libnvme_ns_get_ctrl (nvme_ns_t n)
+.. c:function:: nvme_ctrl_t nvme_ns_get_ctrl (nvme_ns_t n)
 
    :c:type:`nvme_ctrl_t` of a namespace
 
@@ -1046,7 +1046,7 @@ nvme_ctrl_t object may be NULL for a multipathed namespace
 nvme_ctrl_t object of **n** if present
 
 
-.. c:function:: void libnvme_free_ns (struct nvme_ns *n)
+.. c:function:: void nvme_free_ns (struct nvme_ns *n)
 
    Free a namespace object
 
@@ -1056,7 +1056,7 @@ nvme_ctrl_t object of **n** if present
   Namespace instance
 
 
-.. c:function:: int libnvme_ns_read (nvme_ns_t n, void *buf, off_t offset, size_t count)
+.. c:function:: int nvme_ns_read (nvme_ns_t n, void *buf, off_t offset, size_t count)
 
    Read from a namespace
 
@@ -1079,7 +1079,7 @@ nvme_ctrl_t object of **n** if present
 Number of sectors read or -1 on error.
 
 
-.. c:function:: int libnvme_ns_write (nvme_ns_t n, void *buf, off_t offset, size_t count)
+.. c:function:: int nvme_ns_write (nvme_ns_t n, void *buf, off_t offset, size_t count)
 
    Write to a namespace
 
@@ -1102,7 +1102,7 @@ Number of sectors read or -1 on error.
 Number of sectors written or -1 on error
 
 
-.. c:function:: int libnvme_ns_verify (nvme_ns_t n, off_t offset, size_t count)
+.. c:function:: int nvme_ns_verify (nvme_ns_t n, off_t offset, size_t count)
 
    Verify data on a namespace
 
@@ -1122,7 +1122,7 @@ Number of sectors written or -1 on error
 Number of sectors verified
 
 
-.. c:function:: int libnvme_ns_compare (nvme_ns_t n, void *buf, off_t offset, size_t count)
+.. c:function:: int nvme_ns_compare (nvme_ns_t n, void *buf, off_t offset, size_t count)
 
    Compare data on a namespace
 
@@ -1145,7 +1145,7 @@ Number of sectors verified
 Number of sectors compared
 
 
-.. c:function:: int libnvme_ns_write_zeros (nvme_ns_t n, off_t offset, size_t count)
+.. c:function:: int nvme_ns_write_zeros (nvme_ns_t n, off_t offset, size_t count)
 
    Write zeros to a namespace
 
@@ -1165,7 +1165,7 @@ Number of sectors compared
 Number of sectors written
 
 
-.. c:function:: int libnvme_ns_write_uncorrectable (nvme_ns_t n, off_t offset, size_t count)
+.. c:function:: int nvme_ns_write_uncorrectable (nvme_ns_t n, off_t offset, size_t count)
 
    Issus a 'write uncorrectable' command
 
@@ -1185,7 +1185,7 @@ Number of sectors written
 Number of sectors written
 
 
-.. c:function:: int libnvme_ns_flush (nvme_ns_t n)
+.. c:function:: int nvme_ns_flush (nvme_ns_t n)
 
    Flush data to a namespace
 
@@ -1199,7 +1199,7 @@ Number of sectors written
 0 on success, -1 on error.
 
 
-.. c:function:: int libnvme_ns_identify (nvme_ns_t n, struct nvme_id_ns *ns)
+.. c:function:: int nvme_ns_identify (nvme_ns_t n, struct nvme_id_ns *ns)
 
    Issue an 'identify namespace' command
 
@@ -1221,7 +1221,7 @@ into **ns**.
 0 on success, -1 on error.
 
 
-.. c:function:: int libnvme_ns_identify_descs (nvme_ns_t n, struct nvme_ns_id_desc *descs)
+.. c:function:: int nvme_ns_identify_descs (nvme_ns_t n, struct nvme_ns_id_desc *descs)
 
    Issue an 'identify descriptors' command
 
@@ -1243,7 +1243,7 @@ into **descs**.
 0 on success, -1 on error.
 
 
-.. c:function:: const char * libnvme_path_get_name (nvme_path_t p)
+.. c:function:: const char * nvme_path_get_name (nvme_path_t p)
 
    sysfs name of an :c:type:`nvme_path_t` object
 
@@ -1257,7 +1257,7 @@ into **descs**.
 sysfs name of **p**
 
 
-.. c:function:: const char * libnvme_path_get_sysfs_dir (nvme_path_t p)
+.. c:function:: const char * nvme_path_get_sysfs_dir (nvme_path_t p)
 
    sysfs directory of an nvme_path_t object
 
@@ -1271,7 +1271,7 @@ sysfs name of **p**
 sysfs directory of **p**
 
 
-.. c:function:: const char * libnvme_path_get_ana_state (nvme_path_t p)
+.. c:function:: const char * nvme_path_get_ana_state (nvme_path_t p)
 
    ANA state of an nvme_path_t object
 
@@ -1285,7 +1285,7 @@ sysfs directory of **p**
 ANA (Asynchronous Namespace Access) state of **p**
 
 
-.. c:function:: const char * libnvme_path_get_numa_nodes (nvme_path_t p)
+.. c:function:: const char * nvme_path_get_numa_nodes (nvme_path_t p)
 
    NUMA nodes of an nvme_path_t object
 
@@ -1299,7 +1299,7 @@ ANA (Asynchronous Namespace Access) state of **p**
 NUMA nodes associated to **p**
 
 
-.. c:function:: int libnvme_path_get_queue_depth (nvme_path_t p)
+.. c:function:: int nvme_path_get_queue_depth (nvme_path_t p)
 
    Queue depth of an nvme_path_t object
 
@@ -1313,7 +1313,7 @@ NUMA nodes associated to **p**
 Queue depth of **p**
 
 
-.. c:function:: nvme_ctrl_t libnvme_path_get_ctrl (nvme_path_t p)
+.. c:function:: nvme_ctrl_t nvme_path_get_ctrl (nvme_path_t p)
 
    Parent controller of an nvme_path_t object
 
@@ -1327,7 +1327,7 @@ Queue depth of **p**
 Parent controller if present
 
 
-.. c:function:: nvme_ns_t libnvme_path_get_ns (nvme_path_t p)
+.. c:function:: nvme_ns_t nvme_path_get_ns (nvme_path_t p)
 
    Parent namespace of an nvme_path_t object
 
@@ -1341,7 +1341,7 @@ Parent controller if present
 Parent namespace if present
 
 
-.. c:function:: struct nvme_transport_handle * libnvme_ctrl_get_transport_handle (nvme_ctrl_t c)
+.. c:function:: struct nvme_transport_handle * nvme_ctrl_get_transport_handle (nvme_ctrl_t c)
 
    Get associated transport handle
 
@@ -1356,14 +1356,14 @@ libnvme will open() the device (if not already opened) and keep an
 internal copy of the link handle. Following calls to this API retrieve
 the internal cached copy of the link handle. The file will remain
 opened and the handle will remain cached until the controller object
-is deleted or libnvme_ctrl_release_transport_handle() is called.
+is deleted or nvme_ctrl_release_transport_handle() is called.
 
 **Return**
 
 Link handle associated with **c** or NULL
 
 
-.. c:function:: void libnvme_ctrl_release_transport_handle (nvme_ctrl_t c)
+.. c:function:: void nvme_ctrl_release_transport_handle (nvme_ctrl_t c)
 
    Free transport handle from controller object
 
@@ -1373,7 +1373,7 @@ Link handle associated with **c** or NULL
   Controller instance
 
 
-.. c:function:: const char * libnvme_ctrl_get_name (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_name (nvme_ctrl_t c)
 
    sysfs name of a controller
 
@@ -1387,7 +1387,7 @@ Link handle associated with **c** or NULL
 sysfs name of **c**
 
 
-.. c:function:: const char * libnvme_ctrl_get_sysfs_dir (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_sysfs_dir (nvme_ctrl_t c)
 
    sysfs directory of a controller
 
@@ -1416,7 +1416,7 @@ NVMe-over-Fabrics address string of **c** or empty string
 of no address is present.
 
 
-.. c:function:: char * libnvme_ctrl_get_src_addr (nvme_ctrl_t c, char *src_addr, size_t src_addr_len)
+.. c:function:: char * nvme_ctrl_get_src_addr (nvme_ctrl_t c, char *src_addr, size_t src_addr_len)
 
    Extract src_addr from the c->address string
 
@@ -1436,7 +1436,7 @@ of no address is present.
 Pointer to **src_addr** on success. NULL on failure to extract the src_addr.
 
 
-.. c:function:: const char * libnvme_ctrl_get_phy_slot (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_phy_slot (nvme_ctrl_t c)
 
    PCI physical slot number of a controller
 
@@ -1451,7 +1451,7 @@ PCI physical slot number of **c** or empty string if slot
 number is not present.
 
 
-.. c:function:: const char * libnvme_ctrl_get_firmware (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_firmware (nvme_ctrl_t c)
 
    Firmware string of a controller
 
@@ -1465,7 +1465,7 @@ number is not present.
 Firmware string of **c**
 
 
-.. c:function:: const char * libnvme_ctrl_get_model (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_model (nvme_ctrl_t c)
 
    Model of a controller
 
@@ -1479,7 +1479,7 @@ Firmware string of **c**
 Model string of **c**
 
 
-.. c:function:: const char * libnvme_ctrl_get_state (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_state (nvme_ctrl_t c)
 
    Running state of a controller
 
@@ -1493,7 +1493,7 @@ Model string of **c**
 String indicating the running state of **c**
 
 
-.. c:function:: const char * libnvme_ctrl_get_numa_node (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_numa_node (nvme_ctrl_t c)
 
    NUMA node of a controller
 
@@ -1507,7 +1507,7 @@ String indicating the running state of **c**
 String indicating the NUMA node
 
 
-.. c:function:: const char * libnvme_ctrl_get_queue_count (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_queue_count (nvme_ctrl_t c)
 
    Queue count of a controller
 
@@ -1521,7 +1521,7 @@ String indicating the NUMA node
 Queue count of **c**
 
 
-.. c:function:: const char * libnvme_ctrl_get_serial (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_serial (nvme_ctrl_t c)
 
    Serial number of a controller
 
@@ -1535,7 +1535,7 @@ Queue count of **c**
 Serial number string of **c**
 
 
-.. c:function:: const char * libnvme_ctrl_get_sqsize (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_sqsize (nvme_ctrl_t c)
 
    SQ size of a controller
 
@@ -1549,7 +1549,7 @@ Serial number string of **c**
 SQ size (as string) of **c**
 
 
-.. c:function:: const char * libnvme_ctrl_get_transport (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_transport (nvme_ctrl_t c)
 
    Transport type of a controller
 
@@ -1563,7 +1563,7 @@ SQ size (as string) of **c**
 Transport type of **c**
 
 
-.. c:function:: const char * libnvme_ctrl_get_subsysnqn (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_subsysnqn (nvme_ctrl_t c)
 
    Subsystem NQN of a controller
 
@@ -1577,7 +1577,7 @@ Transport type of **c**
 Subsystem NQN of **c**
 
 
-.. c:function:: nvme_subsystem_t libnvme_ctrl_get_subsystem (nvme_ctrl_t c)
+.. c:function:: nvme_subsystem_t nvme_ctrl_get_subsystem (nvme_ctrl_t c)
 
    Parent subsystem of a controller
 
@@ -1591,7 +1591,7 @@ Subsystem NQN of **c**
 Parent nvme_subsystem_t object
 
 
-.. c:function:: const char * libnvme_ctrl_get_traddr (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_traddr (nvme_ctrl_t c)
 
    Transport address of a controller
 
@@ -1605,7 +1605,7 @@ Parent nvme_subsystem_t object
 Transport address of **c**
 
 
-.. c:function:: const char * libnvme_ctrl_get_trsvcid (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_trsvcid (nvme_ctrl_t c)
 
    Transport service identifier of a controller
 
@@ -1619,7 +1619,7 @@ Transport address of **c**
 Transport service identifier of **c** (if present)
 
 
-.. c:function:: const char * libnvme_ctrl_get_host_traddr (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_host_traddr (nvme_ctrl_t c)
 
    Host transport address of a controller
 
@@ -1633,7 +1633,7 @@ Transport service identifier of **c** (if present)
 Host transport address of **c** (if present)
 
 
-.. c:function:: const char * libnvme_ctrl_get_host_iface (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_host_iface (nvme_ctrl_t c)
 
    Host interface name of a controller
 
@@ -1647,7 +1647,7 @@ Host transport address of **c** (if present)
 Host interface name of **c** (if present)
 
 
-.. c:function:: const char * libnvme_ctrl_get_dhchap_host_key (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_dhchap_host_key (nvme_ctrl_t c)
 
    Return host key
 
@@ -1661,7 +1661,7 @@ Host interface name of **c** (if present)
 DH-HMAC-CHAP host key or NULL if not set
 
 
-.. c:function:: const char * libnvme_ctrl_get_cntlid (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_cntlid (nvme_ctrl_t c)
 
    Controller id
 
@@ -1675,7 +1675,7 @@ DH-HMAC-CHAP host key or NULL if not set
 Controller id of **c**
 
 
-.. c:function:: void libnvme_ctrl_set_dhchap_host_key (nvme_ctrl_t c, const char *key)
+.. c:function:: void nvme_ctrl_set_dhchap_host_key (nvme_ctrl_t c, const char *key)
 
    Set host key
 
@@ -1702,7 +1702,7 @@ Controller id of **c**
 DH-HMAC-CHAP controller key or NULL if not set
 
 
-.. c:function:: const char * libnvme_ns_head_get_sysfs_dir (nvme_ns_head_t head)
+.. c:function:: const char * nvme_ns_head_get_sysfs_dir (nvme_ns_head_t head)
 
    sysfs dir of namespave head
 
@@ -1729,7 +1729,7 @@ sysfs directory name of **head**
   DH-HMAC-CHAP Key to set or NULL to clear existing key
 
 
-.. c:function:: const char * libnvme_ctrl_get_keyring (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_keyring (nvme_ctrl_t c)
 
    Return keyring
 
@@ -1743,7 +1743,7 @@ sysfs directory name of **head**
 Keyring or NULL if not set
 
 
-.. c:function:: void libnvme_ctrl_set_keyring (nvme_ctrl_t c, const char *keyring)
+.. c:function:: void nvme_ctrl_set_keyring (nvme_ctrl_t c, const char *keyring)
 
    Set keyring
 
@@ -1756,7 +1756,7 @@ Keyring or NULL if not set
   Keyring name
 
 
-.. c:function:: const char * libnvme_ctrl_get_tls_key_identity (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_tls_key_identity (nvme_ctrl_t c)
 
    Return Derive TLS Identity
 
@@ -1770,7 +1770,7 @@ Keyring or NULL if not set
 Derive TLS Identity or NULL if not set
 
 
-.. c:function:: void libnvme_ctrl_set_tls_key_identity (nvme_ctrl_t c, const char *identity)
+.. c:function:: void nvme_ctrl_set_tls_key_identity (nvme_ctrl_t c, const char *identity)
 
    Set Derive TLS Identity
 
@@ -1783,7 +1783,7 @@ Derive TLS Identity or NULL if not set
   Derive TLS identity or NULL to clear existing key
 
 
-.. c:function:: const char * libnvme_ctrl_get_tls_key (nvme_ctrl_t c)
+.. c:function:: const char * nvme_ctrl_get_tls_key (nvme_ctrl_t c)
 
    Return Derive TLS PSK
 
@@ -1797,7 +1797,7 @@ Derive TLS Identity or NULL if not set
 Key in PSK interchange format or NULL if not set
 
 
-.. c:function:: void libnvme_ctrl_set_tls_key (nvme_ctrl_t c, const char *key)
+.. c:function:: void nvme_ctrl_set_tls_key (nvme_ctrl_t c, const char *key)
 
    Set Derive TLS PSK
 
@@ -1810,7 +1810,7 @@ Key in PSK interchange format or NULL if not set
   Key in interchange format or NULL to clear existing key
 
 
-.. c:function:: struct nvme_fabrics_config * libnvme_ctrl_get_config (nvme_ctrl_t c)
+.. c:function:: struct nvme_fabrics_config * nvme_ctrl_get_config (nvme_ctrl_t c)
 
    Fabrics configuration of a controller
 
@@ -1824,7 +1824,7 @@ Key in PSK interchange format or NULL if not set
 Fabrics configuration of **c**
 
 
-.. c:function:: void libnvme_ctrl_set_discovered (nvme_ctrl_t c, bool discovered)
+.. c:function:: void nvme_ctrl_set_discovered (nvme_ctrl_t c, bool discovered)
 
    Set the 'discovered' flag
 
@@ -1855,7 +1855,7 @@ Set the 'discovered' flag of **c** to **discovered**
 Value of the 'discovered' flag of **c**
 
 
-.. c:function:: void libnvme_ctrl_set_persistent (nvme_ctrl_t c, bool persistent)
+.. c:function:: void nvme_ctrl_set_persistent (nvme_ctrl_t c, bool persistent)
 
    Set the 'persistent' flag
 
@@ -1886,7 +1886,7 @@ Set the 'persistent' flag of **c** to **persistent**
 Value of the 'persistent' flag of **c**
 
 
-.. c:function:: void libnvme_ctrl_set_discovery_ctrl (nvme_ctrl_t c, bool discovery)
+.. c:function:: void nvme_ctrl_set_discovery_ctrl (nvme_ctrl_t c, bool discovery)
 
    Set the 'discovery_ctrl' flag
 
@@ -1923,7 +1923,7 @@ Returns the value of the 'discovery_ctrl' flag which specifies whether
 Value of the 'discover_ctrl' flag
 
 
-.. c:function:: void libnvme_ctrl_set_unique_discovery_ctrl (nvme_ctrl_t c, bool unique)
+.. c:function:: void nvme_ctrl_set_unique_discovery_ctrl (nvme_ctrl_t c, bool unique)
 
    Set the 'unique_discovery_ctrl' flag
 
@@ -1955,7 +1955,7 @@ Sets the 'unique_discovery_ctrl' flag in **c** to specify wheter
 Value of the 'unique_discovery_ctrl' flag
 
 
-.. c:function:: int libnvme_ctrl_identify (nvme_ctrl_t c, struct nvme_id_ctrl *id)
+.. c:function:: int nvme_ctrl_identify (nvme_ctrl_t c, struct nvme_id_ctrl *id)
 
    Issues an 'identify controller' command
 
@@ -1977,7 +1977,7 @@ data into **id**.
 0 on success or -1 on failure.
 
 
-.. c:function:: int libnvme_disconnect_ctrl (nvme_ctrl_t c)
+.. c:function:: int nvme_disconnect_ctrl (nvme_ctrl_t c)
 
    Disconnect a controller
 
@@ -1995,7 +1995,7 @@ Issues a 'disconnect' fabrics command to **c**
 0 on success, -1 on failure.
 
 
-.. c:function:: int libnvme_scan_ctrl (struct nvme_global_ctx *ctx, const char *name, nvme_ctrl_t *c)
+.. c:function:: int nvme_scan_ctrl (struct nvme_global_ctx *ctx, const char *name, nvme_ctrl_t *c)
 
    Scan on a controller
 
@@ -2019,7 +2019,7 @@ Scans a controller with sysfs name **name** and add it to **r**.
 0 on success or negative error code otherwise
 
 
-.. c:function:: void libnvme_rescan_ctrl (nvme_ctrl_t c)
+.. c:function:: void nvme_rescan_ctrl (nvme_ctrl_t c)
 
    Rescan an existing controller
 
@@ -2029,7 +2029,7 @@ Scans a controller with sysfs name **name** and add it to **r**.
   Controller instance
 
 
-.. c:function:: int libnvme_init_ctrl (nvme_host_t h, nvme_ctrl_t c, int instance)
+.. c:function:: int nvme_init_ctrl (nvme_host_t h, nvme_ctrl_t c, int instance)
 
    Initialize nvme_ctrl_t object for an existing controller.
 
@@ -2049,7 +2049,7 @@ Scans a controller with sysfs name **name** and add it to **r**.
 0 on success or negative error code otherwise
 
 
-.. c:function:: void libnvme_free_ctrl (struct nvme_ctrl *c)
+.. c:function:: void nvme_free_ctrl (struct nvme_ctrl *c)
 
    Free controller
 
@@ -2059,7 +2059,7 @@ Scans a controller with sysfs name **name** and add it to **r**.
   Controller instance
 
 
-.. c:function:: void libnvme_unlink_ctrl (struct nvme_ctrl *c)
+.. c:function:: void nvme_unlink_ctrl (struct nvme_ctrl *c)
 
    Unlink controller
 
@@ -2083,7 +2083,7 @@ Scans a controller with sysfs name **name** and add it to **r**.
 NQN of subsystem
 
 
-.. c:function:: const char * libnvme_subsystem_get_sysfs_dir (nvme_subsystem_t s)
+.. c:function:: const char * nvme_subsystem_get_sysfs_dir (nvme_subsystem_t s)
 
    sysfs directory of an nvme_subsystem_t object
 
@@ -2097,7 +2097,7 @@ NQN of subsystem
 sysfs directory name of **s**
 
 
-.. c:function:: const char * libnvme_subsystem_get_name (nvme_subsystem_t s)
+.. c:function:: const char * nvme_subsystem_get_name (nvme_subsystem_t s)
 
    sysfs name of an nvme_subsystem_t object
 
@@ -2129,7 +2129,7 @@ Returns the subsystem type of **s**.
 'nvm' or 'discovery'
 
 
-.. c:function:: const char * libnvme_subsystem_get_application (nvme_subsystem_t s)
+.. c:function:: const char * nvme_subsystem_get_application (nvme_subsystem_t s)
 
    Return the application string
 
@@ -2143,7 +2143,7 @@ Returns the subsystem type of **s**.
 Managing application string or NULL if not set.
 
 
-.. c:function:: void libnvme_subsystem_set_application (nvme_subsystem_t s, const char *a)
+.. c:function:: void nvme_subsystem_set_application (nvme_subsystem_t s, const char *a)
 
    Set the application string
 
@@ -2160,7 +2160,7 @@ Managing application string or NULL if not set.
 Sets the managing application string for **s**.
 
 
-.. c:function:: const char * libnvme_subsystem_get_iopolicy (nvme_subsystem_t s)
+.. c:function:: const char * nvme_subsystem_get_iopolicy (nvme_subsystem_t s)
 
    Return the IO policy of subsytem
 
@@ -2174,7 +2174,7 @@ Sets the managing application string for **s**.
 IO policy used by current subsystem
 
 
-.. c:function:: const char * libnvme_subsystem_get_model (nvme_subsystem_t s)
+.. c:function:: const char * nvme_subsystem_get_model (nvme_subsystem_t s)
 
    Return the model of subsystem
 
@@ -2188,7 +2188,7 @@ IO policy used by current subsystem
 Model of the current subsystem
 
 
-.. c:function:: const char * libnvme_subsystem_get_serial (nvme_subsystem_t s)
+.. c:function:: const char * nvme_subsystem_get_serial (nvme_subsystem_t s)
 
    Return the serial number of subsystem
 
@@ -2216,7 +2216,7 @@ Serial number of the current subsystem
 Firmware revision of the current subsystem
 
 
-.. c:function:: int libnvme_scan_topology (struct nvme_global_ctx *ctx, nvme_scan_filter_t f, void *f_args)
+.. c:function:: int nvme_scan_topology (struct nvme_global_ctx *ctx, nvme_scan_filter_t f, void *f_args)
 
    Scan NVMe topology and apply filter
 
@@ -2241,7 +2241,7 @@ by applying **f**.
 0 on success, or negative error code otherwise.
 
 
-.. c:function:: const char * libnvme_host_get_hostnqn (nvme_host_t h)
+.. c:function:: const char * nvme_host_get_hostnqn (nvme_host_t h)
 
    Host NQN of an nvme_host_t object
 
@@ -2255,7 +2255,7 @@ by applying **f**.
 Host NQN of **h**
 
 
-.. c:function:: const char * libnvme_host_get_hostid (nvme_host_t h)
+.. c:function:: const char * nvme_host_get_hostid (nvme_host_t h)
 
    Host ID of an nvme_host_t object
 
@@ -2269,7 +2269,7 @@ Host NQN of **h**
 Host ID of **h**
 
 
-.. c:function:: void libnvme_host_release_fds (struct nvme_host *h)
+.. c:function:: void nvme_host_release_fds (struct nvme_host *h)
 
    Close all opened file descriptors under host
 
@@ -2285,7 +2285,7 @@ of opened nvme devices. This API can be used to close and
 clear all cached fds under this host.
 
 
-.. c:function:: void libnvme_free_host (nvme_host_t h)
+.. c:function:: void nvme_free_host (nvme_host_t h)
 
    Free nvme_host_t object
 
@@ -2295,7 +2295,7 @@ clear all cached fds under this host.
   nvme_host_t object
 
 
-.. c:function:: int libnvme_read_config (struct nvme_global_ctx *ctx, const char *config_file)
+.. c:function:: int nvme_read_config (struct nvme_global_ctx *ctx, const char *config_file)
 
    Read NVMe JSON configuration file
 
@@ -2317,7 +2317,7 @@ the elements in **r**.
 0 on success or negative error code otherwise
 
 
-.. c:function:: void libnvme_refresh_topology (struct nvme_global_ctx *ctx)
+.. c:function:: void nvme_refresh_topology (struct nvme_global_ctx *ctx)
 
    Refresh nvme_root_t object contents
 
@@ -2331,7 +2331,7 @@ the elements in **r**.
 Removes all elements in **r** and rescans the existing topology.
 
 
-.. c:function:: int libnvme_dump_config (struct nvme_global_ctx *ctx, int fd)
+.. c:function:: int nvme_dump_config (struct nvme_global_ctx *ctx, int fd)
 
    Print the JSON configuration
 
@@ -2353,7 +2353,7 @@ to the file descriptor fd.
 0 on success, or negative error code otherwise.
 
 
-.. c:function:: int libnvme_dump_tree (struct nvme_global_ctx *ctx)
+.. c:function:: int nvme_dump_tree (struct nvme_global_ctx *ctx)
 
    Dump internal object tree
 
@@ -2372,7 +2372,7 @@ to stdout.
 0 on success or negative error code otherwise
 
 
-.. c:function:: char * libnvme_get_attr (const char *d, const char *attr)
+.. c:function:: char * nvme_get_attr (const char *d, const char *attr)
 
    Read sysfs attribute
 
@@ -2390,7 +2390,7 @@ String with the contents of **attr** or ``NULL`` in case of an empty
         value or error.
 
 
-.. c:function:: char * libnvme_get_subsys_attr (nvme_subsystem_t s, const char *attr)
+.. c:function:: char * nvme_get_subsys_attr (nvme_subsystem_t s, const char *attr)
 
    Read subsystem sysfs attribute
 
@@ -2408,7 +2408,7 @@ String with the contents of **attr** or ``NULL`` in case of an empty
         value or error.
 
 
-.. c:function:: char * libnvme_get_ctrl_attr (nvme_ctrl_t c, const char *attr)
+.. c:function:: char * nvme_get_ctrl_attr (nvme_ctrl_t c, const char *attr)
 
    Read controller sysfs attribute
 
@@ -2426,7 +2426,7 @@ String with the contents of **attr** or ``NULL`` in case of an empty value
         or in case of an error.
 
 
-.. c:function:: char * libnvme_get_ns_attr (nvme_ns_t n, const char *attr)
+.. c:function:: char * nvme_get_ns_attr (nvme_ns_t n, const char *attr)
 
    Read namespace sysfs attribute
 
@@ -2444,7 +2444,7 @@ String with the contents of **attr** or ``NULL`` in case of an empty value
         or in case of an error.
 
 
-.. c:function:: nvme_ns_t libnvme_subsystem_lookup_namespace (struct nvme_subsystem *s, __u32 nsid)
+.. c:function:: nvme_ns_t nvme_subsystem_lookup_namespace (struct nvme_subsystem *s, __u32 nsid)
 
    lookup namespace by NSID
 
@@ -2461,7 +2461,7 @@ String with the contents of **attr** or ``NULL`` in case of an empty value
 nvme_ns_t of the namespace with id **nsid** in subsystem **s**
 
 
-.. c:function:: void libnvme_subsystem_release_fds (struct nvme_subsystem *s)
+.. c:function:: void nvme_subsystem_release_fds (struct nvme_subsystem *s)
 
    Close all opened fds under subsystem
 
@@ -2477,7 +2477,7 @@ of opened nvme devices. This API can be used to close and
 clear all cached fds under this subsystem.
 
 
-.. c:function:: char * libnvme_get_path_attr (nvme_path_t p, const char *attr)
+.. c:function:: char * nvme_get_path_attr (nvme_path_t p, const char *attr)
 
    Read path sysfs attribute
 
@@ -2495,7 +2495,7 @@ String with the contents of **attr** or ``NULL`` in case of an empty value
         or in case of an error.
 
 
-.. c:function:: int libnvme_scan_namespace (struct nvme_global_ctx *ctx, const char *name, nvme_ns_t *ns)
+.. c:function:: int nvme_scan_namespace (struct nvme_global_ctx *ctx, const char *name, nvme_ns_t *ns)
 
    scan namespace based on sysfs name
 
@@ -2515,7 +2515,7 @@ String with the contents of **attr** or ``NULL`` in case of an empty value
 0 on success or negative error code otherwise
 
 
-.. c:function:: const char * libnvme_host_get_hostsymname (nvme_host_t h)
+.. c:function:: const char * nvme_host_get_hostsymname (nvme_host_t h)
 
    Get the host's symbolic name
 
@@ -2530,7 +2530,7 @@ The symbolic name or NULL if a symbolic name hasn't been
 configure.
 
 
-.. c:function:: void libnvme_host_set_hostsymname (nvme_host_t h, const char *hostsymname)
+.. c:function:: void nvme_host_set_hostsymname (nvme_host_t h, const char *hostsymname)
 
    Set the host's symbolic name
 

@@ -404,7 +404,7 @@ static void test_genctr_error(nvme_ctrl_t c)
 static void run_test(struct nvme_global_ctx *ctx, const char *test_name,
 		void (*test_fn)(nvme_ctrl_t))
 {
-	struct nvme_ctrl c = { .ctx = ctx, .hdl = test_hdl };
+	struct libnvme_ctrl c = { .ctx = ctx, .hdl = test_hdl };
 
 	printf("Running test %s...", test_name);
 	fflush(stdout);

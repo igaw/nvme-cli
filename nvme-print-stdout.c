@@ -42,41 +42,41 @@ static const char dash[100] = {[0 ... 99] = '-'};
 
 static struct print_ops stdout_print_ops;
 
-static const char *subsys_key(const struct nvme_subsystem *s)
+static const char *subsys_key(const struct libnvme_subsystem *s)
 {
 	return libnvme_subsystem_get_name((nvme_subsystem_t)s);
 }
 
-static const char *ctrl_key(const struct nvme_ctrl *c)
+static const char *ctrl_key(const struct libnvme_ctrl *c)
 {
 	return libnvme_ctrl_get_name((nvme_ctrl_t)c);
 }
 
-static const char *ns_key(const struct nvme_ns *n)
+static const char *ns_key(const struct libnvme_ns *n)
 {
 	return libnvme_ns_get_name((nvme_ns_t)n);
 }
 
-static bool subsys_cmp(const struct nvme_subsystem *s, const char *name)
+static bool subsys_cmp(const struct libnvme_subsystem *s, const char *name)
 {
 	return !strcmp(libnvme_subsystem_get_name((nvme_subsystem_t)s), name);
 }
 
-static bool ctrl_cmp(const struct nvme_ctrl *c, const char *name)
+static bool ctrl_cmp(const struct libnvme_ctrl *c, const char *name)
 {
 	return !strcmp(libnvme_ctrl_get_name((nvme_ctrl_t)c), name);
 }
 
-static bool ns_cmp(const struct nvme_ns *n, const char *name)
+static bool ns_cmp(const struct libnvme_ns *n, const char *name)
 {
 	return !strcmp(libnvme_ns_get_name((nvme_ns_t)n), name);
 }
 
-HTABLE_DEFINE_TYPE(struct nvme_subsystem, subsys_key, hash_string,
+HTABLE_DEFINE_TYPE(struct libnvme_subsystem, subsys_key, hash_string,
 		   subsys_cmp, htable_subsys);
-HTABLE_DEFINE_TYPE(struct nvme_ctrl, ctrl_key, hash_string,
+HTABLE_DEFINE_TYPE(struct libnvme_ctrl, ctrl_key, hash_string,
 		   ctrl_cmp, htable_ctrl);
-HTABLE_DEFINE_TYPE(struct nvme_ns, ns_key, hash_string,
+HTABLE_DEFINE_TYPE(struct libnvme_ns, ns_key, hash_string,
 		   ns_cmp, htable_ns);
 
 static void htable_ctrl_add_unique(struct htable_ctrl *ht, nvme_ctrl_t c)

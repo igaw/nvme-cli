@@ -5,7 +5,7 @@
 
 Linux NVMe ioctl interface functions
 
-.. c:function:: int libnvme_submit_admin_passthru (struct nvme_transport_handle *hdl, struct nvme_passthru_cmd *cmd)
+.. c:function:: int nvme_submit_admin_passthru (struct nvme_transport_handle *hdl, struct nvme_passthru_cmd *cmd)
 
    Submit an nvme passthrough admin command
 
@@ -27,7 +27,7 @@ Uses NVME_IOCTL_ADMIN_CMD for the ioctl request.
 received (see :c:type:`enum nvme_status_field <nvme_status_field>`) or a negative error otherwise.
 
 
-.. c:function:: int libnvme_submit_io_passthru (struct nvme_transport_handle *hdl, struct nvme_passthru_cmd *cmd)
+.. c:function:: int nvme_submit_io_passthru (struct nvme_transport_handle *hdl, struct nvme_passthru_cmd *cmd)
 
    Submit an nvme passthrough command
 
@@ -104,7 +104,7 @@ This should only be sent to controller handles, not to namespaces.
 0 if a rescan was initiated or -1 with errno set otherwise.
 
 
-.. c:function:: int libnvme_get_nsid (struct nvme_transport_handle *hdl, __u32 *nsid)
+.. c:function:: int nvme_get_nsid (struct nvme_transport_handle *hdl, __u32 *nsid)
 
    Retrieve the NSID from a namespace file descriptor
 

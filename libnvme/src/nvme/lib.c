@@ -65,7 +65,7 @@ __public struct nvme_global_ctx *libnvme_create_global_ctx(FILE *fp, int log_lev
 
 __public void libnvme_free_global_ctx(struct nvme_global_ctx *ctx)
 {
-	struct nvme_host *h, *_h;
+	struct libnvme_host *h, *_h;
 	nvme_mi_ep_t ep, tmp;
 
 	if (!ctx)

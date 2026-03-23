@@ -128,12 +128,12 @@ struct nvme_transport_handle {
 	struct nvme_log *log;
 };
 
-struct nvme_path { /*!generate-accessors*/
+struct libnvme_path { /*!generate-accessors*/
 	struct list_node entry;
 	struct list_node nentry;
 
-	struct nvme_ctrl *c;
-	struct nvme_ns *n;
+	struct libnvme_ctrl *c;
+	struct libnvme_ns *n;
 
 	char *name;
 	char *sysfs_dir;
@@ -143,19 +143,19 @@ struct nvme_path { /*!generate-accessors*/
 	int queue_depth; //!accessors:none
 };
 
-struct nvme_ns_head {
+struct libnvme_ns_head {
 	struct list_head paths;
-	struct nvme_ns *n;
+	struct libnvme_ns *n;
 
 	char *sysfs_dir;
 };
 
-struct nvme_ns { /*!generate-accessors*/
+struct libnvme_ns { /*!generate-accessors*/
 	struct list_node entry;
 
-	struct nvme_subsystem *s;
-	struct nvme_ctrl *c;
-	struct nvme_ns_head *head;
+	struct libnvme_subsystem *s;
+	struct libnvme_ctrl *c;
+	struct libnvme_ns_head *head;
 
 	struct nvme_global_ctx *ctx;
 	struct nvme_transport_handle *hdl;
@@ -176,11 +176,11 @@ struct nvme_ns { /*!generate-accessors*/
 	enum nvme_csi csi;
 };
 
-struct nvme_ctrl { /*!generate-accessors*/
+struct libnvme_ctrl { /*!generate-accessors*/
 	struct list_node entry;
 	struct list_head paths;
 	struct list_head namespaces;
-	struct nvme_subsystem *s;
+	struct libnvme_subsystem *s;
 
 	struct nvme_global_ctx *ctx;
 	struct nvme_transport_handle *hdl;
@@ -216,11 +216,11 @@ struct nvme_ctrl { /*!generate-accessors*/
 	struct nvme_fabrics_config cfg;
 };
 
-struct nvme_subsystem { /*!generate-accessors*/
+struct libnvme_subsystem { /*!generate-accessors*/
 	struct list_node entry;
 	struct list_head ctrls;
 	struct list_head namespaces;
-	struct nvme_host *h;
+	struct libnvme_host *h;
 
 	char *name; /*!accessors:readonly*/
 	char *sysfs_dir; /*!accessors:readonly*/
@@ -233,7 +233,7 @@ struct nvme_subsystem { /*!generate-accessors*/
 	char *iopolicy;
 };
 
-struct nvme_host { /*!generate-accessors*/
+struct libnvme_host { /*!generate-accessors*/
 	struct list_node entry;
 	struct list_head subsystems;
 	struct nvme_global_ctx *ctx;
@@ -247,7 +247,7 @@ struct nvme_host { /*!generate-accessors*/
 				 * value */
 };
 
-struct nvme_fabric_options { /*!generate-accessors*/
+struct libnvme_fabric_options { /*!generate-accessors*/
 	bool cntlid;
 	bool concat;
 	bool ctrl_loss_tmo;
@@ -296,7 +296,7 @@ struct nvme_global_ctx {
 	bool ioctl_probing;
 	bool create_only;
 	bool dry_run;
-	struct nvme_fabric_options *options;
+	struct libnvme_fabric_options *options;
 	struct ifaddrs *ifaddrs_cache; /* init with nvme_getifaddrs() */
 
 	enum nvme_io_uring_state uring_state;
@@ -310,10 +310,10 @@ struct nvmf_context {
 	/* common callbacks */
 	bool (*decide_retry)(struct nvmf_context *fctx, int err,
 			void *user_data);
-	void (*connected)(struct nvmf_context *fctx, struct nvme_ctrl *c,
+	void (*connected)(struct nvmf_context *fctx, struct libnvme_ctrl *c,
 			void *user_data);
 	void (*already_connected)(struct nvmf_context *fctx,
-			struct nvme_host *host, const char *subsysnqn,
+			struct libnvme_host *host, const char *subsysnqn,
 			const char *transport, const char *traddr,
 			const char *trsvcid, void *user_data);
 
@@ -384,7 +384,7 @@ void __nvme_transport_handle_close_mi(struct nvme_transport_handle *hdl);
 int _nvme_create_ctrl(struct nvme_global_ctx *ctx,
 		      struct nvmf_context *fctx,
 		      nvme_ctrl_t *cp);
-bool _nvme_ctrl_match_config(struct nvme_ctrl *c, struct nvmf_context *fctx);
+bool _nvme_ctrl_match_config(struct libnvme_ctrl *c, struct nvmf_context *fctx);
 
 void *__nvme_alloc(size_t len);
 
@@ -392,7 +392,7 @@ void *__nvme_realloc(void *p, size_t len);
 
 nvme_host_t nvme_lookup_host(struct nvme_global_ctx *ctx, const char *hostnqn,
 			     const char *hostid);
-nvme_subsystem_t nvme_lookup_subsystem(struct nvme_host *h,
+nvme_subsystem_t nvme_lookup_subsystem(struct libnvme_host *h,
 				       const char *name,
 				       const char *subsysnqn);
 nvme_ctrl_t nvme_lookup_ctrl(nvme_subsystem_t s,

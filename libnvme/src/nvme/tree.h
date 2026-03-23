@@ -20,12 +20,12 @@
  * libnvme tree object interface
  */
 
-typedef struct nvme_ns *nvme_ns_t;
-typedef struct nvme_ns_head *nvme_ns_head_t;
-typedef struct nvme_path *nvme_path_t;
-typedef struct nvme_ctrl *nvme_ctrl_t;
-typedef struct nvme_subsystem *nvme_subsystem_t;
-typedef struct nvme_host *nvme_host_t;
+typedef struct libnvme_ns *nvme_ns_t;
+typedef struct libnvme_ns_head *nvme_ns_head_t;
+typedef struct libnvme_path *nvme_path_t;
+typedef struct libnvme_ctrl *nvme_ctrl_t;
+typedef struct libnvme_subsystem *nvme_subsystem_t;
+typedef struct libnvme_host *nvme_host_t;
 
 typedef bool (*nvme_scan_filter_t)(nvme_subsystem_t, nvme_ctrl_t,
 				   nvme_ns_t, void *);
@@ -193,8 +193,8 @@ nvme_subsystem_t libnvme_next_subsystem(nvme_host_t h, nvme_subsystem_t s);
  *
  */
 int libnvme_get_subsystem(struct nvme_global_ctx *ctx,
-		struct nvme_host *h, const char *name,
-		const char *subsysnqn, struct nvme_subsystem **s);
+		struct libnvme_host *h, const char *name,
+		const char *subsysnqn, struct libnvme_subsystem **s);
 
 /**
  * libnvme_free_subsystem() - Free a subsystem
@@ -202,7 +202,7 @@ int libnvme_get_subsystem(struct nvme_global_ctx *ctx,
  *
  * Frees @s and all related objects.
  */
-void libnvme_free_subsystem(struct nvme_subsystem *s);
+void libnvme_free_subsystem(struct libnvme_subsystem *s);
 
 /**
  * libnvme_subsystem_get_host() - Returns nvme_host_t object
@@ -296,7 +296,7 @@ nvme_path_t libnvme_namespace_next_path(nvme_ns_t ns, nvme_path_t p);
  *
  * Return: true if there's a match, false otherwise.
  */
-bool libnvme_ctrl_match_config(struct nvme_ctrl *c, const char *transport,
+bool libnvme_ctrl_match_config(struct libnvme_ctrl *c, const char *transport,
 			    const char *traddr, const char *trsvcid,
 			    const char *subsysnqn, const char *host_traddr,
 			    const char *host_iface);
@@ -574,7 +574,7 @@ nvme_ctrl_t libnvme_ns_get_ctrl(nvme_ns_t n);
  * libnvme_free_ns() - Free a namespace object
  * @n:	Namespace instance
  */
-void libnvme_free_ns(struct nvme_ns *n);
+void libnvme_free_ns(struct libnvme_ns *n);
 
 /**
  * libnvme_ns_read() - Read from a namespace
@@ -812,13 +812,13 @@ int libnvme_init_ctrl(nvme_host_t h, nvme_ctrl_t c, int instance);
  * libnvme_free_ctrl() - Free controller
  * @c:	Controller instance
  */
-void libnvme_free_ctrl(struct nvme_ctrl *c);
+void libnvme_free_ctrl(struct libnvme_ctrl *c);
 
 /**
  * libnvme_unlink_ctrl() - Unlink controller
  * @c:	Controller instance
  */
-void libnvme_unlink_ctrl(struct nvme_ctrl *c);
+void libnvme_unlink_ctrl(struct libnvme_ctrl *c);
 
 /**
  * libnvme_scan_topology() - Scan NVMe topology and apply filter
@@ -841,7 +841,7 @@ int libnvme_scan_topology(struct nvme_global_ctx *ctx, nvme_scan_filter_t f, voi
  * of opened nvme devices. This API can be used to close and
  * clear all cached fds under this host.
  */
-void libnvme_host_release_fds(struct nvme_host *h);
+void libnvme_host_release_fds(struct libnvme_host *h);
 
 /**
  * libnvme_free_host() - Free nvme_host_t object
@@ -939,7 +939,7 @@ char *libnvme_get_ns_attr(nvme_ns_t n, const char *attr);
  *
  * Return: nvme_ns_t of the namespace with id @nsid in subsystem @s
  */
-nvme_ns_t libnvme_subsystem_lookup_namespace(struct nvme_subsystem *s,
+nvme_ns_t libnvme_subsystem_lookup_namespace(struct libnvme_subsystem *s,
 					  __u32 nsid);
 
 /**
@@ -951,7 +951,7 @@ nvme_ns_t libnvme_subsystem_lookup_namespace(struct nvme_subsystem *s,
  * clear all cached fds under this subsystem.
  *
  */
-void libnvme_subsystem_release_fds(struct nvme_subsystem *s);
+void libnvme_subsystem_release_fds(struct libnvme_subsystem *s);
 
 
 /**

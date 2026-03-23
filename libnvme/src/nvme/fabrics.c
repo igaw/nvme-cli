@@ -191,9 +191,9 @@ __public int nvmf_context_create(struct nvme_global_ctx *ctx,
 		bool (*decide_retry)(struct nvmf_context *fctx, int err,
 			void *user_data),
 		void (*connected)(struct nvmf_context *fctx,
-			struct nvme_ctrl *c, void *user_data),
+			struct libnvme_ctrl *c, void *user_data),
 		void (*already_connected)(struct nvmf_context *fctx,
-			struct nvme_host *host, const char *subsysnqn,
+			struct libnvme_host *host, const char *subsysnqn,
 			const char *transport, const char *traddr,
 			const char *trsvcid, void *user_data),
 		void *user_data, struct nvmf_context **fctxp)
@@ -309,7 +309,7 @@ __public int nvmf_context_set_device(struct nvmf_context *fctx, const char *devi
  * Not all of these options may actually be supported,
  * but we retain the old behavior of passing all that might be.
  */
-static const struct nvme_fabric_options default_supported_options = {
+static const struct libnvme_fabric_options default_supported_options = {
 	.ctrl_loss_tmo = true,
 	.data_digest = true,
 	.disable_sqflow = true,
@@ -1416,7 +1416,7 @@ static __u32 nvmf_get_tel(const char *hostsymname)
  * @tsas:	Transport Specific Address Subtype for the address being
  *		registered.
  */
-static void nvmf_fill_die(struct nvmf_ext_die *die, struct nvme_host *h,
+static void nvmf_fill_die(struct nvmf_ext_die *die, struct libnvme_host *h,
 			  __u32 tel, __u8 trtype, __u8 adrfam,
 			  const char *reg_addr, union nvmf_tsas *tsas)
 {
@@ -1823,11 +1823,11 @@ static nvme_ctrl_t lookup_ctrl(nvme_host_t h, struct nvmf_context *fctx)
 }
 
 static int lookup_host(struct nvme_global_ctx *ctx,
-		struct nvmf_context *fctx, struct nvme_host **host)
+		struct nvmf_context *fctx, struct libnvme_host **host)
 {
 	_cleanup_free_ char *hnqn = NULL;
 	_cleanup_free_ char *hid = NULL;
-	struct nvme_host *h;
+	struct libnvme_host *h;
 	int err;
 
 	err = libnvme_host_get_ids(ctx, fctx->hostnqn, fctx->hostid, &hnqn, &hid);
@@ -1843,7 +1843,7 @@ static int lookup_host(struct nvme_global_ctx *ctx,
 	return 0;
 }
 
-static int setup_connection(struct nvmf_context *fctx, struct nvme_host *h,
+static int setup_connection(struct nvmf_context *fctx, struct libnvme_host *h,
 		bool discovery)
 {
 	if (fctx->hostkey)
@@ -1903,7 +1903,7 @@ static void nvme_parse_tls_args(const char *keyring, const char *tls_key,
 
 static int _nvmf_discovery(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx, bool connect,
-		struct nvme_ctrl *c)
+		struct libnvme_ctrl *c)
 {
 	_cleanup_free_ struct nvmf_discovery_log *log = NULL;
 	nvme_subsystem_t s = libnvme_ctrl_get_subsystem(c);
@@ -2045,7 +2045,7 @@ static bool is_persistent_discovery_ctrl(nvme_host_t h, nvme_ctrl_t c)
 }
 
 static int libnvme_add_ctrl(struct nvmf_context *fctx,
-		struct nvme_host *h, struct nvme_ctrl *c,
+		struct libnvme_host *h, struct libnvme_ctrl *c,
 		struct nvme_fabrics_config *cfg)
 {
 	int err;
@@ -2062,7 +2062,7 @@ retry:
 
 static int __create_discovery_ctrl(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx, nvme_host_t h,
-		struct nvme_fabrics_config *cfg, struct nvme_ctrl **ctrl)
+		struct nvme_fabrics_config *cfg, struct libnvme_ctrl **ctrl)
 {
 	nvme_ctrl_t c;
 	int tmo, ret;
@@ -2096,10 +2096,10 @@ static int __create_discovery_ctrl(struct nvme_global_ctx *ctx,
 static int nvmf_create_discovery_ctrl(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx, nvme_host_t h,
 		struct nvme_fabrics_config *cfg,
-		struct nvme_ctrl **ctrl)
+		struct libnvme_ctrl **ctrl)
 {
 	_cleanup_free_ struct nvme_id_ctrl *id = NULL;
-	struct nvme_ctrl *c;
+	struct libnvme_ctrl *c;
 	int ret;
 
 	ret = __create_discovery_ctrl(ctx, fctx, h, cfg, &c);
@@ -2237,9 +2237,9 @@ __public int nvmf_discovery_config_json(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx, bool connect, bool force)
 {
 	const char *hnqn, *hid;
-	struct nvme_subsystem *s;
-	struct nvme_host *h;
-	struct nvme_ctrl *c;
+	struct libnvme_subsystem *s;
+	struct libnvme_host *h;
+	struct libnvme_ctrl *c;
 	int ret = 0, err;
 
 	err = lookup_host(ctx, fctx, &h);
@@ -2343,8 +2343,8 @@ __public int nvmf_connect_config_json(struct nvme_global_ctx *ctx,
 __public int nvmf_discovery_config_file(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx, bool connect, bool force)
 {
-	struct nvme_host *h;
-	struct nvme_ctrl *c;
+	struct libnvme_host *h;
+	struct libnvme_ctrl *c;
 	int err;
 
 	err = lookup_host(ctx, fctx, &h);
@@ -2399,9 +2399,9 @@ __public int nvmf_config_modify(struct nvme_global_ctx *ctx,
 {
 	_cleanup_free_ char *hnqn = NULL;
 	_cleanup_free_ char *hid = NULL;
-	struct nvme_host *h;
-	struct nvme_subsystem *s;
-	struct nvme_ctrl *c;
+	struct libnvme_host *h;
+	struct libnvme_subsystem *s;
+	struct libnvme_ctrl *c;
 
 	if (!fctx->hostnqn)
 		fctx->hostnqn = hnqn = libnvme_read_hostnqn();
@@ -2526,7 +2526,7 @@ static bool validate_uri(struct nvme_global_ctx *ctx,
 }
 
 static int nbft_connect(struct nvme_global_ctx *ctx,
-		struct nvmf_context *fctx, struct nvme_host *h,
+		struct nvmf_context *fctx, struct libnvme_host *h,
 		struct nvmf_disc_log_entry *e,
 		struct nbft_info_subsystem_ns *ss,
 		struct nvme_fabrics_config *cfg)
@@ -2590,7 +2590,7 @@ static int nbft_connect(struct nvme_global_ctx *ctx,
 
 static int nbft_discovery(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx, struct nbft_info_discovery *dd,
-		struct nvme_host *h, struct nvme_ctrl *c,
+		struct libnvme_host *h, struct libnvme_ctrl *c,
 		struct nvme_fabrics_config *defcfg)
 {
 	struct nvmf_discovery_log *log = NULL;
@@ -2697,7 +2697,7 @@ __public int nvmf_discovery_nbft(struct nvme_global_ctx *ctx,
 	struct nbft_info_subsystem_ns **ss;
 	struct nbft_info_hfi *hfi;
 	struct nbft_info_discovery **dd;
-	struct nvme_host *h;
+	struct libnvme_host *h;
 	int ret, rr, i;
 
 	ret = lookup_host(ctx, fctx, &h);
@@ -2907,8 +2907,8 @@ out_free:
 __public int nvmf_discovery(struct nvme_global_ctx *ctx, struct nvmf_context *fctx,
 		bool connect, bool force)
 {
-	struct nvme_ctrl *c = NULL;
-	struct nvme_host *h;
+	struct libnvme_ctrl *c = NULL;
+	struct libnvme_host *h;
 	int ret;
 
 	ret = lookup_host(ctx, fctx, &h);
@@ -3001,8 +3001,8 @@ __public int nvmf_discovery(struct nvme_global_ctx *ctx, struct nvmf_context *fc
 
 __public int nvmf_connect(struct nvme_global_ctx *ctx, struct nvmf_context *fctx)
 {
-	struct nvme_host *h;
-	struct nvme_ctrl *c;
+	struct libnvme_host *h;
+	struct libnvme_ctrl *c;
 	int err;
 
 	err = lookup_host(ctx, fctx, &h);
