@@ -35,7 +35,7 @@ struct events {
 static int open_uevent(nvme_ctrl_t c)
 {
 	char buf[0x1000];
-	if (snprintf(buf, sizeof(buf), "%s/uevent", nvme_ctrl_get_sysfs_dir(c)) < 0)
+	if (snprintf(buf, sizeof(buf), "%s/uevent", libnvme_ctrl_get_sysfs_dir(c)) < 0)
 		return -1;
 	return open(buf, O_RDONLY);
 }
@@ -49,14 +49,14 @@ static void save_telemetry(nvme_ctrl_t c)
 	time_t s;
 
 	/* Clear the log (rae == false) at the end to see new telemetry events later */
-	ret = nvme_get_ctrl_telemetry(nvme_ctrl_get_transport_handle(c), false, &log,
+	ret = nvme_get_ctrl_telemetry(libnvme_ctrl_get_transport_handle(c), false, &log,
 				      NVME_TELEMETRY_DA_3, &log_size);
 	if (ret)
 		return;
 
 	s = time(NULL);
 	ret = snprintf(buf, sizeof(buf), "/var/log/%s-telemetry-%llu",
-		       nvme_ctrl_get_subsysnqn(c), (unsigned long long)s);
+		       libnvme_ctrl_get_subsysnqn(c), (unsigned long long)s);
 	if (ret < 0) {
 		free(log);
 		return;
@@ -100,7 +100,7 @@ static void check_telemetry(nvme_ctrl_t c, int ufd)
 		lid = (aen >> 16) & 0xff;
 
 		printf("%s: aen type:%x info:%x lid:%d\n",
-			nvme_ctrl_get_name(c), type, info, lid);
+			libnvme_ctrl_get_name(c), type, info, lid);
 		if (type == NVME_AER_NOTICE &&
 		    info == NVME_AER_NOTICE_TELEMETRY)
 			save_telemetry(c);
@@ -138,27 +138,27 @@ int main()
 	nvme_ctrl_t c;
 	nvme_host_t h;
 
-	ctx = nvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
+	ctx = libnvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
 	if (!ctx)
 		return 1;
 
-	if (nvme_scan_topology(ctx, NULL, NULL)) {
-		nvme_free_global_ctx(ctx);
+	if (libnvme_scan_topology(ctx, NULL, NULL)) {
+		libnvme_free_global_ctx(ctx);
 		return EXIT_FAILURE;
 	}
 
-	nvme_for_each_host(ctx, h)
-		nvme_for_each_subsystem(h, s)
-			nvme_subsystem_for_each_ctrl(s, c)
+	libnvme_for_each_host(ctx, h)
+		libnvme_for_each_subsystem(h, s)
+			libnvme_subsystem_for_each_ctrl(s, c)
 				i++;
 
 	e = calloc(i, sizeof(struct events));
 	FD_ZERO(&fds);
 	i = 0;
 
-	nvme_for_each_host(ctx, h) {
-		nvme_for_each_subsystem(h, s) {
-			nvme_subsystem_for_each_ctrl(s, c) {
+	libnvme_for_each_host(ctx, h) {
+		libnvme_for_each_subsystem(h, s) {
+			libnvme_subsystem_for_each_ctrl(s, c) {
 				int fd = open_uevent(c);
 
 				if (fd < 0)
@@ -172,7 +172,7 @@ int main()
 	}
 
 	wait_events(&fds, e, i);
-	nvme_free_global_ctx(ctx);
+	libnvme_free_global_ctx(ctx);
 	free(e);
 
 	return EXIT_SUCCESS;

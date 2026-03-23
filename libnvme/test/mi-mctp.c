@@ -244,7 +244,7 @@ static void test_rx_err(nvme_mi_ep_t ep, struct test_peer *peer)
 
 	peer->rx_rc = -1;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc != 0);
 }
 
@@ -261,7 +261,7 @@ static void test_tx_none(nvme_mi_ep_t ep, struct test_peer *peer)
 	peer->tx_buf_len = 0;
 	peer->tx_fn = tx_none;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc != 0);
 }
 
@@ -272,7 +272,7 @@ static void test_tx_err(nvme_mi_ep_t ep, struct test_peer *peer)
 
 	peer->tx_rc = -1;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc != 0);
 }
 
@@ -283,7 +283,7 @@ static void test_tx_short(nvme_mi_ep_t ep, struct test_peer *peer)
 
 	peer->tx_buf_len = 11;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc != 0);
 }
 
@@ -300,7 +300,7 @@ static void test_poll_err(nvme_mi_ep_t ep, struct test_peer *peer)
 
 	peer->poll_fn = poll_fn_err;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc != 0);
 }
 
@@ -312,7 +312,7 @@ static void test_read_mi_data(nvme_mi_ep_t ep, struct test_peer *peer)
 	/* empty response data */
 	peer->tx_buf_len = 8 + 32;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc == 0);
 }
 
@@ -325,7 +325,7 @@ static void test_mi_resp_err(nvme_mi_ep_t ep, struct test_peer *peer)
 	peer->tx_buf[4] = 0x02; /* internal error */
 	peer->tx_buf_len = 8;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc == 0x2);
 }
 
@@ -359,7 +359,7 @@ static void test_mi_resp_unaligned(nvme_mi_ep_t ep, struct test_peer *peer)
 
 	memset(&list, 0, sizeof(list));
 
-	rc = nvme_mi_mi_read_mi_data_ctrl_list(ep, 0, &list);
+	rc = libnvme_mi_mi_read_mi_data_ctrl_list(ep, 0, &list);
 	assert(rc == 0);
 
 	assert(le16_to_cpu(list.num) == 2);
@@ -419,7 +419,7 @@ static void test_admin_resp_err(nvme_mi_ep_t ep, struct test_peer *peer)
 	struct nvme_id_ctrl id;
 	int rc;
 
-	hdl = nvme_mi_init_transport_handle(ep, 1);
+	hdl = libnvme_mi_init_transport_handle(ep, 1);
 	assert(hdl);
 
 	/* Simple error response, will be shorter than the expected Admin
@@ -428,7 +428,7 @@ static void test_admin_resp_err(nvme_mi_ep_t ep, struct test_peer *peer)
 	peer->tx_buf_len = 8;
 
 	nvme_init_identify_ctrl(&cmd, &id);
-	rc = nvme_submit_admin_passthru(hdl, &cmd);
+	rc = libnvme_submit_admin_passthru(hdl, &cmd);
 	assert(nvme_status_get_type(rc) == NVME_STATUS_TYPE_MI);
 	assert(nvme_status_get_value(rc) == NVME_MI_RESP_INTERNAL_ERR);
 }
@@ -447,7 +447,7 @@ static void test_admin_resp_sizes(nvme_mi_ep_t ep, struct test_peer *peer)
 	unsigned int i;
 	int rc;
 
-	hdl = nvme_mi_init_transport_handle(ep, 1);
+	hdl = libnvme_mi_init_transport_handle(ep, 1);
 	assert(hdl);
 
 	peer->tx_buf[4] = 0x02; /* internal error */
@@ -455,12 +455,12 @@ static void test_admin_resp_sizes(nvme_mi_ep_t ep, struct test_peer *peer)
 	for (i = 8; i <= 4096 + 8; i+=4) {
 		peer->tx_buf_len = i;
 		nvme_init_identify_ctrl(&cmd, &id);
-		rc = nvme_submit_admin_passthru(hdl, &cmd);
+		rc = libnvme_submit_admin_passthru(hdl, &cmd);
 		assert(nvme_status_get_type(rc) == NVME_STATUS_TYPE_MI);
 		assert(nvme_status_get_value(rc) == NVME_MI_RESP_INTERNAL_ERR);
 	}
 
-	nvme_close(hdl);
+	libnvme_close(hdl);
 }
 
 /* test: timeout value passed to poll */
@@ -480,9 +480,9 @@ static void test_poll_timeout_value(nvme_mi_ep_t ep, struct test_peer *peer)
 	peer->tx_buf_len = 8 + 32;
 
 	peer->poll_fn = poll_fn_timeout_value;
-	nvme_mi_ep_set_timeout(ep, 3141);
+	libnvme_mi_ep_set_timeout(ep, 3141);
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc == 0);
 }
 
@@ -500,7 +500,7 @@ static void test_poll_timeout(nvme_mi_ep_t ep, struct test_peer *peer)
 
 	peer->poll_fn = poll_fn_timeout;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc != 0);
 	assert(errno == ETIMEDOUT);
 }
@@ -558,7 +558,7 @@ static void test_mpr_mi(nvme_mi_ep_t ep, struct test_peer *peer)
 	peer->tx_fn = tx_mpr;
 	peer->tx_data = &tx_info;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc == 0);
 }
 
@@ -577,13 +577,13 @@ static void test_mpr_admin(nvme_mi_ep_t ep, struct test_peer *peer)
 	peer->tx_fn = tx_mpr;
 	peer->tx_data = &tx_info;
 
-	hdl = nvme_mi_init_transport_handle(ep, 1);
+	hdl = libnvme_mi_init_transport_handle(ep, 1);
 
 	nvme_init_identify_ctrl(&cmd, &id);
-	rc = nvme_submit_admin_passthru(hdl, &cmd);
+	rc = libnvme_submit_admin_passthru(hdl, &cmd);
 	assert(rc == 0);
 
-	nvme_close(hdl);
+	libnvme_close(hdl);
 }
 
 /* We have seen drives that send a MPR response as a full Admin message,
@@ -604,13 +604,13 @@ static void test_mpr_admin_quirked(nvme_mi_ep_t ep, struct test_peer *peer)
 	peer->tx_fn = tx_mpr;
 	peer->tx_data = &tx_info;
 
-	hdl = nvme_mi_init_transport_handle(ep, 1);
+	hdl = libnvme_mi_init_transport_handle(ep, 1);
 
 	nvme_init_identify_ctrl(&cmd, &id);
-	rc = nvme_submit_admin_passthru(hdl, &cmd);
+	rc = libnvme_submit_admin_passthru(hdl, &cmd);
 	assert(rc == 0);
 
-	nvme_close(hdl);
+	libnvme_close(hdl);
 }
 
 /* helpers for the MPR + poll tests */
@@ -681,7 +681,7 @@ static void test_mpr_timeouts(nvme_mi_ep_t ep, struct test_peer *peer)
 	struct mpr_tx_info tx_info;
 	int rc;
 
-	nvme_mi_ep_set_timeout(ep, 3141);
+	libnvme_mi_ep_set_timeout(ep, 3141);
 
 	tx_info.msg_no = 1;
 	tx_info.final_len = sizeof(struct nvme_mi_mi_resp_hdr) + sizeof(ss_info);
@@ -697,7 +697,7 @@ static void test_mpr_timeouts(nvme_mi_ep_t ep, struct test_peer *peer)
 	peer->poll_fn = poll_fn_mpr_poll;
 	peer->poll_data = &poll_info;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc == 0);
 }
 
@@ -709,8 +709,8 @@ static void test_mpr_timeout_clamp(nvme_mi_ep_t ep, struct test_peer *peer)
 	struct mpr_tx_info tx_info;
 	int rc;
 
-	nvme_mi_ep_set_timeout(ep, 3141);
-	nvme_mi_ep_set_mprt_max(ep, 123400);
+	libnvme_mi_ep_set_timeout(ep, 3141);
+	libnvme_mi_ep_set_mprt_max(ep, 123400);
 
 	tx_info.msg_no = 1;
 	tx_info.final_len = sizeof(struct nvme_mi_mi_resp_hdr) + sizeof(ss_info);
@@ -726,7 +726,7 @@ static void test_mpr_timeout_clamp(nvme_mi_ep_t ep, struct test_peer *peer)
 	peer->poll_fn = poll_fn_mpr_poll;
 	peer->poll_data = &poll_info;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc == 0);
 }
 
@@ -738,8 +738,8 @@ static void test_mpr_mprt_zero(nvme_mi_ep_t ep, struct test_peer *peer)
 	struct mpr_tx_info tx_info;
 	int rc;
 
-	nvme_mi_ep_set_timeout(ep, 3141);
-	nvme_mi_ep_set_mprt_max(ep, 123400);
+	libnvme_mi_ep_set_timeout(ep, 3141);
+	libnvme_mi_ep_set_mprt_max(ep, 123400);
 
 	tx_info.msg_no = 1;
 	tx_info.final_len = sizeof(struct nvme_mi_mi_resp_hdr) + sizeof(ss_info);
@@ -755,7 +755,7 @@ static void test_mpr_mprt_zero(nvme_mi_ep_t ep, struct test_peer *peer)
 	peer->poll_fn = poll_fn_mpr_poll;
 	peer->poll_data = &poll_info;
 
-	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	assert(rc == 0);
 }
 
@@ -868,7 +868,7 @@ static void populate_tx_occ_list(bool aem_not_ack,
 		}
 	}
 
-	nvme_mi_aem_aeolli_set_aeoltl(list_hdr, aeoltl);
+	libnvme_mi_aem_aeolli_set_aeoltl(list_hdr, aeoltl);
 	test_peer.tx_buf_len = hdr_len + aeoltl;
 
 	if ((fn_data->fc == AEM_FC_BAD_OCC_RSP_BUFFER_LEN_SYNC && !aem_not_ack) ||
@@ -915,8 +915,8 @@ static void check_aem_sync_message(struct nvme_mi_aem_enabled_map *expected_mask
 			bool found = false;
 
 			for (int j = 0; j < count; j++) {
-				if (nvme_mi_aem_aesi_get_aesid(item[j].aesi) == i &&
-					nvme_mi_aem_aesi_get_aese(item[j].aesi) ==
+				if (libnvme_mi_aem_aesi_get_aesid(item[j].aesi) == i &&
+					libnvme_mi_aem_aesi_get_aese(item[j].aesi) ==
 					expected_state->enabled[i]) {
 					found = true;
 					break;
@@ -965,8 +965,8 @@ static int aem_rcv_enable_fn(struct test_peer *peer, void *buf, size_t len, int 
 		for (int i = 0; i < 256; i++) {
 			if (fn_data->ep_enabled_map.enabled[i]) {
 				list_hdr->numaes++;
-				nvme_mi_aem_aesi_set_aesid(&item[item_count], i);
-				nvme_mi_aem_aesi_set_aee(&item[item_count], 1);
+				libnvme_mi_aem_aesi_set_aesid(&item[item_count], i);
+				libnvme_mi_aem_aesi_set_aee(&item[item_count], 1);
 				item[item_count].aesl =
 					sizeof(struct nvme_mi_aem_supported_item);
 				item_count++;
@@ -1005,10 +1005,10 @@ static int aem_rcv_enable_fn(struct test_peer *peer, void *buf, size_t len, int 
 		list_hdr->aelver = 0;
 		list_hdr->aeolhl = sizeof(*list_hdr);
 		list_hdr->numaeo = 0;
-		nvme_mi_aem_aeolli_set_aeoltl(list_hdr, list_hdr->aeolhl);
+		libnvme_mi_aem_aeolli_set_aeoltl(list_hdr, list_hdr->aeolhl);
 
 		test_peer.tx_buf_len = sizeof(struct nvme_mi_mi_resp_hdr) +
-			nvme_mi_aem_aeolli_get_aeoltl(list_hdr->aeolli);
+			libnvme_mi_aem_aeolli_get_aeoltl(list_hdr->aeolli);
 
 		test_set_tx_mic(&test_peer);
 
@@ -1052,7 +1052,7 @@ static int aem_rcv_enable_fn(struct test_peer *peer, void *buf, size_t len, int 
 	return 0;
 }
 
-enum nvme_mi_aem_handler_next_action aem_handler(nvme_mi_ep_t ep, size_t num_events, void *userdata)
+enum libnvme_mi_aem_handler_next_action aem_handler(nvme_mi_ep_t ep, size_t num_events, void *userdata)
 {
 	struct aem_rcv_enable_fn_data *fn_data = userdata;
 
@@ -1089,7 +1089,7 @@ enum nvme_mi_aem_handler_next_action aem_handler(nvme_mi_ep_t ep, size_t num_eve
 		assert(num_events == item_count);
 
 		for (int i = 0; i < num_events; i++) {
-			struct nvme_mi_event *e = nvme_mi_aem_get_next_event(ep);
+			struct nvme_mi_event *e = libnvme_mi_aem_get_next_event(ep);
 			uint8_t idx = e->aeoi;
 
 			assert(fn_data->events[idx]);
@@ -1106,7 +1106,7 @@ enum nvme_mi_aem_handler_next_action aem_handler(nvme_mi_ep_t ep, size_t num_eve
 				e->vend_spec_info, e->vend_spec_info_len) == 0);
 		}
 
-		assert(nvme_mi_aem_get_next_event(ep) == NULL);
+		assert(libnvme_mi_aem_get_next_event(ep) == NULL);
 		break;
 	}
 	default:
@@ -1126,22 +1126,22 @@ static void aem_test_aem_api_helper(nvme_mi_ep_t ep,
 	test_peer.tx_fn = aem_rcv_enable_fn;
 
 	//This should not work outside the handler
-	assert(nvme_mi_aem_get_next_event(ep) == NULL);
+	assert(libnvme_mi_aem_get_next_event(ep) == NULL);
 
-	rc = nvme_mi_aem_enable(ep, config, test_peer.tx_data);
+	rc = libnvme_mi_aem_enable(ep, config, test_peer.tx_data);
 	assert(rc == 0);
 
 	//This should not work outside the handler
-	assert(nvme_mi_aem_get_next_event(ep) == NULL);
+	assert(libnvme_mi_aem_get_next_event(ep) == NULL);
 
-	rc = nvme_mi_aem_process(ep, test_peer.tx_data);
+	rc = libnvme_mi_aem_process(ep, test_peer.tx_data);
 	assert(rc == 0);
 
 	//One for initial enable, one for AEM.  No ACK events
 	assert(fn_data->callback_count == expected_event_count);
 
 	//This should not work outside the handler
-	assert(nvme_mi_aem_get_next_event(ep) == NULL);
+	assert(libnvme_mi_aem_get_next_event(ep) == NULL);
 }
 
 static void aem_test_aem_disable_helper(nvme_mi_ep_t ep,
@@ -1151,7 +1151,7 @@ static void aem_test_aem_disable_helper(nvme_mi_ep_t ep,
 		sizeof(fn_data->host_enabled_map));
 
 	fn_data->state = AEM_ES_GET_ENABLED;//This is the flow for disabling
-	assert(nvme_mi_aem_disable(ep) == 0);
+	assert(libnvme_mi_aem_disable(ep) == 0);
 }
 
 static void test_mi_aem_ep_based_failure_helper(nvme_mi_ep_t ep,
@@ -1185,14 +1185,14 @@ static void test_mi_aem_ep_based_failure_helper(nvme_mi_ep_t ep,
 	case AEM_FC_BAD_OCC_RSP_TOTAL_LEN_SYNC:
 	case AEM_FC_BAD_OCC_RSP_BUFFER_LEN_SYNC:
 		//These all should fail before processing
-		assert(nvme_mi_aem_enable(ep, &config, &fn_data) == -EPROTO);
+		assert(libnvme_mi_aem_enable(ep, &config, &fn_data) == -EPROTO);
 		break;
 	case AEM_FC_BAD_OCC_RSP_HDR_LEN_AEM:
 	case AEM_FC_BAD_OCC_RSP_TOTAL_LEN_AEM:
 	case AEM_FC_BAD_OCC_RSP_BUFFER_LEN_AEM:
 		//These should fail on the processing
-		assert(nvme_mi_aem_enable(ep, &config, &fn_data) == 0);
-		assert(nvme_mi_aem_process(ep, &fn_data) == -EPROTO);
+		assert(libnvme_mi_aem_enable(ep, &config, &fn_data) == 0);
+		assert(libnvme_mi_aem_process(ep, &fn_data) == -EPROTO);
 		break;
 	default:
 		assert(false);//Unexpected
@@ -1224,46 +1224,46 @@ static void test_mi_aem_enable_invalid_usage(nvme_mi_ep_t ep, struct test_peer *
 	config.aerd = 2;
 
 	//Call with invalid config due to nothing enabled
-	assert(nvme_mi_aem_enable(ep, &config, NULL) == -1);
+	assert(libnvme_mi_aem_enable(ep, &config, NULL) == -1);
 
 	config.aem_handler = NULL;
 	config.enabled_map.enabled[0] = true;
 
 	//Call with invalid config due to no callback
-	assert(nvme_mi_aem_enable(ep, &config, NULL) == -1);
+	assert(libnvme_mi_aem_enable(ep, &config, NULL) == -1);
 
 	//Call with invalid config due to being NULL
-	assert(nvme_mi_aem_enable(ep, NULL, NULL) == -1);
+	assert(libnvme_mi_aem_enable(ep, NULL, NULL) == -1);
 
 	config.aem_handler = aem_handler;
 	config.enabled_map.enabled[0] = true;
 
 	//Call with invalid endpoint
-	assert(nvme_mi_aem_enable(NULL, &config, NULL) == -1);
+	assert(libnvme_mi_aem_enable(NULL, &config, NULL) == -1);
 }
 
 /* test: Check aem process logic when API used improperly */
 static void test_mi_aem_process_invalid_usage(nvme_mi_ep_t ep, struct test_peer *peer)
 {
 	//Without calling enable first
-	assert(nvme_mi_aem_process(ep, NULL) == -1);
+	assert(libnvme_mi_aem_process(ep, NULL) == -1);
 
 	//Call with invalid ep
-	assert(nvme_mi_aem_process(NULL, NULL) == -1);
+	assert(libnvme_mi_aem_process(NULL, NULL) == -1);
 }
 
 /* test: Check aem disable logic when API used improperly */
 static void test_mi_aem_disable_invalid_usage(nvme_mi_ep_t ep, struct test_peer *peer)
 {
-	assert(nvme_mi_aem_disable(NULL) == -1);
+	assert(libnvme_mi_aem_disable(NULL) == -1);
 }
 
 static void test_mi_aem_get_enabled_invalid_usage(nvme_mi_ep_t ep, struct test_peer *peer)
 {
 	struct nvme_mi_aem_enabled_map map;
 
-	assert(nvme_mi_aem_get_enabled(ep, NULL) == -1);
-	assert(nvme_mi_aem_get_enabled(NULL, &map) == -1);
+	assert(libnvme_mi_aem_get_enabled(ep, NULL) == -1);
+	assert(libnvme_mi_aem_get_enabled(NULL, &map) == -1);
 }
 
 /* test: Check aem get enabled logic*/
@@ -1280,7 +1280,7 @@ static void test_mi_aem_get_enabled(nvme_mi_ep_t ep, struct test_peer *peer)
 	fn_data.ep_enabled_map.enabled[51] = true;
 	fn_data.ep_enabled_map.enabled[255] = true;
 
-	assert(nvme_mi_aem_get_enabled(ep, &map) == 0);
+	assert(libnvme_mi_aem_get_enabled(ep, &map) == 0);
 	assert(memcmp(&fn_data.ep_enabled_map, &map, sizeof(map)) == 0);
 }
 
@@ -1462,10 +1462,10 @@ int main(void)
 
 	__nvme_mi_mctp_set_ops(&ops);
 
-	ctx = nvme_create_global_ctx(fd, DEFAULT_LOGLEVEL);
+	ctx = libnvme_create_global_ctx(fd, DEFAULT_LOGLEVEL);
 	assert(ctx);
 
-	ep = nvme_mi_open_mctp(ctx, 0, 0);
+	ep = libnvme_mi_open_mctp(ctx, 0, 0);
 	assert(ep);
 
 	for (i = 0; i < ARRAY_SIZE(tests); i++) {
@@ -1473,8 +1473,8 @@ int main(void)
 		run_test(&tests[i], fd, ep, &test_peer);
 	}
 
-	nvme_mi_close(ep);
-	nvme_free_global_ctx(ctx);
+	libnvme_mi_close(ep);
+	libnvme_free_global_ctx(ctx);
 
 	test_close_log(fd);
 

@@ -26,7 +26,7 @@ linux-specific utility functions
   SHA2-512
 
 
-.. c:function:: int nvme_gen_dhchap_key (struct nvme_global_ctx *ctx, char *hostnqn, enum nvme_hmac_alg hmac, unsigned int key_len, unsigned char *secret, unsigned char *key)
+.. c:function:: int libnvme_gen_dhchap_key (struct nvme_global_ctx *ctx, char *hostnqn, enum nvme_hmac_alg hmac, unsigned int key_len, unsigned char *secret, unsigned char *key)
 
    DH-HMAC-CHAP key generation
 
@@ -56,7 +56,7 @@ If key generation was successful the function returns 0 or
 a negative error code otherwise.
 
 
-.. c:function:: int nvme_lookup_keyring (struct nvme_global_ctx *ctx, const char *keyring, long *key)
+.. c:function:: int libnvme_lookup_keyring (struct nvme_global_ctx *ctx, const char *keyring, long *key)
 
    Lookup keyring serial number
 
@@ -80,7 +80,7 @@ Looks up the serial number of the keyring **keyring**.
 0 on success or negative error code otherwise
 
 
-.. c:function:: char * nvme_describe_key_serial (struct nvme_global_ctx *ctx, long key_id)
+.. c:function:: char * libnvme_describe_key_serial (struct nvme_global_ctx *ctx, long key_id)
 
    Return key description
 
@@ -103,7 +103,7 @@ The description of **key_id** or NULL on failure.
 The returned string needs to be freed by the caller.
 
 
-.. c:function:: int nvme_lookup_key (struct nvme_global_ctx *ctx, const char *type, const char *identity, long *key)
+.. c:function:: int libnvme_lookup_key (struct nvme_global_ctx *ctx, const char *type, const char *identity, long *key)
 
    Lookup key serial number
 
@@ -131,7 +131,7 @@ with type ``type`` in the current session keyring.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_set_keyring (struct nvme_global_ctx *ctx, long keyring_id)
+.. c:function:: int libnvme_set_keyring (struct nvme_global_ctx *ctx, long keyring_id)
 
    Link keyring for lookup
 
@@ -153,7 +153,7 @@ its keys are available for further key lookups.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_read_key (struct nvme_global_ctx *ctx, long keyring_id, long key_id, int *len, unsigned char **key)
+.. c:function:: int libnvme_read_key (struct nvme_global_ctx *ctx, long keyring_id, long key_id, int *len, unsigned char **key)
 
    Read key raw data
 
@@ -186,7 +186,7 @@ If **keyring** is 0 the default keyring '.nvme' is used.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_update_key (struct nvme_global_ctx *ctx, long keyring_id, const char *key_type, const char *identity, unsigned char *key_data, int key_len, long *key)
+.. c:function:: int libnvme_update_key (struct nvme_global_ctx *ctx, long keyring_id, const char *key_type, const char *identity, unsigned char *key_data, int key_len, long *key)
 
    Update key raw data
 
@@ -259,7 +259,7 @@ inaccessible.
 Called for each TLS PSK in the keyring.
 
 
-.. c:function:: int nvme_scan_tls_keys (struct nvme_global_ctx *ctx, const char *keyring, nvme_scan_tls_keys_cb_t cb, void *data)
+.. c:function:: int libnvme_scan_tls_keys (struct nvme_global_ctx *ctx, const char *keyring, nvme_scan_tls_keys_cb_t cb, void *data)
 
    Iterate over TLS keys in a keyring
 
@@ -290,7 +290,7 @@ during iteration.
 Number of keys for which **cb** was called, or negative error code
 
 
-.. c:function:: int nvme_insert_tls_key (struct nvme_global_ctx *ctx, const char *keyring, const char *key_type, const char *hostnqn, const char *subsysnqn, int hmac, unsigned char *configured_key, int key_len, long *key)
+.. c:function:: int libnvme_insert_tls_key (struct nvme_global_ctx *ctx, const char *keyring, const char *key_type, const char *hostnqn, const char *subsysnqn, int hmac, unsigned char *configured_key, int key_len, long *key)
 
    Derive and insert TLS key
 
@@ -333,7 +333,7 @@ stores it as type **key_type** in the keyring specified by **keyring**.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_insert_tls_key_versioned (struct nvme_global_ctx *ctx, const char *keyring, const char *key_type, const char *hostnqn, const char *subsysnqn, int version, int hmac, unsigned char *configured_key, int key_len, long *key)
+.. c:function:: int libnvme_insert_tls_key_versioned (struct nvme_global_ctx *ctx, const char *keyring, const char *key_type, const char *hostnqn, const char *subsysnqn, int version, int hmac, unsigned char *configured_key, int key_len, long *key)
 
    Derive and insert TLS key
 
@@ -380,7 +380,7 @@ stores it as type **key_type** in the keyring specified by **keyring**.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_insert_tls_key_compat (struct nvme_global_ctx *ctx, const char *keyring, const char *key_type, const char *hostnqn, const char *subsysnqn, int version, int hmac, unsigned char *configured_key, int key_len, long *key)
+.. c:function:: int libnvme_insert_tls_key_compat (struct nvme_global_ctx *ctx, const char *keyring, const char *key_type, const char *hostnqn, const char *subsysnqn, int version, int hmac, unsigned char *configured_key, int key_len, long *key)
 
    Derive and insert TLS key
 
@@ -421,7 +421,7 @@ stores it as type **key_type** in the keyring specified by **keyring**.
 Derives a 'retained' TLS key as specified in NVMe TCP 1.0a (if
 **version** s set to '0') or NVMe TP8028 (if **version** is set to '1) and
 stores it as type **key_type** in the keyring specified by **keyring**.
-This version differs from **nvme_insert_tls_key_versioned\(\)** in that it
+This version differs from **libnvme_insert_tls_key_versioned\(\)** in that it
 uses the original implementation for HKDF Expand-Label which does not
 prefix the 'info' and 'label' strings with the length.
 
@@ -431,7 +431,7 @@ The key serial number if the key could be inserted into
 the keyring or 0 with errno otherwise.
 
 
-.. c:function:: int nvme_generate_tls_key_identity (struct nvme_global_ctx *ctx, const char *hostnqn, const char *subsysnqn, int version, int hmac, unsigned char *configured_key, int key_len, char **identity)
+.. c:function:: int libnvme_generate_tls_key_identity (struct nvme_global_ctx *ctx, const char *hostnqn, const char *subsysnqn, int version, int hmac, unsigned char *configured_key, int key_len, char **identity)
 
    Generate the TLS key identity
 
@@ -473,7 +473,7 @@ It is the responsibility of the caller to free the returned string.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_generate_tls_key_identity_compat (struct nvme_global_ctx *ctx, const char *hostnqn, const char *subsysnqn, int version, int hmac, unsigned char *configured_key, int key_len, char **identity)
+.. c:function:: int libnvme_generate_tls_key_identity_compat (struct nvme_global_ctx *ctx, const char *hostnqn, const char *subsysnqn, int version, int hmac, unsigned char *configured_key, int key_len, char **identity)
 
    Generate the TLS key identity
 
@@ -507,7 +507,7 @@ It is the responsibility of the caller to free the returned string.
 
 Derives a 'retained' TLS key as specified in NVMe TCP and
 generate the corresponding TLs identity. This version differs
-from **nvme_generate_tls_key_identity\(\)** in that it uses the original
+from **libnvme_generate_tls_key_identity\(\)** in that it uses the original
 implementation for HKDF-Expand-Label which does not prefix the 'info'
 and 'label' string with the length.
 
@@ -518,7 +518,7 @@ It is the responsibility of the caller to free the returned string.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_revoke_tls_key (struct nvme_global_ctx *ctx, const char *keyring, const char *key_type, const char *identity)
+.. c:function:: int libnvme_revoke_tls_key (struct nvme_global_ctx *ctx, const char *keyring, const char *key_type, const char *identity)
 
    Revoke TLS key from keyring
 
@@ -541,7 +541,7 @@ It is the responsibility of the caller to free the returned string.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_export_tls_key (struct nvme_global_ctx *ctx, const unsigned char *key_data, int key_len, char **identity)
+.. c:function:: int libnvme_export_tls_key (struct nvme_global_ctx *ctx, const unsigned char *key_data, int key_len, char **identity)
 
    Export a TLS key
 
@@ -572,7 +572,7 @@ string.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_export_tls_key_versioned (struct nvme_global_ctx *ctx, unsigned char version, unsigned char hmac, const unsigned char *key_data, size_t key_len, char **identity)
+.. c:function:: int libnvme_export_tls_key_versioned (struct nvme_global_ctx *ctx, unsigned char version, unsigned char hmac, const unsigned char *key_data, size_t key_len, char **identity)
 
    Export a TLS pre-shared key
 
@@ -610,7 +610,7 @@ string.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_import_tls_key (struct nvme_global_ctx *ctx, const char *encoded_key, int *key_len, unsigned int *hmac, unsigned char **key)
+.. c:function:: int libnvme_import_tls_key (struct nvme_global_ctx *ctx, const char *encoded_key, int *key_len, unsigned int *hmac, unsigned char **key)
 
    Import a TLS key
 
@@ -643,7 +643,7 @@ It is the responsibility of the caller to free the returned string.
 0 on success or negative error code otherwise
 
 
-.. c:function:: int nvme_import_tls_key_versioned (struct nvme_global_ctx *ctx, const char *encoded_key, unsigned char *version, unsigned char *hmac, size_t *key_len, unsigned char **key)
+.. c:function:: int libnvme_import_tls_key_versioned (struct nvme_global_ctx *ctx, const char *encoded_key, unsigned char *version, unsigned char *hmac, size_t *key_len, unsigned char **key)
 
    Import a TLS key
 

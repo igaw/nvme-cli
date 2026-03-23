@@ -377,10 +377,10 @@ static int get_additional_smart_log(int argc, char **argv, struct command *acmd,
 	if (!err) {
 		if (flags & JSON || cfg.json)
 			show_intel_smart_log_jsn(&smart_log, cfg.namespace_id,
-						 nvme_transport_handle_get_name(hdl));
+						 libnvme_transport_handle_get_name(hdl));
 		else if (!cfg.raw_binary)
 			show_intel_smart_log(&smart_log, cfg.namespace_id,
-					     nvme_transport_handle_get_name(hdl));
+					     libnvme_transport_handle_get_name(hdl));
 		else
 			d_raw((unsigned char *)&smart_log, sizeof(smart_log));
 	} else if (err > 0) {
@@ -1234,7 +1234,7 @@ static int read_entire_cmd(struct nvme_passthru_cmd *cmd, int total_size,
 
 	dword_tfer = min(max_tfer, total_size);
 	while (total_size > 0) {
-		err = nvme_submit_admin_passthru(hdl, cmd);
+		err = libnvme_submit_admin_passthru(hdl, cmd);
 		if (err) {
 			fprintf(stderr,
 				"failed on cmd.data_len %u cmd.cdw13 %u cmd.cdw12 %x cmd.cdw10 %u err %x remaining size %d\n",

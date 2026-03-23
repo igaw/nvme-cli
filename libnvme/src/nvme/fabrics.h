@@ -314,7 +314,7 @@ bool nvmf_is_registration_supported(nvme_ctrl_t c);
 int nvmf_register_ctrl(nvme_ctrl_t c, enum nvmf_dim_tas tas, __u32 *result);
 
 /**
- * nvme_parse_uri() - Parse the URI string
+ * libnvme_parse_uri() - Parse the URI string
  * @str:	URI string
  * @uri:	URI object to return
  *
@@ -326,7 +326,7 @@ int nvmf_register_ctrl(nvme_ctrl_t c, enum nvmf_dim_tas tas, __u32 *result);
  * Return: &nvme_fabrics_uri structure on success; NULL on failure with errno
  * set.
  */
-int nvme_parse_uri(const char *str, struct nvme_fabrics_uri **uri);
+int libnvme_parse_uri(const char *str, struct nvme_fabrics_uri **uri);
 
 /**
  * nvmf_free_uri() - Free the URI structure

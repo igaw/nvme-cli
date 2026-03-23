@@ -86,7 +86,7 @@ static int feat_get(struct nvme_transport_handle *hdl, const __u8 fid,
 	} else if (err > 0) {
 		nvme_show_status(err);
 	} else {
-		nvme_show_error("Get %s: %s", feat, nvme_strerror(errno));
+		nvme_show_error("Get %s: %s", feat, libnvme_strerror(errno));
 	}
 
 	nvme_show_finish();
@@ -173,19 +173,19 @@ static int perfc_set(struct nvme_transport_handle *hdl, __u8 fid, __u32 cdw11,
 		data.std_perf->r4karl = cfg->r4karl;
 		break;
 	case NVME_FEAT_PERFC_ATTRI_VS_MIN ... NVME_FEAT_PERFC_ATTRI_VS_MAX:
-		nvme_uuid_from_string(cfg->paid, data.vs_perf->paid);
+		libnvme_uuid_from_string(cfg->paid, data.vs_perf->paid);
 		data.vs_perf->attrl = cfg->attrl;
 		if (data.vs_perf->attrl && strlen(cfg->vs_data)) {
 			ffd = open(cfg->vs_data, O_RDONLY);
 			if (ffd < 0) {
 				nvme_show_error("Failed to open file %s: %s", cfg->vs_data,
-						nvme_strerror(errno));
+						libnvme_strerror(errno));
 				return -EINVAL;
 			}
 			err = read(ffd, data.vs_perf->vs, data.vs_perf->attrl);
 			if (err < 0) {
 				nvme_show_error("failed to read data buffer from input file: %s",
-						nvme_strerror(errno));
+						libnvme_strerror(errno));
 				return -errno;
 			}
 		}
@@ -398,7 +398,7 @@ static int temp_thresh_set(struct nvme_transport_handle *hdl, const __u8 fid,
 		sel = NVME_GET_FEATURES_SEL_SAVED;
 
 	nvme_init_get_features_temp_thresh(&cmd, sel, cfg->tmpsel, cfg->thsel);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (!err) {
 		nvme_feature_decode_temp_threshold(cmd.result, &tmpth,
 						   &tmpsel, &thsel, &tmpthh);
@@ -410,7 +410,7 @@ static int temp_thresh_set(struct nvme_transport_handle *hdl, const __u8 fid,
 
 	nvme_init_set_features_temp_thresh(&cmd, sv, cfg->tmpth, cfg->tmpsel,
 					   cfg->thsel, cfg->tmpthh);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 
 	nvme_show_init();
 
@@ -481,7 +481,7 @@ static int arbitration_set(struct nvme_transport_handle *hdl, const __u8 fid,
 		sel = NVME_GET_FEATURES_SEL_SAVED;
 
 	nvme_init_get_features_arbitration(&cmd, sel);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (!err) {
 		nvme_feature_decode_arbitration(cmd.result, &ab,
 						&lpw, &mpw, &hpw);
@@ -497,7 +497,7 @@ static int arbitration_set(struct nvme_transport_handle *hdl, const __u8 fid,
 
 	nvme_init_set_features_arbitration(&cmd, sv, cfg->ab, cfg->lpw,
 					   cfg->mpw, cfg->hpw);
-	err = nvme_submit_admin_passthru(hdl, &cmd);
+	err = libnvme_submit_admin_passthru(hdl, &cmd);
 
 	nvme_show_init();
 

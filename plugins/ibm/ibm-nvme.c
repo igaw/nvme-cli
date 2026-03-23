@@ -250,13 +250,13 @@ static int get_ibm_addi_smart_log(int argc, char **argv, struct command *cmd, st
 	if (!err) {
 		if (!cfg.raw_binary)
 			show_ibm_smart_log(&smart_log,
-				nvme_transport_handle_get_name(hdl));
+				libnvme_transport_handle_get_name(hdl));
 		else
 			d_raw((unsigned char *)&smart_log, sizeof(smart_log));
 	} else if (err > 0)
 		nvme_show_status(err);
 	else
-		nvme_show_error("ibm additional smart log: %s\n", nvme_strerror(errno));
+		nvme_show_error("ibm additional smart log: %s\n", libnvme_strerror(errno));
 
 	return err;
 }
@@ -381,13 +381,13 @@ static int get_ibm_vpd_log(int argc, char **argv, struct command *cmd, struct pl
 	if (!err) {
 		if (!cfg.raw_binary)
 			show_ibm_vpd_log(&vpd_log,
-				nvme_transport_handle_get_name(hdl));
+				libnvme_transport_handle_get_name(hdl));
 		else
 			d_raw((unsigned char *)&vpd_log, sizeof(vpd_log));
 	} else if (err > 0)
 		nvme_show_status(err);
 	else
-		nvme_show_error("ibm vpd log: %s\n", nvme_strerror(errno));
+		nvme_show_error("ibm vpd log: %s\n", libnvme_strerror(errno));
 
 	return err;
 }
@@ -590,7 +590,7 @@ static int get_ibm_persistent_event_log(int argc, char **argv,
 				pevent_log_info, log_length);
 	if (!err) {
 		nvme_show_ibm_persistent_event_log(pevent_log_info, cfg.action,
-				log_length, nvme_transport_handle_get_name(hdl),
+				log_length, libnvme_transport_handle_get_name(hdl),
 				flags);
 	}
 

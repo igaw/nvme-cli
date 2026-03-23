@@ -618,7 +618,7 @@ tasks are supported: register, deregister, and registration update.
 0 on success, or an error code on failure.
 
 
-.. c:function:: int nvme_parse_uri (const char *str, struct nvme_fabrics_uri **uri)
+.. c:function:: int libnvme_parse_uri (const char *str, struct nvme_fabrics_uri **uri)
 
    Parse the URI string
 

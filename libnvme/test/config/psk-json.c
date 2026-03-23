@@ -22,25 +22,25 @@ static bool import_export_key(struct nvme_global_ctx *ctx, nvme_ctrl_t c)
 	size_t len;
 	int ret;
 
-	ret = nvme_import_tls_key_versioned(ctx, nvme_ctrl_get_tls_key(c),
+	ret = libnvme_import_tls_key_versioned(ctx, libnvme_ctrl_get_tls_key(c),
 					    &version, &hmac, &len, &key);
 	if (ret) {
-		printf("ERROR: nvme_import_tls_key_versioned failed with %d\n",
+		printf("ERROR: libnvme_import_tls_key_versioned failed with %d\n",
 		       ret);
 		return false;
 
 	}
 
-	ret = nvme_export_tls_key_versioned(ctx, version, hmac, key, len,
+	ret = libnvme_export_tls_key_versioned(ctx, version, hmac, key, len,
 					    &encoded_key);
 	free(key);
 	if (ret) {
-		printf("ERROR: nvme_export_tls_key_versioned failed with %d\n",
+		printf("ERROR: libnvme_export_tls_key_versioned failed with %d\n",
 		       ret);
 		return false;
 	}
 
-	nvme_ctrl_set_tls_key(c, encoded_key);
+	libnvme_ctrl_set_tls_key(c, encoded_key);
 
 	free(encoded_key);
 
@@ -56,29 +56,29 @@ static bool psk_json_test(char *file)
 	nvme_ctrl_t c;
 	int err;
 
-	ctx = nvme_create_global_ctx(stderr, LOG_ERR);
+	ctx = libnvme_create_global_ctx(stderr, LOG_ERR);
 	if (!ctx)
 		return false;
 
-	err = nvme_read_config(ctx, file);
+	err = libnvme_read_config(ctx, file);
 	if (err)
 		goto out;
 
 
-	nvme_for_each_host(ctx, h)
-		nvme_for_each_subsystem(h, s)
-			nvme_subsystem_for_each_ctrl(s, c)
+	libnvme_for_each_host(ctx, h)
+		libnvme_for_each_subsystem(h, s)
+			libnvme_subsystem_for_each_ctrl(s, c)
 				if (!import_export_key(ctx, c))
 					goto out;
 
-	err = nvme_dump_config(ctx, STDOUT_FILENO);
+	err = libnvme_dump_config(ctx, STDOUT_FILENO);
 	if (err)
 		goto out;
 
 	pass = true;
 
 out:
-	nvme_free_global_ctx(ctx);
+	libnvme_free_global_ctx(ctx);
 	return pass;
 }
 

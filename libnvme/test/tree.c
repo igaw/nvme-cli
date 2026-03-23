@@ -80,12 +80,12 @@ static void show_ctrl(nvme_ctrl_t c)
 
 	printf("0x%p: %s %s %s %s %s %s",
 	       c,
-	       nvme_ctrl_get_subsysnqn(c),
-	       nvme_ctrl_get_transport(c),
-	       nvme_ctrl_get_traddr(c),
-	       nvme_ctrl_get_host_traddr(c),
-	       nvme_ctrl_get_host_iface(c),
-	       nvme_ctrl_get_trsvcid(c));
+	       libnvme_ctrl_get_subsysnqn(c),
+	       libnvme_ctrl_get_transport(c),
+	       libnvme_ctrl_get_traddr(c),
+	       libnvme_ctrl_get_host_traddr(c),
+	       libnvme_ctrl_get_host_iface(c),
+	       libnvme_ctrl_get_trsvcid(c));
 }
 
 static bool match_ctrl(struct test_data *d, nvme_ctrl_t c)
@@ -96,24 +96,24 @@ static bool match_ctrl(struct test_data *d, nvme_ctrl_t c)
 	if (d->c != c)
 		pass = false;
 
-	if (strcmp(d->f.transport, nvme_ctrl_get_transport(d->c)))
+	if (strcmp(d->f.transport, libnvme_ctrl_get_transport(d->c)))
 		pass = false;
 
-	if (strcmp(d->f.traddr, nvme_ctrl_get_traddr(d->c)))
+	if (strcmp(d->f.traddr, libnvme_ctrl_get_traddr(d->c)))
 		pass = false;
 
 
-	host_traddr = nvme_ctrl_get_host_traddr(c);
+	host_traddr = libnvme_ctrl_get_host_traddr(c);
 	if (d->f.host_traddr &&
 	    (!host_traddr || strcmp(d->f.host_traddr, host_traddr)))
 		pass = false;
 
-	host_iface = nvme_ctrl_get_host_iface(c);
+	host_iface = libnvme_ctrl_get_host_iface(c);
 	if (d->f.host_iface &&
 	    (!host_iface || strcmp(d->f.host_iface, host_iface)))
 		pass = false;
 
-	trsvid = nvme_ctrl_get_trsvcid(c);
+	trsvid = libnvme_ctrl_get_trsvcid(c);
 	if (d->f.trsvcid &&
 	    (!trsvid || strcmp(d->f.trsvcid, trsvid)))
 		pass = false;
@@ -128,16 +128,16 @@ static struct nvme_global_ctx *create_tree()
 	struct nvme_global_ctx *ctx;
 	nvme_host_t h;
 
-	ctx = nvme_create_global_ctx(stdout, LOG_DEBUG);
+	ctx = libnvme_create_global_ctx(stdout, LOG_DEBUG);
 	assert(ctx);
-	nvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
+	libnvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
 	assert(h);
 
 	printf("  ctrls created:\n");
 	for (int i = 0; i < ARRAY_SIZE(test_data); i++) {
 		struct test_data *d = &test_data[i];
 
-		assert(!nvme_get_subsystem(ctx, h, d->subsysname,
+		assert(!libnvme_get_subsystem(ctx, h, d->subsysname,
 			d->f.subsysnqn, &d->s));
 		assert(d->s);
 		d->c = nvme_lookup_ctrl(d->s, &d->f, NULL);
@@ -161,9 +161,9 @@ static unsigned int count_entries(struct nvme_global_ctx *ctx)
 	nvme_ctrl_t c;
 	unsigned int i = 0;
 
-	nvme_for_each_host(ctx, h)
-		nvme_for_each_subsystem(h, s)
-			nvme_subsystem_for_each_ctrl(s, c)
+	libnvme_for_each_host(ctx, h)
+		libnvme_for_each_subsystem(h, s)
+			libnvme_subsystem_for_each_ctrl(s, c)
 				i++;
 
 	return i;
@@ -239,8 +239,8 @@ static bool ctrl_lookups(struct nvme_global_ctx *ctx)
 	nvme_subsystem_t s;
 	bool pass = true;
 
-	h = nvme_first_host(ctx);
-	nvme_get_subsystem(ctx, h, DEFAULT_SUBSYSNAME, DEFAULT_SUBSYSNQN, &s);
+	h = libnvme_first_host(ctx);
+	libnvme_get_subsystem(ctx, h, DEFAULT_SUBSYSNAME, DEFAULT_SUBSYSNQN, &s);
 
 	printf("  lookup controller:\n");
 	for (int i = 0; i < ARRAY_SIZE(test_data); i++) {
@@ -272,7 +272,7 @@ static bool test_lookup(void)
 	pass = count_entries(ctx) == ARRAY_SIZE(test_data);
 	pass &= ctrl_lookups(ctx);
 
-	nvme_free_global_ctx(ctx);
+	libnvme_free_global_ctx(ctx);
 
 	return pass;
 }
@@ -296,13 +296,13 @@ static bool test_src_addr()
 	printf("\n"
 	       "test_src_addr:\n");
 
-	ctx = nvme_create_global_ctx(stdout, LOG_DEBUG);
+	ctx = libnvme_create_global_ctx(stdout, LOG_DEBUG);
 	assert(ctx);
 
-	nvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
+	libnvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
 	assert(h);
 
-	nvme_get_subsystem(ctx, h, DEFAULT_SUBSYSNAME, DEFAULT_SUBSYSNQN, &s);
+	libnvme_get_subsystem(ctx, h, DEFAULT_SUBSYSNAME, DEFAULT_SUBSYSNQN, &s);
 	assert(s);
 
 	c = nvme_lookup_ctrl(s, &fctx, NULL);
@@ -310,11 +310,11 @@ static bool test_src_addr()
 
 	c->address = NULL;
 	printf(" - Test c->address = NULL                                                       : src_addr = NULL             ");
-	src_addr = nvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
+	src_addr = libnvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
 	if (src_addr != NULL) {
 		printf("[FAIL]\n");
 		fprintf(stderr,
-			"nvme_ctrl_get_src_addr() c->address=NULL should return src_addr=NULL\n");
+			"libnvme_ctrl_get_src_addr() c->address=NULL should return src_addr=NULL\n");
 		pass = false;
 	} else {
 		printf("[PASS]\n");
@@ -322,11 +322,11 @@ static bool test_src_addr()
 
 	c->address = "";
 	printf(" - Test c->address = \"\"                                                         : src_addr = NULL             ");
-	src_addr = nvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
+	src_addr = libnvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
 	if (src_addr != NULL) {
 		printf("[FAIL]\n");
 		fprintf(stderr,
-			"nvme_ctrl_get_src_addr() c->address="" should return src_addr=NULL\n");
+			"libnvme_ctrl_get_src_addr() c->address="" should return src_addr=NULL\n");
 		pass = false;
 	} else {
 		printf("[PASS]\n");
@@ -334,11 +334,11 @@ static bool test_src_addr()
 
 	c->address = "traddr=192.168.56.1,trsvcid=8009";
 	printf(" - Test c->address = \"%s\"                         : src_addr = NULL             ", c->address);
-	src_addr = nvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
+	src_addr = libnvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
 	if (src_addr != NULL) {
 		printf("[FAIL]\n");
 		fprintf(stderr,
-			"nvme_ctrl_get_src_addr() c->address=%s should return src_addr=NULL\n",
+			"libnvme_ctrl_get_src_addr() c->address=%s should return src_addr=NULL\n",
 			c->address);
 		pass = false;
 	} else {
@@ -347,11 +347,11 @@ static bool test_src_addr()
 
 	c->address = "traddr=192.168.56.1,trsvcid=8009,src_addr=" SRC_ADDR4;
 	printf(" - Test c->address = \"%s\" : src_addr = \"" SRC_ADDR4 "\" ", c->address);
-	src_addr = nvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
+	src_addr = libnvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
 	if (!src_addr || strcmp(src_addr, SRC_ADDR4)) {
 		printf("[FAIL]\n");
 		fprintf(stderr,
-			"nvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR4 "\n",
+			"libnvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR4 "\n",
 			c->address);
 		pass = false;
 	} else {
@@ -360,11 +360,11 @@ static bool test_src_addr()
 
 	c->address = "traddr=192.168.56.1,src_addr=" SRC_ADDR4 ",trsvcid=8009";
 	printf(" - Test c->address = \"%s\" : src_addr = \"" SRC_ADDR4 "\" ", c->address);
-	src_addr = nvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
+	src_addr = libnvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
 	if (!src_addr || strcmp(src_addr, SRC_ADDR4)) {
 		printf("[FAIL]\n");
 		fprintf(stderr,
-			"nvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR4 "\n",
+			"libnvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR4 "\n",
 			c->address);
 		pass = false;
 	} else {
@@ -373,11 +373,11 @@ static bool test_src_addr()
 
 	c->address = "traddr=1234::abcd,trsvcid=8009,src_addr=" SRC_ADDR6;
 	printf(" - Test c->address = \"%s\"       : src_addr = \"" SRC_ADDR6 "\" ", c->address);
-	src_addr = nvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
+	src_addr = libnvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
 	if (!src_addr || strcmp(src_addr, SRC_ADDR6)) {
 		printf("[FAIL]\n");
 		fprintf(stderr,
-			"nvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR6 "\n",
+			"libnvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR6 "\n",
 			c->address);
 		pass = false;
 	} else {
@@ -386,11 +386,11 @@ static bool test_src_addr()
 
 	c->address = "traddr=1234::abcd,src_addr=" SRC_ADDR6 ",trsvcid=8009";
 	printf(" - Test c->address = \"%s\"       : src_addr = \"" SRC_ADDR6 "\" ", c->address);
-	src_addr = nvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
+	src_addr = libnvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
 	if (!src_addr || strcmp(src_addr, SRC_ADDR6)) {
 		printf("[FAIL]\n");
 		fprintf(stderr,
-			"nvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR6 "\n",
+			"libnvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR6 "\n",
 			c->address);
 		pass = false;
 	} else {
@@ -399,11 +399,11 @@ static bool test_src_addr()
 
 	c->address = "traddr=1234::abcd,trsvcid=8009,src_addr=" SRC_ADDR6 "%scope";
 	printf(" - Test c->address = \"%s\" : src_addr = \"" SRC_ADDR6 "\" ", c->address);
-	src_addr = nvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
+	src_addr = libnvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
 	if (!src_addr || strcmp(src_addr, SRC_ADDR6)) {
 		printf("[FAIL]\n");
 		fprintf(stderr,
-			"nvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR6 "\n",
+			"libnvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR6 "\n",
 			c->address);
 		pass = false;
 	} else {
@@ -412,11 +412,11 @@ static bool test_src_addr()
 
 	c->address = "traddr=1234::abcd,src_addr=" SRC_ADDR6 "%scope,trsvcid=8009";
 	printf(" - Test c->address = \"%s\" : src_addr = \"" SRC_ADDR6 "\" ", c->address);
-	src_addr = nvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
+	src_addr = libnvme_ctrl_get_src_addr(c, buffer, sizeof(buffer));
 	if (!src_addr || strcmp(src_addr, SRC_ADDR6)) {
 		printf("[FAIL]\n");
 		fprintf(stderr,
-			"nvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR6 "\n",
+			"libnvme_ctrl_get_src_addr() c->address=%s should return src_addr=" SRC_ADDR6 "\n",
 			c->address);
 		pass = false;
 	} else {
@@ -425,7 +425,7 @@ static bool test_src_addr()
 
 	c->address = NULL; /* Needed to avoid freeing non-malloced memory (see above) */
 
-	nvme_free_global_ctx(ctx);
+	libnvme_free_global_ctx(ctx);
 
 	return pass;
 }
@@ -467,13 +467,13 @@ static bool ctrl_match(const char *tag,
 	nvme_ctrl_t found_ctrl;
 	nvme_subsystem_t s;
 
-	ctx = nvme_create_global_ctx(stdout, LOG_INFO);
+	ctx = libnvme_create_global_ctx(stdout, LOG_INFO);
 	assert(ctx);
 
-	nvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
+	libnvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
 	assert(h);
 
-	assert(!nvme_get_subsystem(ctx, h, DEFAULT_SUBSYSNAME,
+	assert(!libnvme_get_subsystem(ctx, h, DEFAULT_SUBSYSNAME,
 		 reference->f.subsysnqn ?
 			reference->f.subsysnqn : DEFAULT_SUBSYSNQN,
 		&s));
@@ -546,7 +546,7 @@ static bool ctrl_match(const char *tag,
 	reference_ctrl->name = NULL;
 	reference_ctrl->address = NULL;
 
-	nvme_free_global_ctx(ctx);
+	libnvme_free_global_ctx(ctx);
 
 	return true;
 }
@@ -1089,13 +1089,13 @@ static bool ctrl_config_match(const char *tag,
 	nvme_ctrl_t reference_ctrl; /* Existing controller (from sysfs) */
 	nvme_subsystem_t s;
 
-	ctx = nvme_create_global_ctx(stdout, LOG_INFO);
+	ctx = libnvme_create_global_ctx(stdout, LOG_INFO);
 	assert(ctx);
 
-	nvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
+	libnvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
 	assert(h);
 
-	assert(!nvme_get_subsystem(ctx, h, DEFAULT_SUBSYSNAME,
+	assert(!libnvme_get_subsystem(ctx, h, DEFAULT_SUBSYSNAME,
 		reference->f.subsysnqn ?
 			reference->f.subsysnqn : DEFAULT_SUBSYSNQN,
 		&s));
@@ -1136,7 +1136,7 @@ static bool ctrl_config_match(const char *tag,
 	reference_ctrl->name = NULL;
 	reference_ctrl->address = NULL;
 
-	nvme_free_global_ctx(ctx);
+	libnvme_free_global_ctx(ctx);
 
 	return true;
 }

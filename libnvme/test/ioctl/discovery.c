@@ -419,10 +419,10 @@ static void run_test(struct nvme_global_ctx *ctx, const char *test_name,
 int main(void)
 {
 	struct nvme_global_ctx *ctx =
-		nvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
+		libnvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
 
 	set_mock_fd(TEST_FD);
-	check(!nvme_open(ctx, "NVME_TEST_FD", &test_hdl),
+	check(!libnvme_open(ctx, "NVME_TEST_FD", &test_hdl),
 	      "opening test link failed");
 
 	RUN_TEST(no_entries);
@@ -434,5 +434,5 @@ int main(void)
 	RUN_TEST(entries_error);
 	RUN_TEST(genctr_error);
 
-	nvme_free_global_ctx(ctx);
+	libnvme_free_global_ctx(ctx);
 }

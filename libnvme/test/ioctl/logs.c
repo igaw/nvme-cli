@@ -1103,10 +1103,10 @@ static void run_test(const char *test_name, void (*test_fn)(void))
 int main(void)
 {
 	struct nvme_global_ctx * ctx =
-		nvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
+		libnvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
 
 	set_mock_fd(TEST_FD);
-	check(!nvme_open(ctx, "NVME_TEST_FD", &test_hdl),
+	check(!libnvme_open(ctx, "NVME_TEST_FD", &test_hdl),
 	      "opening test link failed");
 
 	RUN_TEST(get_log_sanitize);
@@ -1153,5 +1153,5 @@ int main(void)
 	RUN_TEST(get_log_persistent_event);
 	RUN_TEST(get_log_lockdown);
 
-	nvme_free_global_ctx(ctx);
+	libnvme_free_global_ctx(ctx);
 }

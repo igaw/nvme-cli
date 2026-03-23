@@ -104,9 +104,9 @@ int solidigm_get_garbage_collection_log(int argc, char **argv, struct command *a
 		if (flags & BINARY)
 			d_raw((unsigned char *)&gc_log, sizeof(gc_log));
 		else if (flags & JSON)
-			vu_gc_log_show_json(&gc_log, nvme_transport_handle_get_name(hdl));
+			vu_gc_log_show_json(&gc_log, libnvme_transport_handle_get_name(hdl));
 		else
-			vu_gc_log_show(&gc_log, nvme_transport_handle_get_name(hdl), uuid_index);
+			vu_gc_log_show(&gc_log, libnvme_transport_handle_get_name(hdl), uuid_index);
 	} else if (err > 0) {
 		nvme_show_status(err);
 	}

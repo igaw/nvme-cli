@@ -472,7 +472,7 @@ static int NVMEGetLogPage(struct nvme_transport_handle *hdl, unsigned char ucLog
 		cmd.addr = (__u64) (uintptr_t) pTempPtr;
 		cmd.nsid = 0xFFFFFFFF;
 		cmd.data_len = uiXferDwords * 4;
-		err = nvme_submit_admin_passthru(hdl, &cmd);
+		err = libnvme_submit_admin_passthru(hdl, &cmd);
 		ullBytesRead += uiXferDwords * 4;
 		if (ucLogID == 0x07 || ucLogID == 0x08 || ucLogID == 0xE9)
 			pTempPtr = pBuffer + (ullBytesRead - offset);
@@ -561,7 +561,7 @@ static int micron_fw_commit(struct nvme_transport_handle *hdl, int select)
 		.cdw12 = select,
 	};
 
-	return nvme_submit_admin_passthru(hdl, &cmd);
+	return libnvme_submit_admin_passthru(hdl, &cmd);
 }
 
 static int micron_selective_download(int argc, char **argv,
@@ -662,7 +662,7 @@ static int micron_selective_download(int argc, char **argv,
 			perror("fw-download");
 			goto out_free;
 		}
-		err = nvme_submit_admin_passthru(hdl, &cmd);
+		err = libnvme_submit_admin_passthru(hdl, &cmd);
 		if (err < 0) {
 			perror("fw-download");
 			goto out_free;
@@ -969,7 +969,7 @@ static int micron_pcie_stats(int argc, char **argv,
 		admin_cmd.addr = (__u64)(uintptr_t)&pcie_error_counters;
 		admin_cmd.data_len = sizeof(pcie_error_counters);
 		admin_cmd.cdw10 = 1;
-		err = nvme_submit_admin_passthru(hdl, &admin_cmd);
+		err = libnvme_submit_admin_passthru(hdl, &admin_cmd);
 		if (!err) {
 			counters = true;
 			correctable_errors = 10;
@@ -1137,7 +1137,7 @@ static int micron_clear_pcie_correctable_errors(int argc, char **argv,
 		admin_cmd.opcode = 0xD6;
 		admin_cmd.addr = 0;
 		admin_cmd.cdw10 = 0;
-		err = nvme_submit_admin_passthru(hdl, &admin_cmd);
+		err = libnvme_submit_admin_passthru(hdl, &admin_cmd);
 		if (!err) {
 			printf("Device correctable error counters are cleared!\n");
 			goto out;
@@ -2500,7 +2500,7 @@ static int micron_drive_info(int argc, char **argv, struct command *acmd,
 		admin_cmd.addr = (__u64) (uintptr_t) &dinfo;
 		admin_cmd.data_len = (__u32)sizeof(dinfo);
 		admin_cmd.cdw12 = 3;
-		err = nvme_submit_admin_passthru(hdl, &admin_cmd);
+		err = libnvme_submit_admin_passthru(hdl, &admin_cmd);
 		if (err) {
 			fprintf(stderr, "ERROR : drive-info opcode failed with 0x%x\n", err);
 			return -1;
@@ -4402,7 +4402,7 @@ static int micron_health_info(int argc, char **argv, struct command *acmd,
 	err = nvme_get_log_smart(hdl, NVME_NSID_ALL, &smart_log);
 	if (err) {
 		fprintf(stderr, "Failed to get SMART log: %s\n",
-			nvme_strerror(err));
+			libnvme_strerror(err));
 		return err;
 	}
 
@@ -4493,7 +4493,7 @@ static int micron_id_ctrl(int argc, char **argv, struct command *acmd,
 	err = nvme_identify_ctrl(hdl, &ctrl);
 	if (err) {
 		fprintf(stderr, "identify controller failed: %s\n",
-			nvme_strerror(err));
+			libnvme_strerror(err));
 		return err;
 	}
 

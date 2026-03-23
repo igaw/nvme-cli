@@ -267,7 +267,7 @@ static void stdout_c3_log(struct nvme_transport_handle *hdl, struct ssd_latency_
 
 	printf("-Latency Monitor/C3 Log Page Data-\n");
 	printf("  Controller   :  %s\n",
-	       nvme_transport_handle_get_name(hdl));
+	       libnvme_transport_handle_get_name(hdl));
 	printf("  Feature Status                     0x%x\n",
 	       log_data->feature_status);
 	printf("  Active Bucket Timer                %d min\n",

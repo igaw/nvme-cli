@@ -60,21 +60,21 @@ int main()
 
 	nvmf_default_config(&cfg);
 
-	ctx = nvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
+	ctx = libnvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
 	if (!ctx)
 		return 1;
 
-	ret = nvme_scan_topology(ctx, NULL, NULL);
+	ret = libnvme_scan_topology(ctx, NULL, NULL);
 	if (ret) {
-		nvme_free_global_ctx(ctx);
+		libnvme_free_global_ctx(ctx);
 		return 1;
 	}
-	ret = nvme_get_host(ctx, NULL, NULL, &h);
+	ret = libnvme_get_host(ctx, NULL, NULL, &h);
 	if (ret) {
 		fprintf(stderr, "Failed to allocated memory\n");
 		return 1;
 	}
-	ret = nvme_create_ctrl(ctx, NVME_DISC_SUBSYS_NAME, "loop",
+	ret = libnvme_create_ctrl(ctx, NVME_DISC_SUBSYS_NAME, "loop",
 			       NULL, NULL, NULL, NULL, &c);
 	if (ret) {
 		fprintf(stderr, "Failed to allocate memory\n");
@@ -87,15 +87,15 @@ int main()
 	}
 
 	ret = nvmf_get_discovery_log(c, &log, 4);
-	nvme_disconnect_ctrl(c);
-	nvme_free_ctrl(c);
+	libnvme_disconnect_ctrl(c);
+	libnvme_free_ctrl(c);
 
 	if (ret)
 		fprintf(stderr, "nvmf-discover-log:%x\n", ret);
 	else
 		print_discover_log(log);
 
-	nvme_free_global_ctx(ctx);
+	libnvme_free_global_ctx(ctx);
 	free(log);
 	return 0;
 }

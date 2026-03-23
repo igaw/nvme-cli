@@ -712,7 +712,7 @@ static int parse_raw_nbft(struct nvme_global_ctx *ctx, struct nbft_info *nbft)
 	return 0;
 }
 
-__public void nvme_free_nbft(struct nvme_global_ctx *ctx, struct nbft_info *nbft)
+__public void libnvme_free_nbft(struct nvme_global_ctx *ctx, struct nbft_info *nbft)
 {
 	struct nbft_info_hfi **hfi;
 	struct nbft_info_security **sec;
@@ -738,7 +738,7 @@ __public void nvme_free_nbft(struct nvme_global_ctx *ctx, struct nbft_info *nbft
 	free(nbft);
 }
 
-__public int nvme_read_nbft(struct nvme_global_ctx *ctx, struct nbft_info **nbft,
+__public int libnvme_read_nbft(struct nvme_global_ctx *ctx, struct nbft_info **nbft,
 		const char *filename)
 {
 	__u8 *raw_nbft = NULL;
@@ -752,14 +752,14 @@ __public int nvme_read_nbft(struct nvme_global_ctx *ctx, struct nbft_info **nbft
 	raw_nbft_fp = fopen(filename, "rb");
 	if (raw_nbft_fp == NULL) {
 		nvme_msg(ctx, LOG_ERR, "Failed to open %s: %s\n",
-			 filename, nvme_strerror(errno));
+			 filename, libnvme_strerror(errno));
 		return -EINVAL;
 	}
 
 	i = fseek(raw_nbft_fp, 0L, SEEK_END);
 	if (i) {
 		nvme_msg(ctx, LOG_ERR, "Failed to read from %s: %s\n",
-			 filename, nvme_strerror(errno));
+			 filename, libnvme_strerror(errno));
 		fclose(raw_nbft_fp);
 		return -EINVAL;
 	}
@@ -778,7 +778,7 @@ __public int nvme_read_nbft(struct nvme_global_ctx *ctx, struct nbft_info **nbft
 	i = fread(raw_nbft, sizeof(*raw_nbft), raw_nbft_size, raw_nbft_fp);
 	if (i != raw_nbft_size) {
 		nvme_msg(ctx, LOG_ERR, "Failed to read from %s: %s\n",
-			 filename, nvme_strerror(errno));
+			 filename, libnvme_strerror(errno));
 		fclose(raw_nbft_fp);
 		free(raw_nbft);
 		return -EINVAL;
@@ -802,7 +802,7 @@ __public int nvme_read_nbft(struct nvme_global_ctx *ctx, struct nbft_info **nbft
 
 	if (parse_raw_nbft(ctx, *nbft)) {
 		nvme_msg(ctx, LOG_ERR, "Failed to parse %s\n", filename);
-		nvme_free_nbft(ctx, *nbft);
+		libnvme_free_nbft(ctx, *nbft);
 		return -EINVAL;
 	}
 	return 0;

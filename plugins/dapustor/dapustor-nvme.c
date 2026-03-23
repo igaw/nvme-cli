@@ -550,12 +550,12 @@ static int dapustor_additional_smart_log(int argc, char **argv, struct command *
 		if (flags & JSON || cfg.json)
 			show_dapustor_smart_log_jsn(&smart_log, &ext_smart_log,
 						    cfg.namespace_id,
-						    nvme_transport_handle_get_name(hdl),
+						    libnvme_transport_handle_get_name(hdl),
 						    has_ext);
 		else if (!cfg.raw_binary)
 			show_dapustor_smart_log(&smart_log, &ext_smart_log,
 						cfg.namespace_id,
-						nvme_transport_handle_get_name(hdl), has_ext);
+						libnvme_transport_handle_get_name(hdl), has_ext);
 		else {
 			d_raw((unsigned char *)&smart_log, sizeof(smart_log));
 			if (has_ext)

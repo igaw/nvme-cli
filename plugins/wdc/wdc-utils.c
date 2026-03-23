@@ -189,7 +189,7 @@ bool wdc_CheckUuidListSupport(struct nvme_transport_handle *hdl,
 		else if (err > 0)
 			nvme_show_status(err);
 		else
-			nvme_show_error("identify UUID list: %s", nvme_strerror(errno));
+			nvme_show_error("identify UUID list: %s", libnvme_strerror(errno));
 	}
 
 	return false;

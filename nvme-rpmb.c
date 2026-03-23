@@ -172,7 +172,7 @@ static int read_file(const char *file, unsigned char **data, unsigned int *len)
 	if (file == NULL) return err;
 
 	if ((fd = open(file, O_RDONLY)) < 0) {
-		fprintf(stderr, "Failed to open %s: %s\n", file, nvme_strerror(errno));
+		fprintf(stderr, "Failed to open %s: %s\n", file, libnvme_strerror(errno));
 		return fd;
 	}
 
@@ -193,7 +193,7 @@ static int read_file(const char *file, unsigned char **data, unsigned int *len)
 	if (err < 0) {
 		err = -errno;
 		fprintf(stderr, "Failed to read data from file"
-				" %s with %s\n", file, nvme_strerror(errno));
+				" %s with %s\n", file, libnvme_strerror(errno));
 		free(buf);
 		goto out;
 	}
@@ -282,7 +282,7 @@ static int send_rpmb_req(struct nvme_transport_handle *hdl, unsigned char tgt,
 
 	nvme_init_security_send(&cmd, NVME_NSID_NONE, tgt, RPMB_NVME_SPSP,
 			        RPMB_NVME_SECP, 0, req, size);
-	return nvme_submit_admin_passthru(hdl, &cmd);
+	return libnvme_submit_admin_passthru(hdl, &cmd);
 }
 
 static int recv_rpmb_rsp(struct nvme_transport_handle *hdl, int tgt, int size,
@@ -292,7 +292,7 @@ static int recv_rpmb_rsp(struct nvme_transport_handle *hdl, int tgt, int size,
 
 	nvme_init_security_receive(&cmd, 0, tgt, RPMB_NVME_SPSP,
 				   RPMB_NVME_SECP, 0, rsp, size);
-	return nvme_submit_admin_passthru(hdl, &cmd);
+	return libnvme_submit_admin_passthru(hdl, &cmd);
 }
 
 /* Initialize nonce value in rpmb request frame */

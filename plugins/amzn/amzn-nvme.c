@@ -599,7 +599,7 @@ static int get_stats(int argc, char **argv, struct command *acmd,
 
 	if (!strncmp((char *)ctrl.mn, AMZN_NVME_LOCAL_STORAGE_PREFIX,
 		     strlen(AMZN_NVME_LOCAL_STORAGE_PREFIX))) {
-		if (nvme_get_nsid(hdl, &nsid) < 0) {
+		if (libnvme_get_nsid(hdl, &nsid) < 0) {
 			struct nvme_id_ctrl test_ctrl;
 
 			if (nvme_identify_ctrl(hdl, &test_ctrl) == 0) {
