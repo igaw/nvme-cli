@@ -40,6 +40,7 @@
  * @ENVME_CONNECT_IGNORED:	connect attempt is ignored due to configuration
  * @ENVME_CONNECT_NOKEY:	the TLS key is missing
  * @ENVME_CONNECT_COMPNOTFOUND: combination not found
+ * @ENVME_CONNECT_TIMEOUT:	connection attempt timeouted
  */
 enum libnvme_connect_err {
 	ENVME_CONNECT_RESOLVE	= 1000,
@@ -64,6 +65,7 @@ enum libnvme_connect_err {
 	ENVME_CONNECT_IGNORED,
 	ENVME_CONNECT_NOKEY,
 	ENVME_CONNECT_COMPNOTFOUND,
+	ENVME_CONNECT_TIMEOUT,
 };
 
 /**

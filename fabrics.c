@@ -265,6 +265,7 @@ static int create_unit(struct libnvmf_context *fctx,
 	__cleanup_free char *unit_name = NULL;
 	__cleanup_free char *path = NULL;
 	__cleanup_free char *pnqn = NULL;
+	__cleanup_free char *cli = NULL;
 	const char *val;
 	FILE *f;
 	int err;
@@ -285,6 +286,10 @@ static int create_unit(struct libnvmf_context *fctx,
 	if (err < 0)
 		return -errno;
 
+	err = asprintf(&cli, "%s/nvme", get_current_dir_name());
+	if (err < 0)
+		return -errno;
+
 	f = fopen(filename, "w");
 	if (!f)
 		return -errno;
@@ -296,31 +301,17 @@ static int create_unit(struct libnvmf_context *fctx,
 	fprintf(f, "Wants=network-online.target\n\n");
 
 	fprintf(f, "[Service]\n");
-	fprintf(f, "Type=oneshot\n");
-	fprintf(f, "RemainAfterExit=yes\n");
+	fprintf(f, "Type=simple\n");
 
-	fprintf(f, "ExecStart=/root/nvme-cli/.build/nvme connect \\\n");
+	fprintf(f, "ExecStart=%s connect \\\n", cli);
 	if (is_printable_at_level(LIBNVME_LOG_DEBUG))
 		fprintf(f, "  -vv \\\n");
+	fprintf(f, "  --disconnect-on-sigint \\\n");
 	fprintf(f, "  --transport=%s \\\n", libnvmf_trtype_str(e->trtype));
 	fprintf(f, "  --traddr=%s \\\n", e->traddr);
 	fprintf(f, "  --trsvcid=%s \\\n", e->trsvcid);
-	fprintf(f, "  --nqn=%s ", e->subnqn);
-	val = libnvmf_context_get_host_traddr(fctx);
-	if (val)
-		fprintf(f, "\\\n  --host-traddr=%s ", val);
-	val = libnvmf_context_get_host_iface(fctx);
-	if (val)
-		fprintf(f, "\\\n  --host-iface=%s", val);
-	fprintf(f, "\n");
-
-	fprintf(f, "ExecStop=/root/nvme-cli/.build/nvme disconnect \\\n");
-	if (is_printable_at_level(LIBNVME_LOG_DEBUG))
-		fprintf(f, "  -vv \\\n");
-	fprintf(f, "  --transport=%s \\\n", libnvmf_trtype_str(e->trtype));
-	fprintf(f, "  --traddr=%s \\\n", e->traddr);
-	fprintf(f, "  --trsvcid=%s \\\n", e->trsvcid);
-	fprintf(f, "  --nqn=%s ", e->subnqn);
+	fprintf(f, "  --nqn=%s \\\n", e->subnqn);
+	fprintf(f, "  --hostnqn=%s ", libnvmf_context_get_hostnqn(fctx));
 	val = libnvmf_context_get_host_traddr(fctx);
 	if (val)
 		fprintf(f, "\\\n  --host-traddr=%s ", val);
@@ -486,6 +477,7 @@ static void create_units(struct libnvmf_context *fctx,
 	LIST_HEAD(unit_list);
 	int err, i;
 	enum nvmf_trtype trtype;
+	bool reload_udevd = true;
 
 	trtype = str_to_trtype(libnvmf_context_get_transport(fctx));
 
@@ -507,10 +499,18 @@ static void create_units(struct libnvmf_context *fctx,
 			goto cleanup_list;
 		}
 
+
+		err = mkdir("/run/udev/rules.d/", 0x755);
+		if (err) {
+			fprintf(stderr, "Skip udev rules setup\n");
+			reload_udevd = false;
+			goto add_unit;
+		}
+
 		err = create_ctrl_udev_rule(fctx, e, i, unit_name);
 		if (err) {
 			fprintf(stderr,
-				"Failed to create udev file: %s\n",
+				"Failed to create ctrl udev file: %s\n",
 				strerror(-err));
 			goto cleanup_list;
 		}
@@ -518,7 +518,7 @@ static void create_units(struct libnvmf_context *fctx,
 		err = create_subsystem_udev_rule(fctx, e, i, unit_name);
 		if (err) {
 			fprintf(stderr,
-				"Failed to create udev file: %s\n",
+				"Failed to create subsytem udev file: %s\n",
 				strerror(-err));
 			goto cleanup_list;
 		}
@@ -526,11 +526,12 @@ static void create_units(struct libnvmf_context *fctx,
 		err = create_ns_udev_rule(fctx, e, i, unit_name);
 		if (err) {
 			fprintf(stderr,
-				"Failed to create udev file: %s\n",
+				"Failed to create ns udev file: %s\n",
 				strerror(-err));
 			goto cleanup_list;
 		}
 
+	add_unit:
 		unit = calloc(1, sizeof(*unit));
 		if (!unit)
 			goto cleanup_list;
@@ -541,10 +542,12 @@ static void create_units(struct libnvmf_context *fctx,
 		list_add_tail(&unit_list, &unit->list);
 	}
 
-	err = udev_reload();
-	if (err) {
-		fprintf(stderr, "Failed to reload udev rules");
-		goto cleanup_list;
+	if (reload_udevd) {
+		err = udev_reload();
+		if (err) {
+			fprintf(stderr, "Failed to reload udev rules");
+			goto cleanup_list;
+		}
 	}
 
 	err = systemd_daemon_reload();
@@ -590,8 +593,8 @@ struct cb_fabrics_data {
 static bool cb_decide_retry(struct libnvmf_context *fctx, int err,
 		void *user_data)
 {
-	if (err == -EAGAIN || (err == -EINTR && !nvme_sigint_received)) {
-		print_debug("libnvmf_add_ctrl returned '%s'\n", libnvme_strerror(-err));
+	if (err == -EAGAIN || (err == -EINTR && !nvme_signal_received)) {
+		print_debug("nvmf_add_ctrl returned '%s'\n", libnvme_strerror(-err));
 		return true;
 	}
 
@@ -1075,6 +1078,7 @@ out_free:
 
 #ifdef CONFIG_LIBUDEV
 #include <libudev.h>
+#include <systemd/sd-journal.h>
 
 static int monitor_udev(const char *device)
 {
@@ -1095,10 +1099,10 @@ static int monitor_udev(const char *device)
 		goto out;
 	}
 
-	printf("monitoring udev events for %s\n", devname);
+	sd_journal_print(LOG_INFO, "monitoring udev events for %s\n", devname);
 
 	fd = udev_monitor_get_fd(mon);
-	while (!nvme_sigint_received) {
+	while (!nvme_signal_received) {
 		fd_set fds;
 		FD_ZERO(&fds);
 		FD_SET(fd, &fds);
@@ -1119,9 +1123,9 @@ static int monitor_udev(const char *device)
 				const char *name = udev_list_entry_get_name(entry);
 				const char *value = udev_list_entry_get_value(entry);
 
-				printf("  %s=%s\n", name, value);
+				sd_journal_print(LOG_INFO, "  %s=%s\n", name, value);
 			}
-			printf("----\n");
+			sd_journal_print(LOG_INFO, "----\n");
 skip:
 			udev_device_unref(dev);
 		}
@@ -1135,7 +1139,7 @@ out:
 #else
 static int monitor_udev(const char *devname)
 {
-	while (!nvme_sigint_received)
+	while (!nvme_signal_received)
 		pause();
 
 	return 0;
@@ -1235,10 +1239,23 @@ do_connect:
 	if (config_file)
 		return libnvmf_connect_config_json(ctx, fctx);
 
+retry:
 	ret = libnvmf_connect(ctx, fctx);
-	if (ret && ret != -EALREADY) {
-		fprintf(stderr, "failed to connect: %s\n",
-			libnvme_strerror(-ret));
+	switch (-ret) {
+	case 0:
+	case EALREADY:
+	case ENVME_CONNECT_ALREADY:
+		break;
+	case ENVME_CONNECT_TIMEOUT:
+		fprintf(stdout, "connection attempt failed with timeout. retry in 10s.\n");
+		fflush(stdout);
+		if (sleep(10))
+			return 0;
+		goto retry;
+		break;
+	default:
+		fprintf(stderr, "failed to connect: %s (%d)\n",
+			libnvme_strerror(-ret), ret);
 		return ret;
 	}
 
@@ -1246,6 +1263,7 @@ do_connect:
 		libnvme_dump_config(ctx, STDOUT_FILENO);
 
 	if (disconnect_on_sigint) {
+		fflush(stdout);
 		monitor_udev(libnvme_ctrl_get_name(cfd.ctrl));
 		libnvmf_disconnect_ctrl(cfd.ctrl);
 	}

@@ -1024,6 +1024,8 @@ static int __nvmf_add_ctrl(struct libnvme_global_ctx *ctx, const char *argstr)
 			return -ENVME_CONNECT_NOKEY;
 		case ENOENT:
 			return -ENVME_CONNECT_COMPNOTFOUND;
+		case ETIMEDOUT:
+			return -ENVME_CONNECT_TIMEOUT;
 		default:
 			return -ENVME_CONNECT_WRITE;
 		}

@@ -4,8 +4,8 @@
 
 #include <stdbool.h>
 
-extern bool nvme_sigint_received;
+extern bool nvme_signal_received;
 
-int nvme_install_sigint_handler(void);
+int nvme_install_signal_handler(void);
 
 #endif // __NVME_SIGHDL

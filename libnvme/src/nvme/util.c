@@ -443,6 +443,7 @@ static const char * const libnvme_status[] = {
 	[ENVME_CONNECT_IGNORED] = "connection ignored",
 	[ENVME_CONNECT_NOKEY] = "pre-shared TLS key is missing",
 	[ENVME_CONNECT_COMPNOTFOUND] = "combination not found",
+	[ENVME_CONNECT_TIMEOUT] = "connection attempt timeouted",
 };
 
 __public const char *libnvme_errno_to_string(int status)
