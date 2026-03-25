@@ -5,14 +5,14 @@
 
 #include "sighdl.h"
 
-bool nvme_sigint_received;
+bool nvme_signal_received;
 
 static void nvme_sigint_handler(int signum)
 {
-	nvme_sigint_received = true;
+	nvme_signal_received = true;
 }
 
-int nvme_install_sigint_handler(void)
+int nvme_install_signal_handler(void)
 {
 	struct sigaction act;
 
@@ -20,8 +20,11 @@ int nvme_install_sigint_handler(void)
 	act.sa_handler = nvme_sigint_handler;
 	act.sa_flags = 0;
 
-	nvme_sigint_received = false;
+	nvme_signal_received = false;
 	if (sigaction(SIGINT, &act, NULL) == -1)
+		return -errno;
+
+	if (sigaction(SIGTERM, &act, NULL) == -1)
 		return -errno;
 
 	return 0;

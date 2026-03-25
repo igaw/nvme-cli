@@ -26,6 +26,131 @@
 #include "compiler-attributes.h"
 
 /****************************************************************************
+ * Accessors for: struct libnvmf_context
+ ****************************************************************************/
+
+__public void libnvmf_context_set_default_max_discovery_retries(
+		struct libnvmf_context *p,
+		int default_max_discovery_retries)
+{
+	p->default_max_discovery_retries = default_max_discovery_retries;
+}
+
+__public int libnvmf_context_get_default_max_discovery_retries(
+		const struct libnvmf_context *p)
+{
+	return p->default_max_discovery_retries;
+}
+
+__public void libnvmf_context_set_default_keep_alive_timeout(
+		struct libnvmf_context *p,
+		int default_keep_alive_timeout)
+{
+	p->default_keep_alive_timeout = default_keep_alive_timeout;
+}
+
+__public int libnvmf_context_get_default_keep_alive_timeout(
+		const struct libnvmf_context *p)
+{
+	return p->default_keep_alive_timeout;
+}
+
+__public void libnvmf_context_set_device(
+		struct libnvmf_context *p,
+		const char *device)
+{
+	free(p->device);
+	p->device = device ? strdup(device) : NULL;
+}
+
+__public const char *libnvmf_context_get_device(const struct libnvmf_context *p)
+{
+	return p->device;
+}
+
+__public void libnvmf_context_set_persistent(
+		struct libnvmf_context *p,
+		bool persistent)
+{
+	p->persistent = persistent;
+}
+
+__public bool libnvmf_context_get_persistent(const struct libnvmf_context *p)
+{
+	return p->persistent;
+}
+
+__public const char *libnvmf_context_get_subsysnqn(
+		const struct libnvmf_context *p)
+{
+	return p->subsysnqn;
+}
+
+__public const char *libnvmf_context_get_transport(
+		const struct libnvmf_context *p)
+{
+	return p->transport;
+}
+
+__public const char *libnvmf_context_get_traddr(const struct libnvmf_context *p)
+{
+	return p->traddr;
+}
+
+__public const char *libnvmf_context_get_trsvcid(
+		const struct libnvmf_context *p)
+{
+	return p->trsvcid;
+}
+
+__public const char *libnvmf_context_get_host_traddr(
+		const struct libnvmf_context *p)
+{
+	return p->host_traddr;
+}
+
+__public const char *libnvmf_context_get_host_iface(
+		const struct libnvmf_context *p)
+{
+	return p->host_iface;
+}
+
+__public const char *libnvmf_context_get_hostnqn(
+		const struct libnvmf_context *p)
+{
+	return p->hostnqn;
+}
+
+__public const char *libnvmf_context_get_hostid(const struct libnvmf_context *p)
+{
+	return p->hostid;
+}
+
+__public const char *libnvmf_context_get_hostkey(
+		const struct libnvmf_context *p)
+{
+	return p->hostkey;
+}
+
+__public const char *libnvmf_context_get_ctrlkey(
+		const struct libnvmf_context *p)
+{
+	return p->ctrlkey;
+}
+
+__public const char *libnvmf_context_get_keyring(
+		const struct libnvmf_context *p)
+{
+	return p->keyring;
+}
+
+__public const char *libnvmf_context_get_tls_key_identity(
+		const struct libnvmf_context *p)
+{
+	return p->tls_key_identity;
+}
+
+/****************************************************************************
  * Accessors for: struct libnvmf_discovery_args
  ****************************************************************************/
 

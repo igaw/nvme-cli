@@ -193,6 +193,388 @@ static void save_discovery_log(char *raw, struct nvmf_discovery_log *log)
 	close(fd);
 }
 
+#ifdef CONFIG_LIBSYSTEMD
+#include <systemd/sd-bus.h>
+
+static int systemd_daemon_reload()
+{
+	sd_bus_error error = SD_BUS_ERROR_NULL;
+	sd_bus *bus;
+	int err;
+
+	err = sd_bus_open_system(&bus);
+	if (err < 0)
+		return err;
+
+	err = sd_bus_call_method(bus,
+		"org.freedesktop.systemd1",
+		"/org/freedesktop/systemd1",
+		"org.freedesktop.systemd1.Manager",
+		"Reload", &error, NULL, "");
+
+	if (err < 0)
+		fprintf(stderr, "%s\n", error.message);
+
+	sd_bus_error_free(&error);
+	sd_bus_unref(bus);
+
+	if (err > 0)
+		print_debug("systemd daemon reload\n");
+
+	return err > 0? 0 : err;
+}
+
+static int systemd_start_unit(const char *unit_name)
+{
+	sd_bus_error error = SD_BUS_ERROR_NULL;
+	sd_bus *bus = NULL;
+	int err;
+
+	err = sd_bus_open_system(&bus);
+	if (err < 0)
+		return err;
+
+	err = sd_bus_call_method(bus,
+		"org.freedesktop.systemd1",
+                "/org/freedesktop/systemd1",
+                "org.freedesktop.systemd1.Manager",
+                "RestartUnit", &error, NULL,
+		"ss", unit_name, "replace");
+	if (err < 0)
+		fprintf(stderr, "%s\n", error.message);
+
+	sd_bus_error_free(&error);
+	sd_bus_unref(bus);
+
+	if (err > 0)
+		print_debug("systemd unit started: %s\n", unit_name);
+
+	return err > 0? 0 : err;
+}
+
+struct unit_entry {
+	struct list_node list;
+	char *name;
+};
+
+static int create_unit(struct libnvmf_context *fctx,
+		struct nvmf_disc_log_entry *e,
+		int id, char **punit_name)
+{
+	__cleanup_free char *filename = NULL;
+	__cleanup_free char *unit_name = NULL;
+	__cleanup_free char *path = NULL;
+	__cleanup_free char *pnqn = NULL;
+	__cleanup_free char *cli = NULL;
+	const char *val;
+	FILE *f;
+	int err;
+
+	err = asprintf(&pnqn, "%d-%s", id, e->subnqn);
+	if (err < 0)
+		return -errno;
+
+	err = sd_bus_path_encode("/nvme", pnqn, &path);
+	if (err < 0)
+		return err;
+
+	err = asprintf(&unit_name, "nvme-connect-%s.service", pnqn);
+	if (err < 0)
+		return -errno;
+
+	err = asprintf(&filename, "/run/systemd/system/%s", unit_name);
+	if (err < 0)
+		return -errno;
+
+	err = asprintf(&cli, "%s/nvme", get_current_dir_name());
+	if (err < 0)
+		return -errno;
+
+	f = fopen(filename, "w");
+	if (!f)
+		return -errno;
+
+
+	fprintf(f, "[Unit]\n");
+	fprintf(f, "Description=NVMe connection to %s\n", e->subnqn);
+	fprintf(f, "After=network-online.target\n");
+	fprintf(f, "Wants=network-online.target\n\n");
+
+	fprintf(f, "[Service]\n");
+	fprintf(f, "Type=simple\n");
+
+	fprintf(f, "ExecStart=%s connect \\\n", cli);
+	if (is_printable_at_level(LIBNVME_LOG_DEBUG))
+		fprintf(f, "  -vv \\\n");
+	fprintf(f, "  --disconnect-on-sigint \\\n");
+	fprintf(f, "  --transport=%s \\\n", libnvmf_trtype_str(e->trtype));
+	fprintf(f, "  --traddr=%s \\\n", e->traddr);
+	fprintf(f, "  --trsvcid=%s \\\n", e->trsvcid);
+	fprintf(f, "  --nqn=%s \\\n", e->subnqn);
+	fprintf(f, "  --hostnqn=%s ", libnvmf_context_get_hostnqn(fctx));
+	val = libnvmf_context_get_host_traddr(fctx);
+	if (val)
+		fprintf(f, "\\\n  --host-traddr=%s ", val);
+	val = libnvmf_context_get_host_iface(fctx);
+	if (val)
+		fprintf(f, "\\\n  --host-iface=%s", val);
+	fprintf(f, "\n");
+
+	fprintf(f, "[Install]\n");
+	fprintf(f, "WantedBy=multi-user.target\n");
+
+	fclose(f);
+
+	print_debug("systemd unit created: %s\n", filename);
+
+	*punit_name = unit_name;
+	unit_name = NULL;
+
+	return 0;
+}
+
+static int create_ctrl_udev_rule(struct libnvmf_context *fctx,
+		struct nvmf_disc_log_entry *e,
+		int id, const char *unit_name)
+{
+	__cleanup_free char *filename = NULL;
+	__cleanup_free char *path = NULL;
+	__cleanup_free char *pnqn = NULL;
+	const char *val;
+	FILE *f;
+	int err;
+
+	err = asprintf(&pnqn, "%d-%s", id, e->subnqn);
+	if (err < 0)
+		return -errno;
+
+	err = sd_bus_path_encode("/nvme", pnqn, &path);
+	if (err < 0)
+		return err;
+
+	err = asprintf(&filename, "/run/udev/rules.d/99-nvme-%d-%s.rules",
+		id, e->subnqn);
+	if (err < 0)
+		return -errno;
+
+	f = fopen(filename, "w");
+	if (!f)
+		return -errno;
+
+	fprintf(f, "# Generated for %s\n", unit_name);
+	fprintf(f, "ACTION==\"add|change\", SUBSYSTEM==\"nvme\", \\\n");
+	val = libnvmf_context_get_host_traddr(fctx);
+	fprintf(f, "  ATTR{address}==\"traddr=%s,host_traddr=%s\", \\\n", e->traddr, val);
+	fprintf(f, "  ATTR{transport}==\"%s\", \\\n", libnvmf_trtype_str(e->trtype));
+	fprintf(f, "  ATTR{subsysnqn}==\"%s\", \\\n", e->subnqn);
+	fprintf(f, "  TAG+=\"systemd\", \\\n");
+	fprintf(f, "  ENV{SYSTEMD_WANTS}+=\"%s\"\n", unit_name);
+
+	fclose(f);
+
+	print_debug("udev rule created: %s\n", filename);
+	return 0;
+}
+
+static int create_subsystem_udev_rule(struct libnvmf_context *fctx,
+		struct nvmf_disc_log_entry *e,
+		int id, const char *unit_name)
+{
+	__cleanup_free char *filename = NULL;
+	FILE *f;
+	int err;
+
+	return 0;
+
+	err = asprintf(&filename, "/run/udev/rules.d/99-nvme-subsystem-%s.rules",
+		e->subnqn);
+	if (err < 0)
+		return -errno;
+
+	f = fopen(filename, "w");
+	if (!f)
+		return -errno;
+
+	fprintf(f, "ACTION==\"add|change\", SUBSYSTEM==\"nvme-subsystem\", \\\n");
+	fprintf(f, "  ATTRS{subsysnqn}==\"%s\", \\\n", e->subnqn);
+	fprintf(f, "  TAG+=\"systemd\", \\\n");
+	fprintf(f, "  ENV{SYSTEMD_WANTS}+=\"%s\"\n", unit_name);
+
+	fclose(f);
+	print_debug("udev rule created: %s\n", filename);
+
+	return 0;
+}
+
+static int create_ns_udev_rule(struct libnvmf_context *fctx,
+		struct nvmf_disc_log_entry *e,
+		int id, const char *unit_name)
+{
+	__cleanup_free char *filename = NULL;
+	FILE *f;
+	int err;
+
+	return 0;
+
+	err = asprintf(&filename, "/run/udev/rules.d/99-nvme-ns-%s.rules",
+		e->subnqn);
+	if (err < 0)
+		return -errno;
+
+	f = fopen(filename, "w");
+	if (!f)
+		return -errno;
+
+	fprintf(f, "ACTION==\"add|change\", SUBSYSTEM==\"block\", ENV{DEVTYPE}==\"disk\", \\\n");
+	fprintf(f, "  ATTRS{subsysnqn}==\"%s\", \\\n", e->subnqn);
+	fprintf(f, "  TAG+=\"systemd\", \\\n");
+	fprintf(f, "  ENV{SYSTEMD_WANTS}+=\"%s\"\n", unit_name);
+
+	fclose(f);
+	print_debug("udev rule created: %s\n", filename);
+
+	return 0;
+}
+
+static int udev_reload(void)
+{
+	int err;
+	/* Reload the daemon's internal cache of rules */
+
+	err = system("udevadm control --reload-rules");
+	if (err)
+		return -errno;
+	err = system("udevadm trigger --action=add --subsystem-match=block");
+	if (err)
+		return -errno;
+
+	print_debug("udevd reloaded and restarted\n");
+
+	return 0;
+}
+
+static enum nvmf_trtype str_to_trtype(const char *str)
+{
+	if (!str)
+		return NVMF_TRTYPE_UNSPECIFIED;
+
+	if (!strcasecmp(str, "rdma"))
+		return NVMF_TRTYPE_RDMA;
+	else if (!strcasecmp(str, "fc"))
+		return NVMF_TRTYPE_FC;
+	else if (!strcasecmp(str, "tcp"))
+		return NVMF_TRTYPE_TCP;
+	else if (!strcasecmp(str, "loop"))
+		return NVMF_TRTYPE_LOOP;
+
+	return NVMF_TRTYPE_UNSPECIFIED;
+}
+
+static void create_units(struct libnvmf_context *fctx,
+		struct nvmf_discovery_log *log, uint64_t numrec)
+{
+	struct unit_entry *unit, *_unit;
+	LIST_HEAD(unit_list);
+	int err, i;
+	enum nvmf_trtype trtype;
+	bool reload_udevd = true;
+
+	trtype = str_to_trtype(libnvmf_context_get_transport(fctx));
+
+	for (i = 0; i < numrec; i++) {
+		struct nvmf_disc_log_entry *e = &log->entries[i];
+		char *unit_name;
+
+		if (e->subtype != NVME_NQN_NVME)
+			continue;
+
+		if (e->trtype != trtype)
+			continue;
+
+		err = create_unit(fctx, e, i, &unit_name);
+		if (err) {
+			fprintf(stderr,
+				"Failed to create unit file: %s\n",
+				strerror(-err));
+			goto cleanup_list;
+		}
+
+		err = mkdir("/run/udev/rules.d/", 0x755);
+		if (err &&  && errno != EEXIST) {
+			fprintf(stderr, "Skip udev rules setup\n");
+			reload_udevd = false;
+			goto add_unit;
+		}
+
+		err = create_ctrl_udev_rule(fctx, e, i, unit_name);
+		if (err) {
+			fprintf(stderr,
+				"Failed to create ctrl udev file: %s\n",
+				strerror(-err));
+			goto cleanup_list;
+		}
+
+		err = create_subsystem_udev_rule(fctx, e, i, unit_name);
+		if (err) {
+			fprintf(stderr,
+				"Failed to create subsytem udev file: %s\n",
+				strerror(-err));
+			goto cleanup_list;
+		}
+
+		err = create_ns_udev_rule(fctx, e, i, unit_name);
+		if (err) {
+			fprintf(stderr,
+				"Failed to create ns udev file: %s\n",
+				strerror(-err));
+			goto cleanup_list;
+		}
+
+	add_unit:
+		unit = calloc(1, sizeof(*unit));
+		if (!unit)
+			goto cleanup_list;
+
+		list_node_init(&unit->list);
+		unit->name = unit_name;
+
+		list_add_tail(&unit_list, &unit->list);
+	}
+
+	if (reload_udevd) {
+		err = udev_reload();
+		if (err) {
+			fprintf(stderr, "Failed to reload udev rules");
+			goto cleanup_list;
+		}
+	}
+
+	err = systemd_daemon_reload();
+	if (err && err != -ENOTSUP) {
+		fprintf(stderr, "Failed to systemd reload daemon: %s\n",
+			strerror(-err));
+		goto cleanup_list;
+	}
+
+	list_for_each(&unit_list, unit, list) {
+		err = systemd_start_unit(unit->name);
+		if (err)
+			fprintf(stderr, "Failed to start unit: %s\n",
+				strerror(-err));
+	}
+
+cleanup_list:
+	list_for_each_safe(&unit_list, unit, _unit, list) {
+		free(unit->name);
+		free(unit);
+	}
+}
+#else
+static void create_units(struct nvmf_context *fctx,
+		struct nvmf_discovery_log *log, uint64_t numrec)
+{}
+#endif
+
 static int setup_common_context(struct libnvmf_context *fctx,
 		struct nvmf_args *fa);
 
@@ -200,16 +582,18 @@ struct cb_fabrics_data {
 	struct nvmf_args *fa;
 	nvme_print_flags_t flags;
 	bool quiet;
+	bool units;
 	char *raw;
 	char **argv;
 	FILE *f;
+	struct libnvme_ctrl *ctrl;
 };
 
 static bool cb_decide_retry(struct libnvmf_context *fctx, int err,
 		void *user_data)
 {
-	if (err == -EAGAIN || (err == -EINTR && !nvme_sigint_received)) {
-		print_debug("libnvmf_add_ctrl returned '%s'\n", libnvme_strerror(-err));
+	if (err == -EAGAIN || (err == -EINTR && !nvme_signal_received)) {
+		print_debug("nvmf_add_ctrl returned '%s'\n", libnvme_strerror(-err));
 		return true;
 	}
 
@@ -220,6 +604,8 @@ static void cb_connected(struct libnvmf_context *fctx,
 		struct libnvme_ctrl *c, void *user_data)
 {
 	struct cb_fabrics_data *cfd = user_data;
+
+	cfd->ctrl = c;
 
 	if (cfd->quiet)
 		return;
@@ -246,16 +632,23 @@ static void cb_connected(struct libnvmf_context *fctx,
 }
 
 static void cb_already_connected(struct libnvmf_context *fctx,
-		struct libnvme_host *host, const char *subsysnqn,
-		const char *transport, const char *traddr,
-		const char *trsvcid, void *user_data)
+		struct libnvme_ctrl *c, void *user_data)
 {
+	struct cb_fabrics_data *cfd = user_data;
+
+	cfd->ctrl = c;
+
 	if (quiet)
 		return;
 
-	fprintf(stderr,	"already connected to hostnqn=%s,nqn=%s,transport=%s,traddr=%s,trsvcid=%s\n",
-		libnvme_host_get_hostnqn(host), subsysnqn,
-		transport, traddr, trsvcid);
+	fprintf(stderr,	"already connected to hostnqn=%s,nqn=%s,transport=%s,traddr=%s,host_traddr=%s,host_iface=%s,trsvcid=%s\n",
+		libnvmf_context_get_hostnqn(fctx),
+		libnvme_ctrl_get_subsysnqn(c),
+		libnvme_ctrl_get_transport(c),
+		libnvme_ctrl_get_traddr(c),
+		libnvmf_context_get_host_traddr(fctx),
+		libnvmf_context_get_host_iface(fctx),
+		libnvme_ctrl_get_trsvcid(c));
 }
 
 static void cb_discovery_log(struct libnvmf_context *fctx,
@@ -264,7 +657,9 @@ static void cb_discovery_log(struct libnvmf_context *fctx,
 {
 	struct cb_fabrics_data *cfd = user_data;
 
-	if (cfd->raw)
+	if (cfd->units)
+		create_units(fctx, log, numrec);
+	else if (cfd->raw)
 		save_discovery_log(cfd->raw, log);
 	else if (!connect)
 		nvme_show_discovery_log(log, numrec, cfd->flags);
@@ -432,9 +827,7 @@ static int create_common_context(struct libnvme_global_ctx *ctx,
 	if (err)
 		goto err;
 
-	err = libnvmf_context_set_persistent(fctx, persistent);
-	if (err)
-		goto err;
+	libnvmf_context_set_persistent(fctx, persistent);
 
 	*fctxp = fctx;
 
@@ -468,9 +861,7 @@ static int create_discovery_context(struct libnvme_global_ctx *ctx,
 	if (err)
 		goto err;
 
-	err = libnvmf_context_set_device(fctx, device);
-	if (err)
-		goto err;
+	libnvmf_context_set_device(fctx, device);
 
 	*fctxp = fctx;
 	return 0;
@@ -567,6 +958,282 @@ unref:
 #endif
 }
 
+#ifdef CONFIG_LIBUDEV
+#include <libudev.h>
+#include <systemd/sd-journal.h>
+
+static int monitor_udev_ctrl(const char *device)
+{
+	__cleanup_free char *devname = NULL;
+	struct udev_monitor *mon;
+	struct udev *udev;
+	int fd, err;
+
+	udev = udev_new();
+	mon = udev_monitor_new_from_netlink(udev, "udev");
+
+	udev_monitor_filter_add_match_subsystem_devtype(mon, "nvme", NULL);
+	udev_monitor_enable_receiving(mon);
+
+	err = asprintf(&devname, "/dev/%s", device);
+	if (err < 0) {
+		err = -errno;
+		goto out;
+	}
+
+	sd_journal_print(LOG_INFO, "monitoring udev events for %s\n", devname);
+
+	fd = udev_monitor_get_fd(mon);
+	while (!nvme_signal_received) {
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(fd, &fds);
+
+		select(fd + 1, &fds, NULL, NULL, NULL);
+
+		if (FD_ISSET(fd, &fds)) {
+			struct udev_device *dev =
+				udev_monitor_receive_device(mon);
+			const char *devnode = udev_device_get_devnode(dev);
+			struct udev_list_entry *entry;
+
+			if (!devnode || strcmp(devname, devnode))
+				goto skip;
+
+			udev_list_entry_foreach(entry,
+		        udev_device_get_properties_list_entry(dev)) {
+				const char *name = udev_list_entry_get_name(entry);
+				const char *value = udev_list_entry_get_value(entry);
+
+				sd_journal_print(LOG_INFO, "  %s=%s\n", name, value);
+			}
+			sd_journal_print(LOG_INFO, "----\n");
+skip:
+			udev_device_unref(dev);
+		}
+	}
+out:
+	udev_unref(udev);
+	udev_monitor_unref(mon);
+
+	return err;
+}
+
+static void call_fabrics_from_udev(struct udev_device *dev)
+{
+	const char *kernel = udev_device_get_sysname(dev);
+
+	const char *trtype      = udev_device_get_property_value(dev, "NVME_TRTYPE");
+	const char *traddr      = udev_device_get_property_value(dev, "NVME_TRADDR");
+	const char *trsvcid     = udev_device_get_property_value(dev, "NVME_TRSVCID");
+	const char *host_traddr = udev_device_get_property_value(dev, "NVME_HOST_TRADDR");
+	const char *host_iface  = udev_device_get_property_value(dev, "NVME_HOST_IFACE");
+
+	/* fallback like udev rule */
+	if (!host_iface || !*host_iface)
+		host_iface = "none";
+
+	if (!kernel || !trtype || !traddr || !trsvcid || !host_traddr)
+		return;
+
+	char *argv[17];
+	int argc = 0;
+
+	argv[argc++] = "autoconnect";
+
+	argv[argc++] = "--device";
+	argv[argc++] = (char *)kernel;
+
+	argv[argc++] = "--transport";
+	argv[argc++] = (char *)trtype;
+
+	argv[argc++] = "--traddr";
+	argv[argc++] = (char *)traddr;
+
+	argv[argc++] = "--trsvcid";
+	argv[argc++] = (char *)trsvcid;
+
+	argv[argc++] = "--host-traddr";
+	argv[argc++] = (char *)host_traddr;
+
+	argv[argc++] = "--host-iface";
+	argv[argc++] = (char *)host_iface;
+
+	argv[argc++] = "--units";
+
+	argv[argc] = NULL;
+
+	sd_journal_print(LOG_INFO, "Calling fabrics_discovery()\n");
+
+	fabrics_discovery("udev-event", argc, argv, true);
+}
+
+static void call_fabrics_from_fc(struct udev_device *dev)
+{
+	const char *traddr      = udev_device_get_property_value(dev, "NVMEFC_TRADDR");
+	const char *host_traddr = udev_device_get_property_value(dev, "NVMEFC_HOST_TRADDR");
+
+	if (!traddr || !host_traddr)
+		return;
+
+	char *argv[17];
+	int argc = 0;
+
+	argv[argc++] = "autoconnect";
+
+	argv[argc++] = "--device";
+	argv[argc++] = "none";
+
+	argv[argc++] = "--transport";
+	argv[argc++] = "fc";
+
+	argv[argc++] = "--traddr";
+	argv[argc++] = (char *)traddr;
+
+	argv[argc++] = "--trsvcid";
+	argv[argc++] = "none";
+
+	argv[argc++] = "--host-traddr";
+	argv[argc++] = (char *)host_traddr;
+
+	argv[argc++] = "--units";
+
+	argv[argc] = NULL;
+
+	fabrics_discovery("udev-fc-event", argc, argv, true);
+}
+
+static int monitor_nvme_udev_events(void)
+{
+	struct udev_monitor *mon;
+	struct udev *udev;
+	int fd;
+
+	udev = udev_new();
+	if (!udev)
+		return -ENOMEM;
+
+	mon = udev_monitor_new_from_netlink(udev, "udev");
+	if (!mon)
+		goto out;
+
+	/* Match both nvme and fc like your rules */
+	udev_monitor_filter_add_match_subsystem_devtype(mon, "nvme", NULL);
+	udev_monitor_filter_add_match_subsystem_devtype(mon, "fc", NULL);
+	udev_monitor_enable_receiving(mon);
+
+	fd = udev_monitor_get_fd(mon);
+
+	sd_journal_print(LOG_INFO, "Listening for NVMe udev events...\n");
+
+	while (!nvme_signal_received) {
+		fd_set fds;
+
+		FD_ZERO(&fds);
+		FD_SET(fd, &fds);
+
+		if (select(fd + 1, &fds, NULL, NULL, NULL) < 0)
+			continue;
+
+		if (!FD_ISSET(fd, &fds))
+			continue;
+
+		struct udev_device *dev =
+			udev_monitor_receive_device(mon);
+		if (!dev)
+			continue;
+
+		const char *subsys = udev_device_get_subsystem(dev);
+		const char *action = udev_device_get_action(dev);
+
+		/* Skip ACTION!="change" */
+		if (!action || strcmp(action, "change"))
+			goto skip;
+
+		/* Read relevant environment properties */
+		const char *aen        = udev_device_get_property_value(dev, "NVME_AEN");
+		const char *event      = udev_device_get_property_value(dev, "NVME_EVENT");
+		const char *trtype     = udev_device_get_property_value(dev, "NVME_TRTYPE");
+		const char *traddr     = udev_device_get_property_value(dev, "NVME_TRADDR");
+		const char *trsvcid    = udev_device_get_property_value(dev, "NVME_TRSVCID");
+		const char *host_traddr= udev_device_get_property_value(dev, "NVME_HOST_TRADDR");
+		const char *host_iface = udev_device_get_property_value(dev, "NVME_HOST_IFACE");
+
+		const char *fc_event   = udev_device_get_property_value(dev, "FC_EVENT");
+		const char *fc_traddr  = udev_device_get_property_value(dev, "NVMEFC_TRADDR");
+		const char *fc_host_tr = udev_device_get_property_value(dev, "NVMEFC_HOST_TRADDR");
+
+		/* ---- Rule 1: NVME_AEN == 0x70f002 ---- */
+		if (subsys && !strcmp(subsys, "nvme") &&
+		    aen && !strcmp(aen, "0x70f002") &&
+		    trtype && traddr && trsvcid && host_traddr && host_iface) {
+
+			sd_journal_print(LOG_INFO,
+				"[MATCH] NVME_AEN discovery change event\n");
+			    call_fabrics_from_udev(dev);
+			    goto print;
+		}
+
+		/* ---- Rule 2: FC discovery (old-style) ---- */
+		if (subsys && !strcmp(subsys, "fc") &&
+		    fc_event && !strcmp(fc_event, "nvmediscovery") &&
+		    fc_traddr && fc_host_tr) {
+
+			sd_journal_print(LOG_INFO,
+				"[MATCH] FC discovery event\n");
+			call_fabrics_from_fc(dev);
+			goto print;
+		}
+
+		/* ---- Rule 3: rediscover ---- */
+		if (subsys && !strcmp(subsys, "nvme") &&
+		    event && !strcmp(event, "rediscover") &&
+		    trtype && traddr && trsvcid && host_traddr && host_iface) {
+
+			sd_journal_print(LOG_INFO,
+				"[MATCH] NVME rediscover event\n");
+			    call_fabrics_from_udev(dev);
+			    goto print;
+		}
+
+		goto skip;
+
+print:
+	{
+		struct udev_list_entry *entry;
+
+		udev_list_entry_foreach(entry,
+			udev_device_get_properties_list_entry(dev)) {
+			const char *name  = udev_list_entry_get_name(entry);
+			const char *value = udev_list_entry_get_value(entry);
+
+			sd_journal_print(LOG_INFO, "  %s=%s\n", name, value);
+		}
+		sd_journal_print(LOG_INFO, "----\n");
+	}
+
+skip:
+		udev_device_unref(dev);
+	}
+
+	udev_monitor_unref(mon);
+out:
+	udev_unref(udev);
+	return 0;
+}
+#else
+static int monitor_udev_ctrl(const char *devname)
+{
+	while (!nvme_signal_received)
+		pause();
+
+	return 0;
+}
+static int monitor_nvme_udev_events(void)
+{
+}
+#endif
+
 #define NBFT_SYSFS_PATH		"/sys/firmware/acpi/tables"
 
 int fabrics_discovery(const char *desc, int argc, char **argv, bool connect)
@@ -582,6 +1249,8 @@ int fabrics_discovery(const char *desc, int argc, char **argv, bool connect)
 	bool force = false;
 	bool json_config = false;
 	bool nbft = false, nonbft = false;
+	bool units = false;
+	bool monitor = false;
 	char *nbft_path = NBFT_SYSFS_PATH;
 
 	NVMF_ARGS(opts, fa,
@@ -595,7 +1264,9 @@ int fabrics_discovery(const char *desc, int argc, char **argv, bool connect)
 		  OPT_FLAG("nbft",           0, &nbft,                "Only look at NBFT tables"),
 		  OPT_FLAG("no-nbft",        0, &nonbft,              "Do not look at NBFT tables"),
 		  OPT_STRING("nbft-path",    0, "STR", &nbft_path,    "user-defined path for NBFT tables"),
-		  OPT_STRING("context",      0, "STR", &context,       nvmf_context));
+		  OPT_STRING("context",      0, "STR", &context,       nvmf_context),
+		  OPT_FLAG("units",          0, &units,               "create systemd unit files"),
+		  OPT_FLAG("monitor",        0, &monitor,             "monitor udev"));
 
 	nvmf_default_args(&fa);
 
@@ -609,6 +1280,11 @@ int fabrics_discovery(const char *desc, int argc, char **argv, bool connect)
 	if (ret < 0) {
 		nvme_show_error("Invalid output format");
 		return ret;
+		}
+
+	if (monitor) {
+		monitor_nvme_udev_events();
+		return 0;
 	}
 
 	if (!strcmp(config_file, "none"))
@@ -648,6 +1324,7 @@ int fabrics_discovery(const char *desc, int argc, char **argv, bool connect)
 	struct cb_fabrics_data dld = {
 		.fa = &fa,
 		.flags = flags,
+		.units = units,
 		.raw = raw,
 	};
 	ret = create_discovery_context(ctx, persistent, device, &fa,
@@ -687,6 +1364,7 @@ int fabrics_connect(const char *desc, int argc, char **argv)
 	__cleanup_free char *hid = NULL;
 	char *config_file = NULL;
 	char *context = NULL;
+	bool disconnect_on_sigint = false;
 	__cleanup_nvme_global_ctx struct libnvme_global_ctx *ctx = NULL;
 	__cleanup_nvmf_context struct libnvmf_context *fctx = NULL;
 	__cleanup_nvme_ctrl libnvme_ctrl_t c = NULL;
@@ -696,8 +1374,9 @@ int fabrics_connect(const char *desc, int argc, char **argv)
 
 	NVMF_ARGS(opts, fa,
 		  OPT_STRING("config",             'J', "FILE", &config_file, nvmf_config_file),
-		  OPT_FLAG("dump-config",          'O', &dump_config,             "Dump JSON configuration to stdout"),
-		  OPT_STRING("context",              0, "STR", &context,  nvmf_context));
+		  OPT_FLAG("dump-config",          'O', &dump_config, "Dump JSON configuration to stdout"),
+		  OPT_STRING("context",              0, "STR", &context,  nvmf_context),
+		  OPT_FLAG("disconnect-on-sigint",   0, &disconnect_on_sigint, "Wait for Ctrl+C and disconnect the controller"));
 
 	nvmf_default_args(&fa);
 
@@ -772,15 +1451,34 @@ do_connect:
 	if (config_file)
 		return libnvmf_connect_config_json(ctx, fctx);
 
+retry:
 	ret = libnvmf_connect(ctx, fctx);
-	if (ret) {
-		fprintf(stderr, "failed to connect: %s\n",
-			libnvme_strerror(-ret));
+	switch (-ret) {
+	case 0:
+	case EALREADY:
+	case ENVME_CONNECT_ALREADY:
+		break;
+	case ENVME_CONNECT_TIMEOUT:
+		fprintf(stdout, "connection attempt failed with timeout. retry in 10s.\n");
+		fflush(stdout);
+		if (sleep(10))
+			return 0;
+		goto retry;
+		break;
+	default:
+		fprintf(stderr, "failed to connect: %s (%d)\n",
+			libnvme_strerror(-ret), ret);
 		return ret;
 	}
 
 	if (dump_config)
 		libnvme_dump_config(ctx, STDOUT_FILENO);
+
+	if (cfd.ctrl && disconnect_on_sigint) {
+		fflush(stdout);
+		monitor_udev_ctrl(libnvme_ctrl_get_name(cfd.ctrl));
+		libnvmf_disconnect_ctrl(cfd.ctrl);
+	}
 
 	return 0;
 }
@@ -831,35 +1529,27 @@ static void nvmf_disconnect_nqn(struct libnvme_global_ctx *ctx, char *nqn)
 
 int fabrics_disconnect(const char *desc, int argc, char **argv)
 {
-	const char *device = "nvme device handle";
+	const char *desc_device = "nvme device handle";
 	__cleanup_nvme_global_ctx struct libnvme_global_ctx *ctx = NULL;
+	__cleanup_free struct libnvmf_context *fctx = NULL;
+	struct nvmf_args fa = { 0 };
+	char *device = NULL;
+	char *nqn = NULL;
 	libnvme_ctrl_t c;
 	char *p;
 	int ret;
 
-	struct config {
-		char *nqn;
-		char *device;
-	};
-
-	struct config cfg = { 0 };
-
-	NVME_ARGS(opts,
-		OPT_STRING("nqn",        'n', "NAME", &cfg.nqn,    nvmf_nqn),
-		OPT_STRING("device",     'd', "DEV",  &cfg.device, device));
+	NVMF_ARGS(opts, fa,
+		OPT_STRING("nqn",        'n', "NAME", &nqn,    nvmf_nqn),
+		OPT_STRING("device",     'd', "DEV",  &device, desc_device));
 
 	ret = argconfig_parse(argc, argv, desc, opts);
 	if (ret)
 		return ret;
 
-	if (cfg.nqn && cfg.device) {
+	if (nqn && device) {
 		fprintf(stderr,
 			"Both device name [--device | -d] and NQN [--nqn | -n] are specified\n");
-		return -EINVAL;
-	}
-	if (!cfg.nqn && !cfg.device) {
-		fprintf(stderr,
-			"Neither device name [--device | -d] nor NQN [--nqn | -n] provided\n");
 		return -EINVAL;
 	}
 
@@ -887,13 +1577,26 @@ int fabrics_disconnect(const char *desc, int argc, char **argv)
 		return ret;
 	}
 
-	if (cfg.nqn)
-		nvmf_disconnect_nqn(ctx, cfg.nqn);
+	if (!device) {
+		ret = create_common_context(ctx, persistent, &fa,
+			NULL, &fctx);
+		if (ret)
+			return ret;
 
-	if (cfg.device) {
+		ret = libnvmf_disconnect(ctx, fctx);
+		if (ret)
+			fprintf(stderr, "Disconnect failed: %s\n",
+				libnvme_strerror(-ret));
+		return ret;
+	}
+
+	if (nqn)
+		nvmf_disconnect_nqn(ctx, nqn);
+
+	if (device) {
 		char *d;
 
-		d = cfg.device;
+		d = device;
 		while ((p = strsep(&d, ",")) != NULL) {
 			if (!strncmp(p, "/dev/", 5))
 				p += 5;

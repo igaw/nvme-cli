@@ -115,7 +115,7 @@ bool nvme_decide_retry(struct libnvme_transport_handle *hdl,
 		return false;
 
 	if (err != -EAGAIN ||
-	    !(err == -EINTR && !nvme_sigint_received))
+	    !(err == -EINTR && !nvme_signal_received))
 		return false;
 
 	nvme_log_retry(errno);

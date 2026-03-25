@@ -22,6 +22,7 @@ LIBNVMF_3 {
 		libnvmf_context_set_persistent;
 		libnvmf_create_ctrl;
 		libnvmf_ctrl_get_fabrics_config;
+		libnvmf_disconnect;
 		libnvmf_disconnect_ctrl;
 		libnvmf_discovery;
 		libnvmf_discovery_config_file;

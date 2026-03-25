@@ -4544,11 +4544,11 @@ static int list_secondary_ctrl(int argc, char **argv, struct command *acmd, stru
 
 static int sleep_self_test(unsigned int seconds)
 {
-	nvme_sigint_received = false;
+	nvme_signal_received = false;
 
 	sleep(seconds);
 
-	if (nvme_sigint_received) {
+	if (nvme_signal_received) {
 		printf("\nInterrupted device self-test operation by SIGINT\n");
 		return -SIGINT;
 	}
@@ -11314,7 +11314,7 @@ int main(int argc, char **argv)
 	}
 	setlocale(LC_ALL, "");
 
-	err = nvme_install_sigint_handler();
+	err = nvme_install_signal_handler();
 	if (err)
 		return err;
 

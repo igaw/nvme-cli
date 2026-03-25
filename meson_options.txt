@@ -155,6 +155,18 @@ option(
   description : 'liburing support'
 )
 option(
+  'libudev',
+  type : 'feature',
+  value: 'auto',
+  description : 'libudev support'
+)
+option(
+  'libsystemd',
+  type : 'feature',
+  value: 'enabled',
+  description : 'libsystemd support'
+)
+option(
   'pypi',
   type : 'boolean',
   value : false,

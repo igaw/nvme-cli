@@ -310,6 +310,13 @@ else
 endif
 conf.set('HAVE_LIBKMOD', libkmod_dep.found(), description: 'Is libkmod available?')
 
+if not want_fabrics or get_option('libudev').disabled()
+    libudev_dep = dependency('', required: false)
+else
+    libudev_dep = dependency('libudev', required: get_option('libudev'))
+endif
+conf.set('CONFIG_LIBUDEV', libudev_dep.found(), description: 'Is libudev available?')
+
 if not want_fabrics or get_option('openssl').disabled()
     openssl_dep = dependency('', required: false)
 else
@@ -365,6 +372,15 @@ else
 endif
 
 conf.set('CONFIG_DBUS', libdbus_dep.found(), description: 'Enable dbus support?')
+
+if not want_fabrics or get_option('libsystemd').disabled()
+    libsystemd_dep = dependency('', required: false)
+else
+    libsystemd_dep = dependency('libsystemd')
+endif
+
+conf.set('CONFIG_LIBSYSTEMD', libsystemd_dep.found(),
+    description: 'Enable libsystemd support?')
 
 conf.set10(
     'HAVE_STATEMENT_EXPR',
@@ -537,6 +553,8 @@ if want_nvme
         libnvme_dep,
         json_c_dep,
         libkmod_dep,
+        libudev_dep,
+        libsystemd_dep,
     ]
 
     if host_system == 'windows'
@@ -692,6 +710,8 @@ dep_dict = {
     'python3':          py3_dep.found(),
     'liburing':         liburing_dep.found(),
     'libkmod':          libkmod_dep.found(),
+    'libudev':          libudev_dep.found(),
+    'libsystemd':       libsystemd_dep.found(),
 }
 if host_system == 'windows'
     dep_dict += {

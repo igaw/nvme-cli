@@ -207,9 +207,7 @@ __public int libnvmf_context_create(struct libnvme_global_ctx *ctx,
 		void (*connected)(struct libnvmf_context *fctx,
 			struct libnvme_ctrl *c, void *user_data),
 		void (*already_connected)(struct libnvmf_context *fctx,
-			struct libnvme_host *host, const char *subsysnqn,
-			const char *transport, const char *traddr,
-			const char *trsvcid, void *user_data),
+			struct libnvme_ctrl *c, void *user_data),
 		void *user_data, struct libnvmf_context **fctxp)
 {
 	struct libnvmf_context *fctx;
@@ -371,20 +369,6 @@ __public int libnvmf_context_set_crypto(struct libnvmf_context *fctx,
 	}
 
 	fctx->tls_key = strdup(tls_key);
-	return 0;
-}
-
-__public int libnvmf_context_set_persistent(struct libnvmf_context *fctx, bool persistent)
-{
-	fctx->persistent = persistent;
-
-	return 0;
-}
-
-__public int libnvmf_context_set_device(struct libnvmf_context *fctx, const char *device)
-{
-	fctx->device = device;
-
 	return 0;
 }
 
@@ -1038,6 +1022,10 @@ static int __nvmf_add_ctrl(struct libnvme_global_ctx *ctx, const char *argstr)
 			return -ENVME_CONNECT_ADDRNOTAVAIL;
 		case ENOKEY:
 			return -ENVME_CONNECT_NOKEY;
+		case ENOENT:
+			return -ENVME_CONNECT_COMPNOTFOUND;
+		case ETIMEDOUT:
+			return -ENVME_CONNECT_TIMEOUT;
 		default:
 			return -ENVME_CONNECT_WRITE;
 		}
@@ -2147,11 +2135,8 @@ static int _nvmf_discovery(struct libnvme_global_ctx *ctx,
 				libnvme_free_ctrl(child);
 			}
 		} else if (err == -ENVME_CONNECT_ALREADY) {
-			struct nvmf_disc_log_entry *e = &log->entries[i];
-
-			nfctx.already_connected(&nfctx, h, e->subnqn,
-				libnvmf_trtype_str(e->trtype), e->traddr,
-				e->trsvcid, nfctx.user_data);
+			c = lookup_ctrl(h, &nfctx);
+			nfctx.already_connected(&nfctx, c, nfctx.user_data);
 		}
 	}
 
@@ -2529,8 +2514,8 @@ __public int libnvmf_discovery_config_file(struct libnvme_global_ctx *ctx,
 	return 0;
 }
 
-__public int libnvmf_config_modify(struct libnvme_global_ctx *ctx,
-		struct libnvmf_context *fctx)
+static int lookup_ctrl_from_fctx(struct libnvme_global_ctx *ctx,
+		struct libnvmf_context *fctx, struct libnvme_ctrl **ctrl)
 {
 	__cleanup_free char *hnqn = NULL;
 	__cleanup_free char *hid = NULL;
@@ -2545,7 +2530,8 @@ __public int libnvmf_config_modify(struct libnvme_global_ctx *ctx,
 
 	h = libnvme_lookup_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
-		libnvme_msg(ctx, LIBNVME_LOG_ERR, "Failed to lookup host '%s'\n",
+		libnvme_msg(ctx, LIBNVME_LOG_DEBUG,
+			"Failed to lookup host '%s'\n",
 			fctx->hostnqn);
 		return -ENODEV;
 	}
@@ -2555,16 +2541,46 @@ __public int libnvmf_config_modify(struct libnvme_global_ctx *ctx,
 
 	s = libnvme_lookup_subsystem(h, NULL, fctx->subsysnqn);
 	if (!s) {
-		libnvme_msg(ctx, LIBNVME_LOG_ERR, "Failed to lookup subsystem '%s'\n",
+		libnvme_msg(ctx, LIBNVME_LOG_DEBUG,
+			"Failed to lookup subsystem '%s'\n",
 			fctx->subsysnqn);
 		return -ENODEV;
 	}
 
 	c = libnvme_lookup_ctrl(s, fctx, NULL);
 	if (!c) {
-		libnvme_msg(ctx, LIBNVME_LOG_ERR, "Failed to lookup controller\n");
+		libnvme_msg(ctx, LIBNVME_LOG_DEBUG,
+			"Failed to lookup controller\n");
 		return -ENODEV;
 	}
+
+	*ctrl = c;
+	return 0;
+}
+
+__public int libnvmf_disconnect(struct libnvme_global_ctx *ctx,
+		struct libnvmf_context *fctx)
+{
+	struct libnvme_ctrl *c;
+	int err;
+
+	err = lookup_ctrl_from_fctx(ctx, fctx, &c);
+	if (!err)
+		err = libnvmf_disconnect_ctrl(c);
+
+	return err;
+}
+
+__public int libnvmf_config_modify(struct libnvme_global_ctx *ctx,
+		struct libnvmf_context *fctx)
+{
+	struct libnvme_ctrl *c;
+	int err;
+
+	err = lookup_ctrl_from_fctx(ctx, fctx, &c);
+	if (err)
+		return err;
+
 	if (fctx->ctrlkey)
 		libnvme_ctrl_set_dhchap_ctrl_key(c, fctx->ctrlkey);
 
@@ -3035,9 +3051,16 @@ out_free:
 __public int libnvmf_discovery(struct libnvme_global_ctx *ctx, struct libnvmf_context *fctx,
 		bool connect, bool force)
 {
+	__cleanup_free char *hnqn = NULL;
+	__cleanup_free char *hid = NULL;
 	struct libnvme_ctrl *c = NULL;
 	struct libnvme_host *h;
 	int ret;
+
+	if (!fctx->hostnqn)
+		fctx->hostnqn = hnqn = libnvme_read_hostnqn();
+	if (!fctx->hostid && hnqn)
+		fctx->hostid = hid = libnvme_read_hostid();
 
 	ret = lookup_host(ctx, fctx, &h);
 	if (ret)
@@ -3143,9 +3166,7 @@ __public int libnvmf_connect(struct libnvme_global_ctx *ctx, struct libnvmf_cont
 
 	c = lookup_ctrl(h, fctx);
 	if (c && libnvme_ctrl_get_name(c) && !fctx->cfg.duplicate_connect) {
-		fctx->already_connected(fctx, h, libnvme_ctrl_get_subsysnqn(c),
-			libnvme_ctrl_get_transport(c), libnvme_ctrl_get_traddr(c),
-			libnvme_ctrl_get_trsvcid(c), fctx->user_data);
+		fctx->already_connected(fctx, c, fctx->user_data);
 		return -EALREADY;
 	}
 
