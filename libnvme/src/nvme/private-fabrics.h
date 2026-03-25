@@ -25,9 +25,7 @@ struct libnvmf_context {
 	void (*connected)(struct libnvmf_context *fctx, struct libnvme_ctrl *c,
 			void *user_data);
 	void (*already_connected)(struct libnvmf_context *fctx,
-			struct libnvme_host *host, const char *subsysnqn,
-			const char *transport, const char *traddr,
-			const char *trsvcid, void *user_data);
+			struct libnvme_ctrl *c, void *user_data);
 
 	/* discovery callbacks */
 	void (*discovery_log)(struct libnvmf_context *fctx,

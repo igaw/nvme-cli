@@ -269,9 +269,7 @@ int libnvmf_context_create(struct libnvme_global_ctx *ctx,
 		void (*connected)(struct libnvmf_context *fctx,
 			struct libnvme_ctrl *c, void *user_data),
 		void (*already_connected)(struct libnvmf_context *fctx,
-			struct libnvme_host *host, const char *subsysnqn,
-			const char *transport, const char *traddr,
-			const char *trsvcid, void *user_data),
+			struct libnvme_ctrl *c,  void *user_data),
 		void *user_data, struct libnvmf_context **fctxp);
 
 /**
