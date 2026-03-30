@@ -1242,7 +1242,7 @@ static int nvme_discovery_log(const struct nvme_get_discovery_args *args,
 	struct nvme_transport_handle *hdl = nvme_ctrl_get_transport_handle(args->c);
 	struct nvme_passthru_cmd cmd;
 
-	log = __nvme_alloc(sizeof(*log));
+	log = calloc(1, sizeof(*log));
 	if (!log) {
 		nvme_msg(ctx, LOG_ERR,
 			 "could not allocate memory for discovery log header\n");
@@ -1271,7 +1271,7 @@ static int nvme_discovery_log(const struct nvme_get_discovery_args *args,
 
 		free(log);
 		entries_size = sizeof(*log->entries) * numrec;
-		log = __nvme_alloc(sizeof(*log) + entries_size);
+		log = calloc(1, sizeof(*log) + entries_size);
 		if (!log) {
 		nvme_msg(ctx, LOG_ERR,
 				 "could not alloc memory for discovery log page\n");
