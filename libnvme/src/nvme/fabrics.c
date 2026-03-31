@@ -275,10 +275,9 @@ __public int nvmf_context_set_connection(struct nvmf_context *fctx,
 }
 
 __public int nvmf_context_set_hostnqn(struct nvmf_context *fctx,
-		const char *hostnqn, const char *hostid)
+		const char *hostnqn)
 {
 	fctx->hostnqn = hostnqn;
-	fctx->hostid = hostid;
 
 	return 0;
 }
@@ -741,7 +740,7 @@ static int build_options(nvme_host_t h, nvme_ctrl_t c, char **argstr)
 		discover = true;
 
 	hostnqn = nvme_host_get_hostnqn(h);
-	hostid = nvme_host_get_hostid(h);
+	hostid = nvme_hostid_from_hostnqn(hostnqn);
 	hostkey = nvme_host_get_dhchap_host_key(h);
 	if (!hostkey)
 		hostkey = nvme_ctrl_get_dhchap_host_key(c);
@@ -1453,9 +1452,10 @@ static void nvmf_fill_die(struct nvmf_ext_die *die, struct nvme_host *h,
 			  __u32 tel, __u8 trtype, __u8 adrfam,
 			  const char *reg_addr, union nvmf_tsas *tsas)
 {
+	_cleanup_free_ char *hostid = NULL;
+	struct nvmf_ext_attr *exat;
 	__u16 numexat = 0;
 	size_t symname_len;
-	struct nvmf_ext_attr *exat;
 
 	die->tel = cpu_to_le32(tel);
 	die->trtype = trtype;
@@ -1472,7 +1472,8 @@ static void nvmf_fill_die(struct nvmf_ext_die *die, struct nvme_host *h,
 	exat = die->exat;
 	exat->exattype = cpu_to_le16(NVMF_EXATTYPE_HOSTID);
 	exat->exatlen  = cpu_to_le16(nvmf_exat_len(NVME_UUID_LEN));
-	nvme_uuid_from_string(h->hostid, exat->exatval);
+	hostid = nvme_hostid_from_hostnqn(h->hostnqn);
+	nvme_uuid_from_string(hostid, exat->exatval);
 
 	/* Extended Attribute for the Symbolic Name (optional) */
 	symname_len = h->hostsymname ? strlen(h->hostsymname) : 0;
@@ -1536,13 +1537,6 @@ static int nvmf_dim(nvme_ctrl_t c, enum nvmf_dim_tas tas, __u8 trtype,
 	if (!c->s->h) {
 		nvme_msg(ctx, LOG_ERR,
 			 "%s: failed to perform DIM. host undefined.\n",
-			 c->name);
-		return -EINVAL;
-	}
-
-	if (!c->s->h->hostid) {
-		nvme_msg(ctx, LOG_ERR,
-			 "%s: failed to perform DIM. hostid undefined.\n",
 			 c->name);
 		return -EINVAL;
 	}
@@ -1859,15 +1853,14 @@ static int lookup_host(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx, struct nvme_host **host)
 {
 	_cleanup_free_ char *hnqn = NULL;
-	_cleanup_free_ char *hid = NULL;
 	struct nvme_host *h;
 	int err;
 
-	err = nvme_host_get_ids(ctx, fctx->hostnqn, fctx->hostid, &hnqn, &hid);
+	err = nvme_host_resolve_hostnqn(ctx, fctx->hostnqn, &hnqn);
 	if (err < 0)
 		return err;
 
-	h = nvme_lookup_host(ctx, hnqn, hid);
+	h = nvme_lookup_host(ctx, hnqn);
 	if (!h)
 		return -ENOMEM;
 
@@ -2269,7 +2262,7 @@ int _discovery_config_json(struct nvme_global_ctx *ctx,
 __public int nvmf_discovery_config_json(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx, bool connect, bool force)
 {
-	const char *hnqn, *hid;
+	const char *hnqn;
 	struct nvme_subsystem *s;
 	struct nvme_host *h;
 	struct nvme_ctrl *c;
@@ -2288,10 +2281,6 @@ __public int nvmf_discovery_config_json(struct nvme_global_ctx *ctx,
 			hnqn = nvme_host_get_hostnqn(h);
 			if (fctx->hostnqn && hnqn &&
 					strcmp(fctx->hostnqn, hnqn))
-				continue;
-			hid = nvme_host_get_hostid(h);
-			if (fctx->hostid && hid &&
-					strcmp(fctx->hostid, hid))
 				continue;
 
 			nvme_subsystem_for_each_ctrl(s, c) {
@@ -2317,7 +2306,7 @@ __public int nvmf_discovery_config_json(struct nvme_global_ctx *ctx,
 __public int nvmf_connect_config_json(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx)
 {
-	const char *hnqn, *hid;
+	const char *hnqn;
 	const char *transport;
 	nvme_host_t h;
 	nvme_subsystem_t s;
@@ -2337,10 +2326,6 @@ __public int nvmf_connect_config_json(struct nvme_global_ctx *ctx,
 			hnqn = nvme_host_get_hostnqn(h);
 			if (fctx->hostnqn && hnqn &&
 					strcmp(fctx->hostnqn, hnqn))
-				continue;
-			hid = nvme_host_get_hostid(h);
-			if (fctx->hostid && hid &&
-					strcmp(fctx->hostid, hid))
 				continue;
 
 			nvme_subsystem_for_each_ctrl_safe(s, c, _c) {
@@ -2431,17 +2416,14 @@ __public int nvmf_config_modify(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx)
 {
 	_cleanup_free_ char *hnqn = NULL;
-	_cleanup_free_ char *hid = NULL;
 	struct nvme_host *h;
 	struct nvme_subsystem *s;
 	struct nvme_ctrl *c;
 
 	if (!fctx->hostnqn)
 		fctx->hostnqn = hnqn = nvme_read_hostnqn();
-	if (!fctx->hostid && hnqn)
-		fctx->hostid = hid = nvme_read_hostid();
 
-	h = nvme_lookup_host(ctx, fctx->hostnqn, fctx->hostid);
+	h = nvme_lookup_host(ctx, fctx->hostnqn);
 	if (!h) {
 		nvme_msg(ctx, LOG_ERR, "Failed to lookup host '%s'\n",
 			fctx->hostnqn);
@@ -2724,8 +2706,7 @@ static int nbft_discovery(struct nvme_global_ctx *ctx,
 __public int nvmf_discovery_nbft(struct nvme_global_ctx *ctx,
 		struct nvmf_context *fctx, bool connect, char *nbft_path)
 {
-	const char *hostnqn = NULL, *hostid = NULL, *host_traddr = NULL;
-	char uuid[NVME_UUID_LEN_STRING];
+	const char *hostnqn = NULL, *host_traddr = NULL;
 	struct nbft_file_entry *entry = NULL;
 	struct nbft_info_subsystem_ns **ss;
 	struct nbft_info_hfi *hfi;
@@ -2764,17 +2745,7 @@ __public int nvmf_discovery_nbft(struct nvme_global_ctx *ctx,
 				hostnqn = fctx->hostnqn;
 		}
 
-		if (fctx->hostid)
-			hostid = fctx->hostid;
-		else if (*entry->nbft->host.id) {
-			ret = nvme_uuid_to_string(entry->nbft->host.id, uuid);
-			if (!ret)
-				hostid = uuid;
-			else
-				hostid = fctx->hostid;
-		}
-
-		h = nvme_lookup_host(ctx, hostnqn, hostid);
+		h = nvme_lookup_host(ctx, hostnqn);
 		if (!h) {
 			ret = -ENOENT;
 			goto out_free;
