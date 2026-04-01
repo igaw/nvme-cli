@@ -14,7 +14,7 @@ SYNOPSIS
 			[--data-len=<data-len> | -l <data-len>]
 			[--sel=<select> | -s <select>]
 			[--raw-binary | -b] [--cdw11=<cdw11> | -c <cdw11>]
-			 [--changed | -C]
+			[--changed | -C]
 			[<global-options>]
 
 DESCRIPTION

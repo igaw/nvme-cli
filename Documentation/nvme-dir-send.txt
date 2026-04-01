@@ -15,7 +15,7 @@ SYNOPSIS
 			[--dir-oper=<doper> | -O <doper>]
 			[--endir=<endir> | -e <endir>]
 			[--target-dir=<tdir> | -T <tdir>]
-			 [--raw-binary | -b]
+			[--raw-binary | -b]
 			[<global-options>]
 
 DESCRIPTION

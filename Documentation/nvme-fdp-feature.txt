@@ -9,8 +9,8 @@ SYNOPSIS
 --------
 [verse]
 'nvme fdp' <device> [--endgrp-id=<NUM> | -e <NUM>]
- [--enable-conf-idx=<NUM> | -c <NUM>]
- [--disable | -d]
+			[--enable-conf-idx=<NUM> | -c <NUM>]
+			[--disable | -d]
 			[<global-options>]
 
 DESCRIPTION

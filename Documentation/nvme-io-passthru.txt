@@ -20,7 +20,7 @@ SYNOPSIS
 			[--read | -r] [--write | -w]
 			[--input-file=<file> | -i <file>]
 			[--metadata=<file> | -M <file>]
-			 [--show-command | -s]
+			[--show-command | -s]
 			[--dry-run | -d] [--raw-binary | -b]
 			[--prefill=<prefill> | -p <prefill>]
 			[--latency | -T]

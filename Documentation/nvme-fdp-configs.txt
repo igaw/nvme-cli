@@ -9,7 +9,7 @@ SYNOPSIS
 --------
 [verse]
 'nvme fdp configs' <device> [--endgrp-id=<NUM> | -e <NUM>]
-			 [--raw-binary | -b]
+			[--raw-binary | -b]
 			[<global-options>]
 
 DESCRIPTION

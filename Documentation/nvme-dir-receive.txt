@@ -14,7 +14,7 @@ SYNOPSIS
 			[--dir-spec=<dspec> | -S <dspec>]
 			[--dir-oper=<doper> | -O <doper>]
 			[--req-resource=<nsr> | -r <nsr>]
-			 [--raw-binary | -b]
+			[--raw-binary | -b]
 			[<global-options>]
 
 DESCRIPTION
