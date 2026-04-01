@@ -9,8 +9,7 @@ SYNOPSIS
 --------
 [verse]
 'nvme solidigm id-ctrl' <device> [--raw-binary | -b] [--vendor-specific | -V]
-                              [--output-format=<fmt> | -o <fmt>] [--human-readable | -H]
-                              [--verbose | -v] [--timeout=<seconds> | -t <seconds>]
+			[<global-options>]
 
 DESCRIPTION
 -----------
@@ -30,6 +29,10 @@ This command includes all options available in the generic `nvme id-ctrl` comman
 - `--timeout=<seconds>` or `-t <seconds>`
 
 For detailed usage and options, please refer to the documentation for 'nvme id-ctrl'.
+
+OPTIONS
+-------
+include::global-options.txt[]
 
 EXAMPLES
 --------

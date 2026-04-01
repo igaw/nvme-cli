@@ -15,9 +15,8 @@ SYNOPSIS
 			[--dir-oper=<doper> | -O <doper>]
 			[--endir=<endir> | -e <endir>]
 			[--target-dir=<tdir> | -T <tdir>]
-			[--human-readable | -H] [--raw-binary | -b]
-			[--output-format=<fmt> | -o <fmt>] [--verbose | -v]
-			[--timeout=<timeout>]
+			 [--raw-binary | -b]
+			[<global-options>]
 
 DESCRIPTION
 -----------
@@ -82,21 +81,7 @@ OPTIONS
 	Print the raw receive buffer to stdout if the command returns
 	a structure.
 
--H::
---human-readable::
-	deprecated; does nothing so use the --verbose flag instead.
-
--o <fmt>::
---output-format=<fmt>::
-	Set the reporting format to 'normal', 'json' or 'binary'. Only one
-	output format can be used at a time.
-
--v::
---verbose::
-	Increase the information detail in the output.
-
---timeout=<timeout>::
-	Override default timeout value. In milliseconds.
+include::global-options.txt[]
 
 EXAMPLES
 --------

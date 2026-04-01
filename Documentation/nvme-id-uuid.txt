@@ -8,8 +8,8 @@ nvme-id-uuid - Send a Identify UUID List command to the specified device
 SYNOPSIS
 --------
 [verse]
-'nvme id-uuid' <device> [--raw-binary | -b] [--human-readable | -H]
-			[--output-format=<fmt> | -o <fmt>] [--verbose | -v]
+'nvme id-uuid' <device> [--raw-binary | -b]
+			[<global-options>]
 
 DESCRIPTION
 -----------
@@ -28,19 +28,7 @@ OPTIONS
 	Print the raw buffer to stdout. Structure is not parsed by
 	program. This overrides the vendor specific and human readable options.
 
--H::
---human-readable::
-	This option will parse and format many of the bit fields
-	into human-readable formats.
-
--o <fmt>::
---output-format=<fmt>::
-	Set the reporting format to 'normal', 'json' or 'binary'. Only one
-	output format can be used at a time.
-
--v::
---verbose::
-	Increase the information detail in the output.
+include::global-options.txt[]
 
 EXAMPLES
 --------
