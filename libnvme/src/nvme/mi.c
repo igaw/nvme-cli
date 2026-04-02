@@ -24,21 +24,21 @@
 
 #define NUM_ENABLES    (256u)
 
-_Static_assert(sizeof(struct libnvme_mi_aem_supported_list_header) == 5,
+_Static_assert(sizeof(struct nvme_mi_aem_supported_list_header) == 5,
 	"size_of_nvme_mi_aem_supported_list_header_is_not_5_bytes");
-_Static_assert(sizeof(struct libnvme_mi_aem_supported_item) == 3,
+_Static_assert(sizeof(struct nvme_mi_aem_supported_item) == 3,
 	"sizeof_nvme_mi_aem_supported_item_is_not_3_bytes");
-_Static_assert(sizeof(struct libnvme_mi_aem_enable_item) == 3,
+_Static_assert(sizeof(struct nvme_mi_aem_enable_item) == 3,
 	"size_of_ae_enable_item_t_is_not_3_bytes");
-_Static_assert(sizeof(struct libnvme_mi_aem_enable_list_header) == 5,
+_Static_assert(sizeof(struct nvme_mi_aem_enable_list_header) == 5,
 	"size_of_nvme_mi_aem_enable_list_header_is_not_5_bytes");
-_Static_assert(sizeof(struct libnvme_mi_aem_occ_data) == 9,
+_Static_assert(sizeof(struct nvme_mi_aem_occ_data) == 9,
 	"size_of_nvme_mi_aem_occ_data_is_not_9_bytes");
-_Static_assert(sizeof(struct libnvme_mi_aem_occ_list_hdr) == 7,
+_Static_assert(sizeof(struct nvme_mi_aem_occ_list_hdr) == 7,
 	"size_of_nvme_mi_aem_occ_list_hdr_is_not_7_bytes");
 
-static int nvme_mi_get_async_message(libnvme_mi_ep_t ep,
-	struct libnvme_mi_aem_msg *aem_msg, size_t *aem_msg_len);
+static int nvme_mi_get_async_message(nvme_mi_ep_t ep,
+	struct nvme_mi_aem_msg *aem_msg, size_t *aem_msg_len);
 
 static const int default_timeout = 1000; /* milliseconds; endpoints may
 					    override */
@@ -64,10 +64,10 @@ static int parse_devname(const char *dev, unsigned int *net, uint8_t *eid,
 
 int __nvme_transport_handle_init_mi(struct libnvme_transport_handle *hdl)
 {
-	if (hdl->type != NVME_TRANSPORT_HANDLE_TYPE_UNKNOWN)
+	if (hdl->type != LIBNVME_TRANSPORT_HANDLE_TYPE_UNKNOWN)
 		return -EALREADY;
 
-	hdl->type = NVME_TRANSPORT_HANDLE_TYPE_MI;
+	hdl->type = LIBNVME_TRANSPORT_HANDLE_TYPE_MI;
 
 	return 0;
 }
@@ -76,7 +76,7 @@ int __nvme_transport_handle_open_mi(struct libnvme_transport_handle *hdl, const 
 {
 	unsigned int rc, net, ctrl_id;
 	unsigned char eid;
-	struct libnvme_mi_ep *ep;
+	struct nvme_mi_ep *ep;
 
 	rc = __nvme_transport_handle_init_mi(hdl);
 	if (rc)
@@ -86,7 +86,7 @@ int __nvme_transport_handle_open_mi(struct libnvme_transport_handle *hdl, const 
 	if (rc)
 		return rc;
 
-	ep = libnvme_mi_open_mctp(hdl->ctx, net, eid);
+	ep = nvme_mi_open_mctp(hdl->ctx, net, eid);
 	if (!ep)
 		return -EINVAL;
 
@@ -99,7 +99,7 @@ void __nvme_transport_handle_close_mi(struct libnvme_transport_handle *hdl)
 	free(hdl);
 }
 
-static void nvme_mi_record_resp_time(struct libnvme_mi_ep *ep)
+static void nvme_mi_record_resp_time(struct nvme_mi_ep *ep)
 {
 	int rc;
 
@@ -107,7 +107,7 @@ static void nvme_mi_record_resp_time(struct libnvme_mi_ep *ep)
 	ep->last_resp_time_valid = !rc;
 }
 
-static bool nvme_mi_compare_vid_mn(struct libnvme_mi_ep *ep,
+static bool nvme_mi_compare_vid_mn(struct nvme_mi_ep *ep,
 				   struct nvme_id_ctrl *id,
 				   __u16 vid, const char *mn)
 
@@ -116,7 +116,7 @@ static bool nvme_mi_compare_vid_mn(struct libnvme_mi_ep *ep,
 
 	len = strlen(mn);
 	if (len >= sizeof(id->mn)) {
-		nvme_msg(ep->ctx, LOG_ERR,
+		libnvme_msg(ep->ctx, LOG_ERR,
 			 "Internal error: invalid model number for %s\n",
 			 __func__);
 		return false;
@@ -149,7 +149,7 @@ static void __nvme_mi_format_mn(struct nvme_id_ctrl *id,
 
 #define nvme_mi_format_mn(id, m) __nvme_mi_format_mn(id, m, sizeof(m))
 
-void nvme_mi_ep_probe(struct libnvme_mi_ep *ep)
+void libnvme_mi_ep_probe(struct nvme_mi_ep *ep)
 {
 	struct nvme_id_ctrl id = { 0 };
 	struct libnvme_transport_handle *hdl;
@@ -176,7 +176,7 @@ void nvme_mi_ep_probe(struct libnvme_mi_ep *ep)
 	/* start with no quirks, detect as we go */
 	ep->quirks = 0;
 
-	hdl = libnvme_mi_init_transport_handle(ep, 0);
+	hdl = nvme_mi_init_transport_handle(ep, 0);
 	if (!hdl)
 		return;
 
@@ -196,7 +196,7 @@ void nvme_mi_ep_probe(struct libnvme_mi_ep *ep)
 	cmd.data_len = offsetof(struct nvme_id_ctrl, rab);
 	rc = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (rc) {
-		nvme_msg(ep->ctx, LOG_WARNING,
+		libnvme_msg(ep->ctx, LOG_WARNING,
 			 "Identify Controller failed, no quirks applied\n");
 		goto out_close;
 	}
@@ -206,21 +206,21 @@ void nvme_mi_ep_probe(struct libnvme_mi_ep *ep)
 	 * a little extra tolerance.
 	 */
 	if (nvme_mi_compare_vid_mn(ep, &id, 0x144d, "MZUL2512HCJQ")) {
-		ep->quirks |= NVME_QUIRK_MIN_INTER_COMMAND_TIME;
+		ep->quirks |= LIBNVME_QUIRK_MIN_INTER_COMMAND_TIME;
 		ep->inter_command_us = 1200;
 	}
 
 	/* If we're quirking for the inter-command time, record the last
 	 * command time now, so we don't conflict with the just-sent identify.
 	 */
-	if (ep->quirks & NVME_QUIRK_MIN_INTER_COMMAND_TIME)
+	if (ep->quirks & LIBNVME_QUIRK_MIN_INTER_COMMAND_TIME)
 		nvme_mi_record_resp_time(ep);
 
 	if (ep->quirks) {
 		char tmp[sizeof(id.mn) + 1];
 
 		nvme_mi_format_mn(&id, tmp);
-		nvme_msg(ep->ctx, LOG_DEBUG,
+		libnvme_msg(ep->ctx, LOG_DEBUG,
 			 "device %02x:%s: applying quirks 0x%08lx\n",
 			 id.vid, tmp, ep->quirks);
 	}
@@ -246,7 +246,7 @@ static const int nsec_per_sec = 1000 * 1000 * 1000;
 		}							\
 	} while (0)
 
-static void nvme_mi_insert_delay(struct libnvme_mi_ep *ep)
+static void nvme_mi_insert_delay(struct nvme_mi_ep *ep)
 {
 	struct timespec now, next, delay;
 	int rc;
@@ -276,9 +276,9 @@ static void nvme_mi_insert_delay(struct libnvme_mi_ep *ep)
 	nanosleep(&delay, NULL);
 }
 
-struct libnvme_mi_ep *nvme_mi_init_ep(struct libnvme_global_ctx *ctx)
+struct nvme_mi_ep *libnvme_mi_init_ep(struct libnvme_global_ctx *ctx)
 {
-	struct libnvme_mi_ep *ep;
+	struct nvme_mi_ep *ep;
 
 	ep = calloc(1, sizeof(*ep));
 	if (!ep)
@@ -297,7 +297,7 @@ struct libnvme_mi_ep *nvme_mi_init_ep(struct libnvme_global_ctx *ctx)
 	return ep;
 }
 
-__public int libnvme_mi_ep_set_timeout(libnvme_mi_ep_t ep, unsigned int timeout_ms)
+__public int nvme_mi_ep_set_timeout(nvme_mi_ep_t ep, unsigned int timeout_ms)
 {
 	if (ep->transport->check_timeout) {
 		int rc;
@@ -310,22 +310,22 @@ __public int libnvme_mi_ep_set_timeout(libnvme_mi_ep_t ep, unsigned int timeout_
 	return 0;
 }
 
-void libnvme_mi_ep_set_mprt_max(libnvme_mi_ep_t ep, unsigned int mprt_max_ms)
+void nvme_mi_ep_set_mprt_max(nvme_mi_ep_t ep, unsigned int mprt_max_ms)
 {
 	ep->mprt_max = mprt_max_ms;
 }
 
-__public unsigned int libnvme_mi_ep_get_timeout(libnvme_mi_ep_t ep)
+__public unsigned int nvme_mi_ep_get_timeout(nvme_mi_ep_t ep)
 {
 	return ep->timeout;
 }
 
-static bool nvme_mi_ep_has_quirk(libnvme_mi_ep_t ep, unsigned long quirk)
+static bool nvme_mi_ep_has_quirk(nvme_mi_ep_t ep, unsigned long quirk)
 {
 	return ep->quirks & quirk;
 }
 
-__public struct libnvme_transport_handle *libnvme_mi_init_transport_handle(libnvme_mi_ep_t ep, __u16 ctrl_id)
+__public struct libnvme_transport_handle *nvme_mi_init_transport_handle(nvme_mi_ep_t ep, __u16 ctrl_id)
 {
 	struct libnvme_transport_handle *hdl;
 
@@ -343,12 +343,12 @@ __public struct libnvme_transport_handle *libnvme_mi_init_transport_handle(libnv
 	return hdl;
 }
 
-__public __u16 libnvme_mi_ctrl_id(struct libnvme_transport_handle *hdl)
+__public __u16 nvme_mi_ctrl_id(struct libnvme_transport_handle *hdl)
 {
 	return hdl->id;
 }
 
-__public int libnvme_mi_scan_ep(libnvme_mi_ep_t ep, bool force_rescan)
+__public int nvme_mi_scan_ep(nvme_mi_ep_t ep, bool force_rescan)
 {
 	struct nvme_ctrl_list list;
 	unsigned int i, n_ctrl;
@@ -358,14 +358,14 @@ __public int libnvme_mi_scan_ep(libnvme_mi_ep_t ep, bool force_rescan)
 		if (force_rescan) {
 			struct libnvme_transport_handle *hdl, *tmp;
 
-			libnvme_mi_for_each_transport_handle_safe(ep, hdl, tmp)
+			nvme_mi_for_each_transport_handle_safe(ep, hdl, tmp)
 				libnvme_close(hdl);
 		} else {
 			return 0;
 		}
 	}
 
-	rc = libnvme_mi_mi_read_mi_data_ctrl_list(ep, 0, &list);
+	rc = nvme_mi_mi_read_mi_data_ctrl_list(ep, 0, &list);
 	if (rc)
 		return rc;
 
@@ -379,7 +379,7 @@ __public int libnvme_mi_scan_ep(libnvme_mi_ep_t ep, bool force_rescan)
 
 		id = le16_to_cpu(list.identifier[i]);
 
-		hdl = libnvme_mi_init_transport_handle(ep, id);
+		hdl = nvme_mi_init_transport_handle(ep, id);
 		if (!hdl)
 			break;
 	}
@@ -388,7 +388,7 @@ __public int libnvme_mi_scan_ep(libnvme_mi_ep_t ep, bool force_rescan)
 	return 0;
 }
 
-__u32 nvme_mi_crc32_update(__u32 crc, void *data, size_t len)
+__u32 libnvme_mi_crc32_update(__u32 crc, void *data, size_t len)
 {
 	int i;
 
@@ -400,41 +400,41 @@ __u32 nvme_mi_crc32_update(__u32 crc, void *data, size_t len)
 	return crc;
 }
 
-static void nvme_mi_calc_req_mic(struct nvme_mi_req *req)
+static void nvme_mi_calc_req_mic(struct libnvme_mi_req *req)
 {
 	__u32 crc = 0xffffffff;
 
-	crc = nvme_mi_crc32_update(crc, req->hdr, req->hdr_len);
-	crc = nvme_mi_crc32_update(crc, req->data, req->data_len);
+	crc = libnvme_mi_crc32_update(crc, req->hdr, req->hdr_len);
+	crc = libnvme_mi_crc32_update(crc, req->data, req->data_len);
 
 	req->mic = ~crc;
 }
 
 /* returns zero on correct MIC */
-static int nvme_mi_verify_resp_mic(struct nvme_mi_resp *resp)
+static int nvme_mi_verify_resp_mic(struct libnvme_mi_resp *resp)
 {
 	__u32 crc = 0xffffffff;
 
-	crc = nvme_mi_crc32_update(crc, resp->hdr, resp->hdr_len);
-	crc = nvme_mi_crc32_update(crc, resp->data, resp->data_len);
+	crc = libnvme_mi_crc32_update(crc, resp->hdr, resp->hdr_len);
+	crc = libnvme_mi_crc32_update(crc, resp->data, resp->data_len);
 
 	return resp->mic != ~crc;
 }
 
-__public __weak void *libnvme_mi_submit_entry(__u8 type, const struct libnvme_mi_msg_hdr *hdr,
+__public __weak void *nvme_mi_submit_entry(__u8 type, const struct nvme_mi_msg_hdr *hdr,
 					   size_t hdr_len, const void *data, size_t data_len)
 {
 	return NULL;
 }
 
-__public __weak void libnvme_mi_submit_exit(__u8 type, const struct libnvme_mi_msg_hdr *hdr,
+__public __weak void nvme_mi_submit_exit(__u8 type, const struct nvme_mi_msg_hdr *hdr,
 					 size_t hdr_len, const void *data, size_t data_len,
 					 void *user_data) { }
 
 
-int nvme_mi_async_read(libnvme_mi_ep_t ep, struct nvme_mi_resp *resp)
+int nvme_mi_async_read(nvme_mi_ep_t ep, struct libnvme_mi_resp *resp)
 {
-	if (nvme_mi_ep_has_quirk(ep, NVME_QUIRK_MIN_INTER_COMMAND_TIME))
+	if (nvme_mi_ep_has_quirk(ep, LIBNVME_QUIRK_MIN_INTER_COMMAND_TIME))
 		nvme_mi_record_resp_time(ep);
 
 	int rc = ep->transport->aem_read(ep, resp);
@@ -445,14 +445,14 @@ int nvme_mi_async_read(libnvme_mi_ep_t ep, struct nvme_mi_resp *resp)
 		resp->data_len = 0;//No data to process
 		return 0;
 	} else if (rc) {
-		nvme_msg(ep->ctx, LOG_INFO, "transport failure\n");
+		libnvme_msg(ep->ctx, LOG_INFO, "transport failure\n");
 		return rc;
 	}
 
 	if (ep->transport->mic_enabled) {
 		rc = nvme_mi_verify_resp_mic(resp);
 		if (rc) {
-			nvme_msg(ep->ctx, LOG_WARNING, "crc mismatch\n");
+			libnvme_msg(ep->ctx, LOG_WARNING, "crc mismatch\n");
 			return -EBADMSG;
 		}
 	}
@@ -460,26 +460,26 @@ int nvme_mi_async_read(libnvme_mi_ep_t ep, struct nvme_mi_resp *resp)
 	//TODO: There's a bunch of overlap with the nvme_mi_submit.  Maybe we make common helpers
 
 	/* basic response checks */
-	if (resp->hdr_len < sizeof(struct libnvme_mi_msg_hdr)) {
-		nvme_msg(ep->ctx, LOG_DEBUG,
+	if (resp->hdr_len < sizeof(struct nvme_mi_msg_hdr)) {
+		libnvme_msg(ep->ctx, LOG_DEBUG,
 			 "Bad response header len: %zd\n", resp->hdr_len);
 		return -EPROTO;
 	}
 
 	if (resp->hdr->type != NVME_MI_MSGTYPE_NVME) {
-		nvme_msg(ep->ctx, LOG_DEBUG,
+		libnvme_msg(ep->ctx, LOG_DEBUG,
 			 "Invalid message type 0x%02x\n", resp->hdr->type);
 		return -EPROTO;
 	}
 
 	if (!(resp->hdr->nmp & ~(NVME_MI_ROR_REQ << 7))) {
-		nvme_msg(ep->ctx, LOG_DEBUG,
+		libnvme_msg(ep->ctx, LOG_DEBUG,
 			 "ROR value in response indicates a response\n");
 		return -EIO;
 	}
 
 	if (!(resp->hdr->nmp & (NVME_MI_MT_AE << 3))) {
-		nvme_msg(ep->ctx, LOG_DEBUG,
+		libnvme_msg(ep->ctx, LOG_DEBUG,
 			 "NMIMT does not indicate AEM\n");
 		resp->data_len = 0;//No data to process
 		return 0;
@@ -489,91 +489,91 @@ int nvme_mi_async_read(libnvme_mi_ep_t ep, struct nvme_mi_resp *resp)
 }
 
 
-int nvme_mi_submit(libnvme_mi_ep_t ep, struct nvme_mi_req *req,
-		   struct nvme_mi_resp *resp)
+int nvme_mi_submit(nvme_mi_ep_t ep, struct libnvme_mi_req *req,
+		   struct libnvme_mi_resp *resp)
 {
 	int rc;
 	void *user_data;
 
-	user_data = libnvme_mi_submit_entry(req->hdr->type, req->hdr, req->hdr_len, req->data,
+	user_data = nvme_mi_submit_entry(req->hdr->type, req->hdr, req->hdr_len, req->data,
 					 req->data_len);
 
-	if (req->hdr_len < sizeof(struct libnvme_mi_msg_hdr))
+	if (req->hdr_len < sizeof(struct nvme_mi_msg_hdr))
 		return -EINVAL;
 
 	if (req->hdr_len & 0x3)
 		return -EINVAL;
 
-	if (resp->hdr_len < sizeof(struct libnvme_mi_msg_hdr))
+	if (resp->hdr_len < sizeof(struct nvme_mi_msg_hdr))
 		return -EINVAL;
 
 	if (resp->hdr_len & 0x3)
 		return -EINVAL;
 
-	nvme_mi_ep_probe(ep);
+	libnvme_mi_ep_probe(ep);
 
 	if (ep->transport->mic_enabled)
 		nvme_mi_calc_req_mic(req);
 
-	if (nvme_mi_ep_has_quirk(ep, NVME_QUIRK_MIN_INTER_COMMAND_TIME))
+	if (nvme_mi_ep_has_quirk(ep, LIBNVME_QUIRK_MIN_INTER_COMMAND_TIME))
 		nvme_mi_insert_delay(ep);
 
 	rc = ep->transport->submit(ep, req, resp);
 
-	if (nvme_mi_ep_has_quirk(ep, NVME_QUIRK_MIN_INTER_COMMAND_TIME))
+	if (nvme_mi_ep_has_quirk(ep, LIBNVME_QUIRK_MIN_INTER_COMMAND_TIME))
 		nvme_mi_record_resp_time(ep);
 
 	if (rc) {
-		nvme_msg(ep->ctx, LOG_INFO, "transport failure\n");
+		libnvme_msg(ep->ctx, LOG_INFO, "transport failure\n");
 		return rc;
 	}
 
 	if (ep->transport->mic_enabled) {
 		rc = nvme_mi_verify_resp_mic(resp);
 		if (rc) {
-			nvme_msg(ep->ctx, LOG_WARNING, "crc mismatch\n");
+			libnvme_msg(ep->ctx, LOG_WARNING, "crc mismatch\n");
 			return -EBADMSG;
 		}
 	}
 
 	/* basic response checks */
-	if (resp->hdr_len < sizeof(struct libnvme_mi_msg_hdr)) {
-		nvme_msg(ep->ctx, LOG_DEBUG,
+	if (resp->hdr_len < sizeof(struct nvme_mi_msg_hdr)) {
+		libnvme_msg(ep->ctx, LOG_DEBUG,
 			 "Bad response header len: %zd\n", resp->hdr_len);
 		return -EPROTO;
 	}
 
 	if (resp->hdr->type != NVME_MI_MSGTYPE_NVME) {
-		nvme_msg(ep->ctx, LOG_DEBUG,
+		libnvme_msg(ep->ctx, LOG_DEBUG,
 			 "Invalid message type 0x%02x\n", resp->hdr->type);
 		return -EPROTO;
 	}
 
 	if (!(resp->hdr->nmp & (NVME_MI_ROR_RSP << 7))) {
-		nvme_msg(ep->ctx, LOG_DEBUG,
+		libnvme_msg(ep->ctx, LOG_DEBUG,
 			 "ROR value in response indicates a request\n");
 		return -EIO;
 	}
 
 	if ((resp->hdr->nmp & 0x1) != (req->hdr->nmp & 0x1)) {
-		nvme_msg(ep->ctx, LOG_WARNING,
+		libnvme_msg(ep->ctx, LOG_WARNING,
 			 "Command slot mismatch: req %d, resp %d\n",
 			 req->hdr->nmp & 0x1,
 			 resp->hdr->nmp & 0x1);
 		return -EIO;
 	}
 
-	libnvme_mi_submit_exit(resp->hdr->type, resp->hdr, resp->hdr_len, resp->data, resp->data_len,
+	nvme_mi_submit_exit(resp->hdr->type, resp->hdr, resp->hdr_len, resp->data, resp->data_len,
 			    user_data);
 
 	return 0;
 }
 
-__public int libnvme_mi_set_csi(libnvme_mi_ep_t ep, uint8_t csi)
+__public int nvme_mi_set_csi(nvme_mi_ep_t ep, uint8_t csi)
 {
 	uint8_t csi_bit = (csi) ? 1 : 0;
 
-	if (nvme_mi_ep_has_quirk(ep, NVME_QUIRK_CSI_1_NOT_SUPPORTED) && csi_bit)
+	if (nvme_mi_ep_has_quirk(ep, LIBNVME_QUIRK_CSI_1_NOT_SUPPORTED) && csi_bit)
 		return -1;
 
 	ep->csi = csi_bit;
@@ -581,9 +581,9 @@ __public int libnvme_mi_set_csi(libnvme_mi_ep_t ep, uint8_t csi)
 	return 0;
 }
 
-static void nvme_mi_admin_init_req(libnvme_mi_ep_t ep,
-				   struct nvme_mi_req *req,
-				   struct libnvme_mi_admin_req_hdr *hdr,
+static void nvme_mi_admin_init_req(nvme_mi_ep_t ep,
+				   struct libnvme_mi_req *req,
+				   struct nvme_mi_admin_req_hdr *hdr,
 				   __u16 ctrl_id, __u8 opcode)
 {
 	memset(req, 0, sizeof(*req));
@@ -600,17 +600,17 @@ static void nvme_mi_admin_init_req(libnvme_mi_ep_t ep,
 	req->hdr_len = sizeof(*hdr);
 }
 
-static void nvme_mi_admin_init_resp(struct nvme_mi_resp *resp,
-				    struct libnvme_mi_admin_resp_hdr *hdr)
+static void nvme_mi_admin_init_resp(struct libnvme_mi_resp *resp,
+				    struct nvme_mi_admin_resp_hdr *hdr)
 {
 	memset(resp, 0, sizeof(*resp));
 	resp->hdr = &hdr->hdr;
 	resp->hdr_len = sizeof(*hdr);
 }
 
-static void nvme_mi_control_init_req(libnvme_mi_ep_t ep,
-				    struct nvme_mi_req *req,
-				    struct libnvme_mi_control_req *control_req,
+static void nvme_mi_control_init_req(nvme_mi_ep_t ep,
+				    struct libnvme_mi_req *req,
+				    struct nvme_mi_control_req *control_req,
 				    __u8 opcode, __u16 cpsp)
 {
 	memset(req, 0, sizeof(*req));
@@ -627,18 +627,18 @@ static void nvme_mi_control_init_req(libnvme_mi_ep_t ep,
 	req->hdr_len = sizeof(*control_req);
 }
 
-static void nvme_mi_control_init_resp(struct nvme_mi_resp *resp,
-				    struct libnvme_mi_control_resp *control_resp)
+static void nvme_mi_control_init_resp(struct libnvme_mi_resp *resp,
+				    struct nvme_mi_control_resp *control_resp)
 {
 	memset(resp, 0, sizeof(*resp));
 	resp->hdr = &control_resp->hdr;
 	resp->hdr_len = sizeof(*control_resp);
 }
 
-static int nvme_mi_admin_parse_status(struct nvme_mi_resp *resp, __u64 *result)
+static int nvme_mi_admin_parse_status(struct libnvme_mi_resp *resp, __u64 *result)
 {
-	struct libnvme_mi_admin_resp_hdr *admin_hdr;
-	struct libnvme_mi_msg_resp *resp_hdr;
+	struct nvme_mi_admin_resp_hdr *admin_hdr;
+	struct nvme_mi_msg_resp *resp_hdr;
 	__u32 nvme_status;
 	__u32 nvme_result;
 
@@ -650,7 +650,7 @@ static int nvme_mi_admin_parse_status(struct nvme_mi_resp *resp, __u64 *result)
 
 	if (resp->hdr_len < sizeof(*resp_hdr))
 		return -EPROTO;
-	resp_hdr = (struct libnvme_mi_msg_resp *)resp->hdr;
+	resp_hdr = (struct nvme_mi_msg_resp *)resp->hdr;
 
 	/* If we have a MI error, we can't be sure there's an admin header
 	 * following; return just the MI status, with the status type
@@ -666,7 +666,7 @@ static int nvme_mi_admin_parse_status(struct nvme_mi_resp *resp, __u64 *result)
 	if (resp->hdr_len < sizeof(*admin_hdr))
 		return -EPROTO;
 
-	admin_hdr = (struct libnvme_mi_admin_resp_hdr *)resp->hdr;
+	admin_hdr = (struct nvme_mi_admin_resp_hdr *)resp->hdr;
 	nvme_result = le32_to_cpu(admin_hdr->cdw0);
 
 	/* Shift down 17 here: the SC starts at bit 17, and the NVME_SC_*
@@ -682,13 +682,13 @@ static int nvme_mi_admin_parse_status(struct nvme_mi_resp *resp, __u64 *result)
 	return nvme_status;
 }
 
-static int nvme_mi_control_parse_status(struct nvme_mi_resp *resp, __u16 *cpsr)
+static int nvme_mi_control_parse_status(struct libnvme_mi_resp *resp, __u16 *cpsr)
 {
-	struct libnvme_mi_control_resp *control_resp;
+	struct nvme_mi_control_resp *control_resp;
 
 	if (resp->hdr_len < sizeof(*control_resp))
 		return -EPROTO;
-	control_resp = (struct libnvme_mi_control_resp *)resp->hdr;
+	control_resp = (struct nvme_mi_control_resp *)resp->hdr;
 
 	if (control_resp->status)
 		return control_resp->status |
@@ -700,15 +700,15 @@ static int nvme_mi_control_parse_status(struct nvme_mi_resp *resp, __u16 *cpsr)
 	return control_resp->status;
 }
 
-static int nvme_mi_get_async_message(libnvme_mi_ep_t ep,
-							struct libnvme_mi_aem_msg *aem_msg,
+static int nvme_mi_get_async_message(nvme_mi_ep_t ep,
+							struct nvme_mi_aem_msg *aem_msg,
 							size_t *aem_msg_len)
 {
-	struct nvme_mi_resp resp;
+	struct libnvme_mi_resp resp;
 
 	memset(&resp, 0, sizeof(resp));
 	resp.hdr = &aem_msg->hdr;
-	resp.hdr_len = sizeof(struct libnvme_mi_msg_hdr);
+	resp.hdr_len = sizeof(struct nvme_mi_msg_hdr);
 	resp.data = &aem_msg->occ_list_hdr;
 	resp.data_len = *aem_msg_len;
 
@@ -722,15 +722,15 @@ static int nvme_mi_get_async_message(libnvme_mi_ep_t ep,
 }
 
 
-__public int libnvme_mi_admin_xfer(struct libnvme_transport_handle *hdl,
-		       struct libnvme_mi_admin_req_hdr *admin_req,
+__public int nvme_mi_admin_xfer(struct libnvme_transport_handle *hdl,
+		       struct nvme_mi_admin_req_hdr *admin_req,
 		       size_t req_data_size,
-		       struct libnvme_mi_admin_resp_hdr *admin_resp,
+		       struct nvme_mi_admin_resp_hdr *admin_resp,
 		       off_t resp_data_offset,
 		       size_t *resp_data_size)
 {
-	struct nvme_mi_resp resp;
-	struct nvme_mi_req req;
+	struct libnvme_mi_resp resp;
+	struct libnvme_mi_req req;
 	__u32 dlen, doff;
 	int rc;
 
@@ -801,14 +801,14 @@ __public int libnvme_mi_admin_xfer(struct libnvme_transport_handle *hdl,
 	return 0;
 }
 
-int nvme_mi_admin_admin_passthru(struct libnvme_transport_handle *hdl,
+int libnvme_mi_admin_admin_passthru(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd)
 {
 	/* Input parameters flags, rsvd, metadata, metadata_len are not used */
-	struct libnvme_mi_admin_resp_hdr resp_hdr;
-	struct libnvme_mi_admin_req_hdr req_hdr;
-	struct nvme_mi_resp resp;
-	struct nvme_mi_req req;
+	struct nvme_mi_admin_resp_hdr resp_hdr;
+	struct nvme_mi_admin_req_hdr req_hdr;
+	struct libnvme_mi_resp resp;
+	struct libnvme_mi_req req;
 	unsigned int timeout_save = 0;
 	int rc;
 	int direction = cmd->opcode & 0x3;
@@ -816,14 +816,14 @@ int nvme_mi_admin_admin_passthru(struct libnvme_transport_handle *hdl,
 	bool has_read_data = false;
 
 	if (direction == NVME_DATA_TFR_BIDIRECTIONAL) {
-		nvme_msg(hdl->ctx, LOG_ERR,
-			"nvme_mi_admin_admin_passthru doesn't support bidirectional commands\n");
+		libnvme_msg(hdl->ctx, LOG_ERR,
+			"libnvme_mi_admin_admin_passthru doesn't support bidirectional commands\n");
 		return -EINVAL;
 	}
 
 	if (cmd->data_len > 4096) {
-		nvme_msg(hdl->ctx, LOG_ERR,
-			"nvme_mi_admin_admin_passthru doesn't support data_len over 4096 bytes.\n");
+		libnvme_msg(hdl->ctx, LOG_ERR,
+			"libnvme_mi_admin_admin_passthru doesn't support data_len over 4096 bytes.\n");
 		return -EINVAL;
 	}
 
@@ -868,12 +868,12 @@ int nvme_mi_admin_admin_passthru(struct libnvme_transport_handle *hdl,
 	 * timeout and override
 	 */
 	if (cmd->timeout_ms != 0) {
-		timeout_save = libnvme_mi_ep_get_timeout(hdl->ep);
-		libnvme_mi_ep_set_timeout(hdl->ep, cmd->timeout_ms);
+		timeout_save = nvme_mi_ep_get_timeout(hdl->ep);
+		nvme_mi_ep_set_timeout(hdl->ep, cmd->timeout_ms);
 	}
 	rc = nvme_mi_submit(hdl->ep, &req, &resp);
 	if (cmd->timeout_ms != 0)
-		libnvme_mi_ep_set_timeout(hdl->ep, timeout_save);
+		nvme_mi_ep_set_timeout(hdl->ep, timeout_save);
 
 	if (rc)
 		return rc;
@@ -888,13 +888,13 @@ int nvme_mi_admin_admin_passthru(struct libnvme_transport_handle *hdl,
 	return 0;
 }
 
-__public int libnvme_mi_control(libnvme_mi_ep_t ep, __u8 opcode,
+__public int nvme_mi_control(nvme_mi_ep_t ep, __u8 opcode,
 		    __u16 cpsp, __u16 *result_cpsr)
 {
-	struct libnvme_mi_control_resp control_resp;
-	struct libnvme_mi_control_req control_req;
-	struct nvme_mi_resp resp;
-	struct nvme_mi_req req;
+	struct nvme_mi_control_resp control_resp;
+	struct nvme_mi_control_req control_req;
+	struct libnvme_mi_resp resp;
+	struct libnvme_mi_req req;
 	int rc = 0;
 
 	nvme_mi_control_init_req(ep, &req, &control_req, opcode, cpsp);
@@ -911,9 +911,9 @@ __public int libnvme_mi_control(libnvme_mi_ep_t ep, __u8 opcode,
 	return 0;
 }
 
-static void nvme_mi_mi_init_req(libnvme_mi_ep_t ep,
-	struct nvme_mi_req *req,
-	struct libnvme_mi_mi_req_hdr *hdr,
+static void nvme_mi_mi_init_req(nvme_mi_ep_t ep,
+	struct libnvme_mi_req *req,
+	struct nvme_mi_mi_req_hdr *hdr,
 	__u32 cdw0, __u8 opcode)
 {
 	memset(req, 0, sizeof(*req));
@@ -930,17 +930,17 @@ static void nvme_mi_mi_init_req(libnvme_mi_ep_t ep,
 	req->hdr_len = sizeof(*hdr);
 }
 
-static int nvme_mi_read_data(libnvme_mi_ep_t ep, __u32 cdw0,
+static int nvme_mi_read_data(nvme_mi_ep_t ep, __u32 cdw0,
 			     void *data, size_t *data_len)
 {
-	struct libnvme_mi_mi_resp_hdr resp_hdr;
-	struct libnvme_mi_mi_req_hdr req_hdr;
-	struct nvme_mi_resp resp;
-	struct nvme_mi_req req;
+	struct nvme_mi_mi_resp_hdr resp_hdr;
+	struct nvme_mi_mi_req_hdr req_hdr;
+	struct libnvme_mi_resp resp;
+	struct libnvme_mi_req req;
 	int rc;
 
 	nvme_mi_mi_init_req(ep, &req, &req_hdr, cdw0,
-		libnvme_mi_mi_opcode_mi_data_read);
+		nvme_mi_mi_opcode_mi_data_read);
 
 	memset(&resp, 0, sizeof(resp));
 	resp.hdr = &resp_hdr.hdr;
@@ -960,15 +960,15 @@ static int nvme_mi_read_data(libnvme_mi_ep_t ep, __u32 cdw0,
 	return 0;
 }
 
-__public int libnvme_mi_mi_xfer(libnvme_mi_ep_t ep,
-		       struct libnvme_mi_mi_req_hdr *mi_req,
+__public int nvme_mi_mi_xfer(nvme_mi_ep_t ep,
+		       struct nvme_mi_mi_req_hdr *mi_req,
 		       size_t req_data_size,
-		       struct libnvme_mi_mi_resp_hdr *mi_resp,
+		       struct nvme_mi_mi_resp_hdr *mi_resp,
 		       size_t *resp_data_size)
 {
 	int rc;
-	struct nvme_mi_req req;
-	struct nvme_mi_resp resp;
+	struct libnvme_mi_req req;
+	struct libnvme_mi_resp resp;
 
 	/* There is nothing in the spec to define this limit but going with the limits
 	 * from the admin message types for DLEN seems like a reasonable starting point
@@ -1010,14 +1010,14 @@ __public int libnvme_mi_mi_xfer(libnvme_mi_ep_t ep,
 	return 0;
 }
 
-__public int libnvme_mi_mi_read_mi_data_subsys(libnvme_mi_ep_t ep,
+__public int nvme_mi_mi_read_mi_data_subsys(nvme_mi_ep_t ep,
 				   struct nvme_mi_read_nvm_ss_info *s)
 {
 	size_t len;
 	__u32 cdw0;
 	int rc;
 
-	cdw0 = (__u8)libnvme_mi_dtyp_subsys_info << 24;
+	cdw0 = (__u8)nvme_mi_dtyp_subsys_info << 24;
 	len = sizeof(*s);
 
 	rc = nvme_mi_read_data(ep, cdw0, s, &len);
@@ -1025,7 +1025,7 @@ __public int libnvme_mi_mi_read_mi_data_subsys(libnvme_mi_ep_t ep,
 		return rc;
 
 	if (len != sizeof(*s)) {
-		nvme_msg(ep->ctx, LOG_WARNING,
+		libnvme_msg(ep->ctx, LOG_WARNING,
 			 "MI read data length mismatch: "
 			 "got %zd bytes, expected %zd\n",
 			 len, sizeof(*s));
@@ -1035,14 +1035,14 @@ __public int libnvme_mi_mi_read_mi_data_subsys(libnvme_mi_ep_t ep,
 	return 0;
 }
 
-__public int libnvme_mi_mi_read_mi_data_port(libnvme_mi_ep_t ep, __u8 portid,
+__public int nvme_mi_mi_read_mi_data_port(nvme_mi_ep_t ep, __u8 portid,
 				 struct nvme_mi_read_port_info *p)
 {
 	size_t len;
 	__u32 cdw0;
 	int rc;
 
-	cdw0 = ((__u8)libnvme_mi_dtyp_port_info << 24) | (portid << 16);
+	cdw0 = ((__u8)nvme_mi_dtyp_port_info << 24) | (portid << 16);
 	len = sizeof(*p);
 
 	rc = nvme_mi_read_data(ep, cdw0, p, &len);
@@ -1055,14 +1055,14 @@ __public int libnvme_mi_mi_read_mi_data_port(libnvme_mi_ep_t ep, __u8 portid,
 	return 0;
 }
 
-__public int libnvme_mi_mi_read_mi_data_ctrl_list(libnvme_mi_ep_t ep, __u8 start_ctrlid,
+__public int nvme_mi_mi_read_mi_data_ctrl_list(nvme_mi_ep_t ep, __u8 start_ctrlid,
 				       struct nvme_ctrl_list *list)
 {
 	size_t len;
 	__u32 cdw0;
 	int rc;
 
-	cdw0 = ((__u8)libnvme_mi_dtyp_ctrl_list << 24) | (start_ctrlid << 16);
+	cdw0 = ((__u8)nvme_mi_dtyp_ctrl_list << 24) | (start_ctrlid << 16);
 	len = sizeof(*list);
 
 	rc = nvme_mi_read_data(ep, cdw0, list, &len);
@@ -1072,14 +1072,14 @@ __public int libnvme_mi_mi_read_mi_data_ctrl_list(libnvme_mi_ep_t ep, __u8 start
 	return 0;
 }
 
-__public int libnvme_mi_mi_read_mi_data_ctrl(libnvme_mi_ep_t ep, __u16 ctrl_id,
+__public int nvme_mi_mi_read_mi_data_ctrl(nvme_mi_ep_t ep, __u16 ctrl_id,
 				       struct nvme_mi_read_ctrl_info *ctrl)
 {
 	size_t len;
 	__u32 cdw0;
 	int rc;
 
-	cdw0 = ((__u8)libnvme_mi_dtyp_ctrl_info << 24) | cpu_to_le16(ctrl_id);
+	cdw0 = ((__u8)nvme_mi_dtyp_ctrl_info << 24) | cpu_to_le16(ctrl_id);
 	len = sizeof(*ctrl);
 
 	rc = nvme_mi_read_data(ep, cdw0, ctrl, &len);
@@ -1092,17 +1092,17 @@ __public int libnvme_mi_mi_read_mi_data_ctrl(libnvme_mi_ep_t ep, __u16 ctrl_id,
 	return 0;
 }
 
-__public int libnvme_mi_mi_subsystem_health_status_poll(libnvme_mi_ep_t ep, bool clear,
+__public int nvme_mi_mi_subsystem_health_status_poll(nvme_mi_ep_t ep, bool clear,
 					    struct nvme_mi_nvm_ss_health_status *sshs)
 {
-	struct libnvme_mi_mi_resp_hdr resp_hdr;
-	struct libnvme_mi_mi_req_hdr req_hdr;
-	struct nvme_mi_resp resp;
-	struct nvme_mi_req req;
+	struct nvme_mi_mi_resp_hdr resp_hdr;
+	struct nvme_mi_mi_req_hdr req_hdr;
+	struct libnvme_mi_resp resp;
+	struct libnvme_mi_req req;
 	int rc;
 
 	nvme_mi_mi_init_req(ep, &req, &req_hdr, 0,
-		libnvme_mi_mi_opcode_subsys_health_status_poll);
+		nvme_mi_mi_opcode_subsys_health_status_poll);
 	req_hdr.cdw1 = (clear ? 1 : 0) << 31;
 
 	memset(&resp, 0, sizeof(resp));
@@ -1119,7 +1119,7 @@ __public int libnvme_mi_mi_subsystem_health_status_poll(libnvme_mi_ep_t ep, bool
 		return resp_hdr.status;
 
 	if (resp.data_len != sizeof(*sshs)) {
-		nvme_msg(ep->ctx, LOG_WARNING,
+		libnvme_msg(ep->ctx, LOG_WARNING,
 			 "MI Subsystem Health Status length mismatch: "
 			 "got %zd bytes, expected %zd\n",
 			 resp.data_len, sizeof(*sshs));
@@ -1129,14 +1129,14 @@ __public int libnvme_mi_mi_subsystem_health_status_poll(libnvme_mi_ep_t ep, bool
 	return 0;
 }
 
-int nvme_mi_mi_config_set_get_ex(libnvme_mi_ep_t ep, __u8 opcode, __u32 dw0,
+int nvme_mi_mi_config_set_get_ex(nvme_mi_ep_t ep, __u8 opcode, __u32 dw0,
 				__u32 dw1, void *data_out, size_t data_out_len,
 				void *data_in, size_t *data_in_len, __u32 *nmresp)
 {
-	struct libnvme_mi_mi_resp_hdr resp_hdr;
-	struct libnvme_mi_mi_req_hdr req_hdr;
-	struct nvme_mi_resp resp;
-	struct nvme_mi_req req;
+	struct nvme_mi_mi_resp_hdr resp_hdr;
+	struct nvme_mi_mi_req_hdr req_hdr;
+	struct libnvme_mi_resp resp;
+	struct libnvme_mi_req req;
 	int rc;
 
 	nvme_mi_mi_init_req(ep, &req, &req_hdr, dw0, opcode);
@@ -1168,13 +1168,13 @@ int nvme_mi_mi_config_set_get_ex(libnvme_mi_ep_t ep, __u8 opcode, __u32 dw0,
 	return 0;
 }
 
-__public int libnvme_mi_mi_config_get(libnvme_mi_ep_t ep, __u32 dw0, __u32 dw1,
+__public int nvme_mi_mi_config_get(nvme_mi_ep_t ep, __u32 dw0, __u32 dw1,
 			  __u32 *nmresp)
 {
 	size_t data_in_len = 0;
 
 	return nvme_mi_mi_config_set_get_ex(ep,
-					libnvme_mi_mi_opcode_configuration_get,
+					nvme_mi_mi_opcode_configuration_get,
 					dw0,
 					dw1,
 					NULL,
@@ -1184,12 +1184,12 @@ __public int libnvme_mi_mi_config_get(libnvme_mi_ep_t ep, __u32 dw0, __u32 dw1,
 					nmresp);
 }
 
-__public int libnvme_mi_mi_config_set(libnvme_mi_ep_t ep, __u32 dw0, __u32 dw1)
+__public int nvme_mi_mi_config_set(nvme_mi_ep_t ep, __u32 dw0, __u32 dw1)
 {
 	size_t data_in_len = 0;
 
 	return nvme_mi_mi_config_set_get_ex(ep,
-					libnvme_mi_mi_opcode_configuration_set,
+					nvme_mi_mi_opcode_configuration_set,
 					dw0,
 					dw1,
 					NULL,
@@ -1199,9 +1199,9 @@ __public int libnvme_mi_mi_config_set(libnvme_mi_ep_t ep, __u32 dw0, __u32 dw1)
 					NULL);
 }
 
-int libnvme_mi_mi_config_get_async_event(libnvme_mi_ep_t ep,
+int nvme_mi_mi_config_get_async_event(nvme_mi_ep_t ep,
 				__u8 *aeelver,
-				struct libnvme_mi_aem_supported_list *list,
+				struct nvme_mi_aem_supported_list *list,
 				size_t *list_num_bytes)
 {
 
@@ -1209,7 +1209,7 @@ int libnvme_mi_mi_config_get_async_event(libnvme_mi_ep_t ep,
 	__u32 aeelvertemp = 0;
 
 	int rc = nvme_mi_mi_config_set_get_ex(ep,
-					libnvme_mi_mi_opcode_configuration_get,
+					nvme_mi_mi_opcode_configuration_get,
 					dw0,
 					0,
 					NULL,
@@ -1226,15 +1226,15 @@ int libnvme_mi_mi_config_get_async_event(libnvme_mi_ep_t ep,
 	return 0;
 }
 
-int libnvme_mi_mi_config_set_async_event(libnvme_mi_ep_t ep,
+int nvme_mi_mi_config_set_async_event(nvme_mi_ep_t ep,
 				bool envfa,
 				bool empfa,
 				bool encfa,
 				__u8 aemd,
 				__u8 aerd,
-				struct libnvme_mi_aem_enable_list *enable_list,
+				struct nvme_mi_aem_enable_list *enable_list,
 				size_t enable_list_size,
-				struct libnvme_mi_aem_occ_list_hdr *occ_list,
+				struct nvme_mi_aem_occ_list_hdr *occ_list,
 				size_t *occ_list_size)
 {
 
@@ -1245,19 +1245,19 @@ int libnvme_mi_mi_config_set_async_event(libnvme_mi_ep_t ep,
 				((__u16) aerd << 8)  | NVME_MI_CONFIG_AE;
 
 	// Basic checks here on lengths
-	if (enable_list_size < sizeof(struct libnvme_mi_aem_enable_list) ||
-	    (sizeof(struct libnvme_mi_aem_enable_list) +
-	     enable_list->hdr.numaee * sizeof(struct libnvme_mi_aem_enable_item)
+	if (enable_list_size < sizeof(struct nvme_mi_aem_enable_list) ||
+	    (sizeof(struct nvme_mi_aem_enable_list) +
+	     enable_list->hdr.numaee * sizeof(struct nvme_mi_aem_enable_item)
 	     > enable_list_size))
 		return -EINVAL;
 
 	// Some very baseic header checks
-	if (enable_list->hdr.aeelhl != sizeof(struct libnvme_mi_aem_enable_list_header) ||
+	if (enable_list->hdr.aeelhl != sizeof(struct nvme_mi_aem_enable_list_header) ||
 	    enable_list->hdr.aeelver != 0)
 		return -EINVAL;
 
 	return nvme_mi_mi_config_set_get_ex(ep,
-		libnvme_mi_mi_opcode_configuration_set,
+		nvme_mi_mi_opcode_configuration_set,
 		dw0,
 		0,
 		enable_list,
@@ -1268,14 +1268,14 @@ int libnvme_mi_mi_config_set_async_event(libnvme_mi_ep_t ep,
 }
 
 
-__public void libnvme_mi_close(libnvme_mi_ep_t ep)
+__public void nvme_mi_close(nvme_mi_ep_t ep)
 {
 	struct libnvme_transport_handle *hdl, *tmp;
 
 	/* don't look for controllers during destruction */
 	ep->controllers_scanned = true;
 
-	libnvme_mi_for_each_transport_handle_safe(ep, hdl, tmp)
+	nvme_mi_for_each_transport_handle_safe(ep, hdl, tmp)
 		libnvme_close(hdl);
 
 	if (ep->transport && ep->transport->close)
@@ -1284,7 +1284,7 @@ __public void libnvme_mi_close(libnvme_mi_ep_t ep)
 	free(ep);
 }
 
-__public char *libnvme_mi_endpoint_desc(libnvme_mi_ep_t ep)
+__public char *nvme_mi_endpoint_desc(nvme_mi_ep_t ep)
 {
 	char tsbuf[101], *s = NULL;
 	size_t tslen;
@@ -1314,22 +1314,22 @@ __public char *libnvme_mi_endpoint_desc(libnvme_mi_ep_t ep)
 	return s;
 }
 
-__public libnvme_mi_ep_t libnvme_mi_first_endpoint(struct libnvme_global_ctx *ctx)
+__public nvme_mi_ep_t nvme_mi_first_endpoint(struct libnvme_global_ctx *ctx)
 {
-	return list_top(&ctx->endpoints, struct libnvme_mi_ep, root_entry);
+	return list_top(&ctx->endpoints, struct nvme_mi_ep, root_entry);
 }
 
-__public libnvme_mi_ep_t libnvme_mi_next_endpoint(struct libnvme_global_ctx *ctx, libnvme_mi_ep_t ep)
+__public nvme_mi_ep_t nvme_mi_next_endpoint(struct libnvme_global_ctx *ctx, nvme_mi_ep_t ep)
 {
 	return ep ? list_next(&ctx->endpoints, ep, root_entry) : NULL;
 }
 
-struct libnvme_transport_handle *libnvme_mi_first_transport_handle(libnvme_mi_ep_t ep)
+struct libnvme_transport_handle *nvme_mi_first_transport_handle(nvme_mi_ep_t ep)
 {
 	return list_top(&ep->controllers, struct libnvme_transport_handle, ep_entry);
 }
 
-struct libnvme_transport_handle *libnvme_mi_next_transport_handle(libnvme_mi_ep_t ep,
+struct libnvme_transport_handle *nvme_mi_next_transport_handle(nvme_mi_ep_t ep,
 							    struct libnvme_transport_handle *hdl)
 {
 	return hdl ? list_next(&ep->controllers, hdl, ep_entry) : NULL;
@@ -1358,7 +1358,7 @@ static const char *const mi_status[] = {
 
 /* kept in mi.c while we have a split libnvme/libnvme-mi; consider moving
  * to utils.c (with libnvme_status_to_string) if we ever merge. */
-__public const char *libnvme_mi_status_to_string(int status)
+__public const char *nvme_mi_status_to_string(int status)
 {
 	const char *s = "Unknown status";
 
@@ -1368,24 +1368,24 @@ __public const char *libnvme_mi_status_to_string(int status)
         return s;
 }
 
-bool libnvme_mi_aem_aeei_get_aee(__le16 aeei)
+bool nvme_mi_aem_aeei_get_aee(__le16 aeei)
 {
 	return !!(le16_to_cpu(aeei) & 0x8000);
 }
 
-__u8 libnvme_mi_aem_aeei_get_aeeid(__le16 aeei)
+__u8 nvme_mi_aem_aeei_get_aeeid(__le16 aeei)
 {
 	return (le16_to_cpu(aeei) & 0xFF);
 }
 
-void libnvme_mi_aem_aeei_set_aeeid(struct libnvme_mi_aem_enable_item *item, __u8 aeeid)
+void nvme_mi_aem_aeei_set_aeeid(struct nvme_mi_aem_enable_item *item, __u8 aeeid)
 {
 	__u16 temp = le16_to_cpu(item->aeei);
 
 	item->aeei = cpu_to_le16((temp & 0xFF00) | aeeid);
 }
 
-void libnvme_mi_aem_aeei_set_aee(struct libnvme_mi_aem_enable_item *item, bool enabled)
+void nvme_mi_aem_aeei_set_aee(struct nvme_mi_aem_enable_item *item, bool enabled)
 {
 	__u16 temp = le16_to_cpu(item->aeei);
 	__u8 bit = (enabled) ? 1 : 0;
@@ -1393,24 +1393,24 @@ void libnvme_mi_aem_aeei_set_aee(struct libnvme_mi_aem_enable_item *item, bool e
 	item->aeei = cpu_to_le16((temp & 0xFF) | (bit << 15));
 }
 
-bool libnvme_mi_aem_aesi_get_aese(__le16 aesi)
+bool nvme_mi_aem_aesi_get_aese(__le16 aesi)
 {
 	return !!(le16_to_cpu(aesi) & 0x8000);
 }
 
-__u8 libnvme_mi_aem_aesi_get_aesid(__le16 aesi)
+__u8 nvme_mi_aem_aesi_get_aesid(__le16 aesi)
 {
 	return le16_to_cpu(aesi) & 0xff;
 }
 
-void libnvme_mi_aem_aesi_set_aesid(struct libnvme_mi_aem_supported_item *item, __u8 aesid)
+void nvme_mi_aem_aesi_set_aesid(struct nvme_mi_aem_supported_item *item, __u8 aesid)
 {
 	__u16 temp = le16_to_cpu(item->aesi);
 
 	item->aesi = cpu_to_le16((temp & 0xFF00) | aesid);
 }
 
-void libnvme_mi_aem_aesi_set_aee(struct libnvme_mi_aem_supported_item *item, bool enabled)
+void nvme_mi_aem_aesi_set_aee(struct nvme_mi_aem_supported_item *item, bool enabled)
 {
 	__u16 temp = le16_to_cpu(item->aesi);
 	__u8 bit = (enabled) ? 1 : 0;
@@ -1418,12 +1418,12 @@ void libnvme_mi_aem_aesi_set_aee(struct libnvme_mi_aem_supported_item *item, boo
 	item->aesi = cpu_to_le16((temp & 0xFF) | (bit << 15));
 }
 
-__u8 libnvme_mi_aem_aemti_get_aemgn(__u8 aemti)
+__u8 nvme_mi_aem_aemti_get_aemgn(__u8 aemti)
 {
 	return aemti >> 3 & 0x1f;
 }
 
-__u32 libnvme_mi_aem_aeolli_get_aeoltl(__u8 *aeolli)
+__u32 nvme_mi_aem_aeolli_get_aeoltl(__u8 *aeolli)
 {
 	//First 23-bits contain the aeoltl
 	__u32 aeoltl = aeolli[0] | (aeolli[1] << 8) | (aeolli[2] << 16);
@@ -1431,32 +1431,32 @@ __u32 libnvme_mi_aem_aeolli_get_aeoltl(__u8 *aeolli)
 	return aeoltl & 0x7FFFFF;
 }
 
-void libnvme_mi_aem_aeolli_set_aeoltl(struct libnvme_mi_aem_occ_list_hdr *hdr, __u32 aeoltl)
+void nvme_mi_aem_aeolli_set_aeoltl(struct nvme_mi_aem_occ_list_hdr *hdr, __u32 aeoltl)
 {
 	hdr->aeolli[0] = aeoltl & 0xFF;
 	hdr->aeolli[1] = (aeoltl >> 8) & 0xFF;
 	hdr->aeolli[2] = (hdr->aeolli[2] & 0b10000000) | ((aeoltl >> 16) & 0x7F);
 }
 
-static int validate_enabled_list(struct libnvme_mi_aem_supported_list *list, size_t len)
+static int validate_enabled_list(struct nvme_mi_aem_supported_list *list, size_t len)
 {
-	if (len < sizeof(struct libnvme_mi_aem_supported_list))
+	if (len < sizeof(struct nvme_mi_aem_supported_list))
 		return -EPROTO;
 	if (list->hdr.aeslver != 0)
 		return -EPROTO;
-	if (list->hdr.aeslhl != sizeof(struct libnvme_mi_aem_supported_list))
+	if (list->hdr.aeslhl != sizeof(struct nvme_mi_aem_supported_list))
 		return -EPROTO;
 	if (list->hdr.aest > len ||
 		list->hdr.aest !=
-		list->hdr.aeslhl + list->hdr.numaes * sizeof(struct libnvme_mi_aem_supported_item)) {
+		list->hdr.aeslhl + list->hdr.numaes * sizeof(struct nvme_mi_aem_supported_item)) {
 		return -EPROTO;
 	}
 	return 0;
 }
 static int validate_occ_list_update_ctx(
-							struct libnvme_mi_aem_occ_list_hdr *occ_header,
+							struct nvme_mi_aem_occ_list_hdr *occ_header,
 							size_t len,
-							struct nvme_mi_aem_ctx *ctx,
+							struct libnvme_mi_aem_ctx *ctx,
 							bool check_generation_num)
 {
 	int err;
@@ -1470,19 +1470,19 @@ static int validate_occ_list_update_ctx(
 		//Make sure header is the right version and length
 		err = -EPROTO;
 		goto err_cleanup;
-	} else if (libnvme_mi_aem_aeolli_get_aeoltl(occ_header->aeolli) > len) {
+	} else if (nvme_mi_aem_aeolli_get_aeoltl(occ_header->aeolli) > len) {
 		//Full length is bigger than the data that was received
 		err = -EPROTO;
 		goto err_cleanup;
 	} else if (check_generation_num &&
 		ctx->last_generation_num ==
-			(int) libnvme_mi_aem_aemti_get_aemgn(occ_header->aemti)) {
+			(int) nvme_mi_aem_aemti_get_aemgn(occ_header->aemti)) {
 		//This is a duplicate and shouldn't be parsed.
 		//Let's just act like there's no updates
 		occ_header->numaeo = 0;
 	} else if (check_generation_num) {
 		ctx->last_generation_num =
-			libnvme_mi_aem_aemti_get_aemgn(occ_header->aemti);
+			nvme_mi_aem_aemti_get_aemgn(occ_header->aemti);
 	}
 
 	//Header is fine.  Let's go through the data
@@ -1490,11 +1490,11 @@ static int validate_occ_list_update_ctx(
 	ctx->occ_header = occ_header;
 
 	//Data starts after header
-	ctx->list_current = (struct libnvme_mi_aem_occ_data *) (occ_header + 1);
+	ctx->list_current = (struct nvme_mi_aem_occ_data *) (occ_header + 1);
 	ctx->list_current_index = 0;
 	ctx->list_start = ctx->list_current;
 
-	struct libnvme_mi_aem_occ_data *current = ctx->list_current;
+	struct nvme_mi_aem_occ_data *current = ctx->list_current;
 	size_t bytes_so_far = ctx->occ_header->aeolhl;
 
 	for (int i = 0; i < occ_header->numaeo; i++) {
@@ -1512,12 +1512,12 @@ static int validate_occ_list_update_ctx(
 		uint32_t offset = sizeof(*current) + current->aeosil + current->aeovsil;
 
 		bytes_so_far += offset;
-		if (bytes_so_far > libnvme_mi_aem_aeolli_get_aeoltl(occ_header->aeolli)) {
+		if (bytes_so_far > nvme_mi_aem_aeolli_get_aeoltl(occ_header->aeolli)) {
 			err = -EPROTO;
 			goto err_cleanup;
 		}
 
-		current = (struct libnvme_mi_aem_occ_data *)((uint8_t *)current + offset);
+		current = (struct nvme_mi_aem_occ_data *)((uint8_t *)current + offset);
 	}
 
 	return 0;
@@ -1526,7 +1526,7 @@ err_cleanup:
 	return err;
 }
 
-__public int libnvme_mi_aem_get_fd(libnvme_mi_ep_t ep)
+__public int nvme_mi_aem_get_fd(nvme_mi_ep_t ep)
 {
 	if (!ep || !ep->aem_ctx || !ep->transport || !ep->transport->aem_fd)
 		return -1;
@@ -1534,7 +1534,7 @@ __public int libnvme_mi_aem_get_fd(libnvme_mi_ep_t ep)
 	return ep->transport->aem_fd(ep);
 }
 
-static void reset_list_info(struct nvme_mi_aem_ctx *ctx)
+static void reset_list_info(struct libnvme_mi_aem_ctx *ctx)
 {
 	//Reset context information
 	ctx->list_current_index = -1;
@@ -1543,34 +1543,34 @@ static void reset_list_info(struct nvme_mi_aem_ctx *ctx)
 	ctx->occ_header = NULL;
 }
 
-static int aem_sync(libnvme_mi_ep_t ep,
+static int aem_sync(nvme_mi_ep_t ep,
 	bool envfa,
 	bool empfa,
 	bool encfa,
 	__u8 aemd,
 	__u8 aerd,
-	struct libnvme_mi_aem_enable_item *items,
+	struct nvme_mi_aem_enable_item *items,
 	__u8 num_items,
-	struct libnvme_mi_aem_occ_list_hdr *resp,
+	struct nvme_mi_aem_occ_list_hdr *resp,
 	size_t *resp_len
 )
 {
 	size_t msg_len =
-		sizeof(struct libnvme_mi_aem_enable_list_header) +
-		num_items * sizeof(struct libnvme_mi_aem_enable_item);
+		sizeof(struct nvme_mi_aem_enable_list_header) +
+		num_items * sizeof(struct nvme_mi_aem_enable_item);
 
-	struct libnvme_mi_aem_enable_list_header *request = malloc(msg_len);
+	struct nvme_mi_aem_enable_list_header *request = malloc(msg_len);
 
 	if (!request)
 		return -1;
 
-	request->aeelhl = sizeof(struct libnvme_mi_aem_enable_list_header);
+	request->aeelhl = sizeof(struct nvme_mi_aem_enable_list_header);
 	request->numaee = num_items;
 	request->aeelver = 0;
 	request->aeetl = msg_len;
 
 	//Data follows header
-	struct libnvme_mi_aem_enable_item *msg_items = (struct libnvme_mi_aem_enable_item *)(request + 1);
+	struct nvme_mi_aem_enable_item *msg_items = (struct nvme_mi_aem_enable_item *)(request + 1);
 
 	//Let's be explicit about what's enabled and what's not
 	for (int i = 0; i < num_items; i++) {
@@ -1579,13 +1579,13 @@ static int aem_sync(libnvme_mi_ep_t ep,
 	}
 
 	//Send it
-	int rc = libnvme_mi_mi_config_set_async_event(ep,
+	int rc = nvme_mi_mi_config_set_async_event(ep,
 					envfa,
 					empfa,
 					encfa,
 					aemd,
 					aerd,
-					(struct libnvme_mi_aem_enable_list *)request,
+					(struct nvme_mi_aem_enable_list *)request,
 					msg_len,
 					resp,
 					resp_len);
@@ -1594,17 +1594,17 @@ static int aem_sync(libnvme_mi_ep_t ep,
 	return rc;
 }
 
-static int aem_disable_enabled(libnvme_mi_ep_t ep)
+static int aem_disable_enabled(nvme_mi_ep_t ep)
 {
-	struct libnvme_mi_aem_enabled_map already_enabled = {false};
+	struct nvme_mi_aem_enabled_map already_enabled = {false};
 	uint8_t response_buffer[4096] = {0};
 	size_t response_len = sizeof(response_buffer);
-	struct libnvme_mi_aem_occ_list_hdr *response =
-		(struct libnvme_mi_aem_occ_list_hdr *)response_buffer;
+	struct nvme_mi_aem_occ_list_hdr *response =
+		(struct nvme_mi_aem_occ_list_hdr *)response_buffer;
 
 	// First, let's figure out if anything is already enabled that we need to
     // disable
-	int rc = libnvme_mi_aem_get_enabled(ep, &already_enabled);
+	int rc = nvme_mi_aem_get_enabled(ep, &already_enabled);
 
 	if (rc)
 		return rc;
@@ -1612,12 +1612,12 @@ static int aem_disable_enabled(libnvme_mi_ep_t ep)
 	int sync_data_count = 0;
 
 	//Add the enabled items to the list of things to disable
-	struct libnvme_mi_aem_enable_item sync_data[NUM_ENABLES] = {0};
+	struct nvme_mi_aem_enable_item sync_data[NUM_ENABLES] = {0};
 
 	for (int i = 0; i < NUM_ENABLES; i++) {
 		if (already_enabled.enabled[i]) {
-			libnvme_mi_aem_aeei_set_aeeid(&sync_data[sync_data_count], i);
-			libnvme_mi_aem_aeei_set_aee(&sync_data[sync_data_count], false);
+			nvme_mi_aem_aeei_set_aeeid(&sync_data[sync_data_count], i);
+			nvme_mi_aem_aeei_set_aee(&sync_data[sync_data_count], false);
 			sync_data_count++;
 		}
 	}
@@ -1635,25 +1635,25 @@ static int aem_disable_enabled(libnvme_mi_ep_t ep)
 	return rc;
 }
 
-__public int libnvme_mi_aem_enable(libnvme_mi_ep_t ep,
-	struct libnvme_mi_aem_config *config,
+__public int nvme_mi_aem_enable(nvme_mi_ep_t ep,
+	struct nvme_mi_aem_config *config,
 	void *userdata)
 {
 	if (!ep || !config || !config->aem_handler)
 		return -1;
 
-	int rc = libnvme_mi_aem_open(ep);
+	int rc = nvme_mi_aem_open(ep);
 
 	if (rc < 0)
 		return rc;
 
 	int sync_data_count = 0;
-	struct libnvme_mi_aem_enable_item sync_data[NUM_ENABLES] = {0};
+	struct nvme_mi_aem_enable_item sync_data[NUM_ENABLES] = {0};
 
 	uint8_t response_buffer[4096] = {0};
 	size_t response_len = sizeof(response_buffer);
-	struct libnvme_mi_aem_occ_list_hdr *response =
-		(struct libnvme_mi_aem_occ_list_hdr *)response_buffer;
+	struct nvme_mi_aem_occ_list_hdr *response =
+		(struct nvme_mi_aem_occ_list_hdr *)response_buffer;
 
 	//It's possible we're already enabled
 	if (!ep->aem_ctx)
@@ -1673,8 +1673,8 @@ __public int libnvme_mi_aem_enable(libnvme_mi_ep_t ep,
 	//Now, let's do a fresh enable of what's asked
 	for (int i = 0; i < NUM_ENABLES; i++) {
 		if (config->enabled_map.enabled[i]) {
-			libnvme_mi_aem_aeei_set_aeeid(&sync_data[sync_data_count], i);
-			libnvme_mi_aem_aeei_set_aee(&sync_data[sync_data_count], true);
+			nvme_mi_aem_aeei_set_aeeid(&sync_data[sync_data_count], i);
+			nvme_mi_aem_aeei_set_aee(&sync_data[sync_data_count], true);
 			sync_data_count++;
 		}
 	}
@@ -1709,8 +1709,8 @@ cleanup_ctx:
 	return rc;
 }
 
-__public int libnvme_mi_aem_get_enabled(libnvme_mi_ep_t ep,
-	struct libnvme_mi_aem_enabled_map *enabled_map)
+__public int nvme_mi_aem_get_enabled(nvme_mi_ep_t ep,
+	struct nvme_mi_aem_enabled_map *enabled_map)
 {
 	if (!ep || !enabled_map)
 		return -1;
@@ -1718,13 +1718,13 @@ __public int libnvme_mi_aem_get_enabled(libnvme_mi_ep_t ep,
 	int rc = 0;
 
 	unsigned char aeelver;
-	size_t ae_list_bytes = NUM_ENABLES * sizeof(struct libnvme_mi_aem_supported_list);
-	struct libnvme_mi_aem_supported_list *enabled_list = malloc(ae_list_bytes);
+	size_t ae_list_bytes = NUM_ENABLES * sizeof(struct nvme_mi_aem_supported_list);
+	struct nvme_mi_aem_supported_list *enabled_list = malloc(ae_list_bytes);
 
 	if (!enabled_list)
 		return -1;
 
-	rc = libnvme_mi_mi_config_get_async_event(
+	rc = nvme_mi_mi_config_get_async_event(
 		ep, &aeelver, enabled_list, &ae_list_bytes);
 	if (rc)
 		goto cleanup;
@@ -1735,12 +1735,12 @@ __public int libnvme_mi_aem_get_enabled(libnvme_mi_ep_t ep,
 
 	memset(enabled_map, 0, sizeof(*enabled_map));
 
-	struct libnvme_mi_aem_enable_item *items =
-		(struct libnvme_mi_aem_enable_item *)(enabled_list + 1);
+	struct nvme_mi_aem_enable_item *items =
+		(struct nvme_mi_aem_enable_item *)(enabled_list + 1);
 
 	for (int i = 0; i < enabled_list->hdr.numaes; i++) {
-		__u8 aeeid = libnvme_mi_aem_aeei_get_aeeid(items[i].aeei);
-		bool enabled = libnvme_mi_aem_aeei_get_aee(items[i].aeei);
+		__u8 aeeid = nvme_mi_aem_aeei_get_aeeid(items[i].aeei);
+		bool enabled = nvme_mi_aem_aeei_get_aee(items[i].aeei);
 
 		enabled_map->enabled[aeeid] = enabled;
 	}
@@ -1750,7 +1750,7 @@ cleanup:
 	return rc;
 }
 
-__public int libnvme_mi_aem_disable(libnvme_mi_ep_t ep)
+__public int nvme_mi_aem_disable(nvme_mi_ep_t ep)
 {
 	if (!ep)
 		return -1;
@@ -1768,7 +1768,7 @@ __public int libnvme_mi_aem_disable(libnvme_mi_ep_t ep)
  *spec_info and vend_spec_info must be copied to persist as they will not be valid after
  *the aem_handler has returned.
  */
-__public struct libnvme_mi_event *libnvme_mi_aem_get_next_event(libnvme_mi_ep_t ep)
+__public struct nvme_mi_event *nvme_mi_aem_get_next_event(nvme_mi_ep_t ep)
 {
 	if (!ep || !ep->aem_ctx ||
 		!ep->aem_ctx->list_current ||
@@ -1780,8 +1780,8 @@ __public struct libnvme_mi_event *libnvme_mi_aem_get_next_event(libnvme_mi_ep_t 
 	if (ep->aem_ctx->occ_header->numaeo <= ep->aem_ctx->list_current_index)
 		return NULL;
 
-	struct nvme_mi_aem_ctx *aem_ctx = ep->aem_ctx;
-	struct libnvme_mi_aem_occ_data *current = aem_ctx->list_current;
+	struct libnvme_mi_aem_ctx *aem_ctx = ep->aem_ctx;
+	struct nvme_mi_aem_occ_data *current = aem_ctx->list_current;
 
 	aem_ctx->event.aeoi = current->aeoui.aeoi;
 	aem_ctx->event.aessi = current->aeoui.aessi;
@@ -1796,7 +1796,7 @@ __public struct libnvme_mi_event *libnvme_mi_aem_get_next_event(libnvme_mi_ep_t 
 	//Let's grab the next item (if there is any).
 	aem_ctx->list_current_index++;
 	aem_ctx->list_current =
-		(struct libnvme_mi_aem_occ_data *)
+		(struct nvme_mi_aem_occ_data *)
 		((uint8_t *)aem_ctx->event.vend_spec_info + aem_ctx->event.vend_spec_info_len);
 
 	return &aem_ctx->event;
@@ -1805,12 +1805,12 @@ __public struct libnvme_mi_event *libnvme_mi_aem_get_next_event(libnvme_mi_ep_t 
 /* POLLIN has indicated events.  This function reads and processes them.
  * A callback will likely be invoked.
  */
-__public int libnvme_mi_aem_process(libnvme_mi_ep_t ep, void *userdata)
+__public int nvme_mi_aem_process(nvme_mi_ep_t ep, void *userdata)
 {
 	int rc = 0;
 	uint8_t response_buffer[4096];
-	struct libnvme_mi_aem_msg *response = (struct libnvme_mi_aem_msg *)response_buffer;
-	size_t response_len = sizeof(response_buffer) - sizeof(struct libnvme_mi_aem_msg);
+	struct nvme_mi_aem_msg *response = (struct nvme_mi_aem_msg *)response_buffer;
+	size_t response_len = sizeof(response_buffer) - sizeof(struct nvme_mi_aem_msg);
 
 	if (!ep || !ep->aem_ctx)
 		return -1;
@@ -1840,7 +1840,7 @@ __public int libnvme_mi_aem_process(libnvme_mi_ep_t ep, void *userdata)
 		goto cleanup;
 
 	if (response->occ_list_hdr.numaeo) {
-		enum libnvme_mi_aem_handler_next_action action =
+		enum nvme_mi_aem_handler_next_action action =
 			ep->aem_ctx->callbacks.aem_handler(ep,
 								response->occ_list_hdr.numaeo,
 								userdata);
@@ -1850,7 +1850,7 @@ __public int libnvme_mi_aem_process(libnvme_mi_ep_t ep, void *userdata)
 		if (action == NVME_MI_AEM_HNA_ACK) {
 			response_len = sizeof(response_buffer);
 
-			rc = libnvme_mi_aem_ack(ep, &response->occ_list_hdr, &response_len);
+			rc = nvme_mi_aem_ack(ep, &response->occ_list_hdr, &response_len);
 			if (rc)
 				goto cleanup;
 

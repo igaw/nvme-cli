@@ -30,7 +30,7 @@ static void show_zns_properties(libnvme_ns_t n)
 	struct nvme_zone_report *zr;
 	int err;
 
-	err = nvme_ns_get_transport_handle(n, &hdl);
+	err = libnvme_ns_get_transport_handle(n, &hdl);
 	if (err)
 		return;
 

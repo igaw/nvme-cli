@@ -53,14 +53,14 @@ static struct {
 	{ 0x02, "SMBus", show_port_smbus },
 };
 
-static int show_port(libnvme_mi_ep_t ep, int portid)
+static int show_port(nvme_mi_ep_t ep, int portid)
 {
 	void (*show_fn)(struct nvme_mi_read_port_info *);
 	struct nvme_mi_read_port_info port;
 	const char *typestr;
 	int rc;
 
-	rc = libnvme_mi_mi_read_mi_data_port(ep, portid, &port);
+	rc = nvme_mi_mi_read_mi_data_port(ep, portid, &port);
 	if (rc)
 		return rc;
 
@@ -83,13 +83,13 @@ static int show_port(libnvme_mi_ep_t ep, int portid)
 	return 0;
 }
 
-int do_info(libnvme_mi_ep_t ep)
+int do_info(nvme_mi_ep_t ep)
 {
 	struct nvme_mi_nvm_ss_health_status ss_health;
 	struct nvme_mi_read_nvm_ss_info ss_info;
 	int i, rc;
 
-	rc = libnvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
+	rc = nvme_mi_mi_read_mi_data_subsys(ep, &ss_info);
 	if (rc) {
 		warn("can't perform Read MI Data operation");
 		return -1;
@@ -104,7 +104,7 @@ int do_info(libnvme_mi_ep_t ep)
 	for (i = 0; i <= ss_info.nump; i++)
 		show_port(ep, i);
 
-	rc = libnvme_mi_mi_subsystem_health_status_poll(ep, true, &ss_health);
+	rc = nvme_mi_mi_subsystem_health_status_poll(ep, true, &ss_health);
 	if (rc)
 		err(EXIT_FAILURE, "can't perform Health Status Poll operation");
 
@@ -118,12 +118,12 @@ int do_info(libnvme_mi_ep_t ep)
 	return 0;
 }
 
-static int show_ctrl(libnvme_mi_ep_t ep, uint16_t ctrl_id)
+static int show_ctrl(nvme_mi_ep_t ep, uint16_t ctrl_id)
 {
 	struct nvme_mi_read_ctrl_info ctrl;
 	int rc;
 
-	rc = libnvme_mi_mi_read_mi_data_ctrl(ep, ctrl_id, &ctrl);
+	rc = nvme_mi_mi_read_mi_data_ctrl(ep, ctrl_id, &ctrl);
 	if (rc)
 		return rc;
 
@@ -146,12 +146,12 @@ static int show_ctrl(libnvme_mi_ep_t ep, uint16_t ctrl_id)
 	return 0;
 }
 
-static int do_controllers(libnvme_mi_ep_t ep)
+static int do_controllers(nvme_mi_ep_t ep)
 {
 	struct nvme_ctrl_list ctrl_list;
 	int rc, i;
 
-	rc = libnvme_mi_mi_read_mi_data_ctrl_list(ep, 0, &ctrl_list);
+	rc = nvme_mi_mi_read_mi_data_ctrl_list(ep, 0, &ctrl_list);
 	if (rc) {
 		warnx("Can't perform Controller List operation");
 		return rc;
@@ -176,7 +176,7 @@ static const char *__copy_id_str(const void *field, size_t size,
 
 #define copy_id_str(f,b) __copy_id_str(f, sizeof(f), b, sizeof(b))
 
-int do_identify(libnvme_mi_ep_t ep, int argc, char **argv)
+int do_identify(nvme_mi_ep_t ep, int argc, char **argv)
 {
 	struct libnvme_transport_handle *hdl;
 	struct libnvme_passthru_cmd cmd;
@@ -201,7 +201,7 @@ int do_identify(libnvme_mi_ep_t ep, int argc, char **argv)
 
 	partial = argc > 2 && !strcmp(argv[2], "--partial");
 
-	hdl = libnvme_mi_init_transport_handle(ep, ctrl_id);
+	hdl = nvme_mi_init_transport_handle(ep, ctrl_id);
 	if (!hdl) {
 		warn("can't create controller");
 		return -1;
@@ -232,7 +232,7 @@ int do_identify(libnvme_mi_ep_t ep, int argc, char **argv)
 	return 0;
 }
 
-int do_control_primitive(libnvme_mi_ep_t ep, int argc, char **argv)
+int do_control_primitive(nvme_mi_ep_t ep, int argc, char **argv)
 {
 	int rc = 0;
 	char *action = NULL;
@@ -243,11 +243,11 @@ int do_control_primitive(libnvme_mi_ep_t ep, int argc, char **argv)
 		const char *name;
 		uint8_t opcode;
 	} control_actions[] = {
-		{ "pause", libnvme_mi_control_opcode_pause },
-		{ "resume", libnvme_mi_control_opcode_resume },
-		{ "abort", libnvme_mi_control_opcode_abort },
-		{ "get-state", libnvme_mi_control_opcode_get_state },
-		{ "replay", libnvme_mi_control_opcode_replay },
+		{ "pause", nvme_mi_control_opcode_pause },
+		{ "resume", nvme_mi_control_opcode_resume },
+		{ "abort", nvme_mi_control_opcode_abort },
+		{ "get-state", nvme_mi_control_opcode_get_state },
+		{ "replay", nvme_mi_control_opcode_replay },
 	};
 
 	static const char * const slot_state[] = {
@@ -283,7 +283,7 @@ int do_control_primitive(libnvme_mi_ep_t ep, int argc, char **argv)
 		return -1;
 	}
 
-	rc = libnvme_mi_control(ep, opcode, 0, &cpsr); /* cpsp reserved in example */
+	rc = nvme_mi_control(ep, opcode, 0, &cpsr); /* cpsp reserved in example */
 	if (rc) {
 		warn("can't perform primitive control command");
 		return -1;
@@ -291,19 +291,19 @@ int do_control_primitive(libnvme_mi_ep_t ep, int argc, char **argv)
 
 	printf("NVMe control primitive\n");
 	switch (opcode) {
-	case libnvme_mi_control_opcode_pause:
+	case nvme_mi_control_opcode_pause:
 		printf(" Pause : cspr is %#x\n", cpsr);
 		printf("  Pause Flag Status Slot 0: %s\n", (cpsr & (1 << 0)) ? "Yes" : "No");
 		printf("  Pause Flag Status Slot 1: %s\n", (cpsr & (1 << 1)) ? "Yes" : "No");
 		break;
-	case libnvme_mi_control_opcode_resume:
+	case nvme_mi_control_opcode_resume:
 		printf(" Resume : cspr is %#x\n", cpsr);
 		break;
-	case libnvme_mi_control_opcode_abort:
+	case nvme_mi_control_opcode_abort:
 		printf(" Abort : cspr is %#x\n", cpsr);
 		printf("  Command Aborted Status: %s\n", cpas_state[cpsr & 0x3]);
 		break;
-	case libnvme_mi_control_opcode_get_state:
+	case nvme_mi_control_opcode_get_state:
 		printf(" Get State : cspr is %#x\n", cpsr);
 		printf("  Slot Command Servicing State: %s\n", slot_state[cpsr & 0x3]);
 		printf("  Bad Message Integrity Check: %s\n", (cpsr & (1 << 4)) ? "Yes" : "No");
@@ -319,7 +319,7 @@ int do_control_primitive(libnvme_mi_ep_t ep, int argc, char **argv)
 		printf("  NVM Subsystem Reset Occurred: %s\n", (cpsr & (1 << 14)) ? "Yes" : "No");
 		printf("  Pause Flag: %s\n", (cpsr & (1 << 15)) ? "Yes" : "No");
 		break;
-	case libnvme_mi_control_opcode_replay:
+	case nvme_mi_control_opcode_replay:
 		printf(" Replay : cspr is %#x\n", cpsr);
 		break;
 	default:
@@ -362,7 +362,7 @@ void hexdump(const unsigned char *buf, int len)
 	fhexdump(stdout, buf, len);
 }
 
-int do_get_log_page(libnvme_mi_ep_t ep, int argc, char **argv)
+int do_get_log_page(nvme_mi_ep_t ep, int argc, char **argv)
 {
 	struct libnvme_transport_handle *hdl;
 	enum nvme_cmd_get_log_lid lid;
@@ -391,7 +391,7 @@ int do_get_log_page(libnvme_mi_ep_t ep, int argc, char **argv)
 		lid = 0x1;
 	}
 
-	hdl = libnvme_mi_init_transport_handle(ep, ctrl_id);
+	hdl = nvme_mi_init_transport_handle(ep, ctrl_id);
 	if (!hdl) {
 		warn("can't create controller");
 		return -1;
@@ -411,10 +411,10 @@ int do_get_log_page(libnvme_mi_ep_t ep, int argc, char **argv)
 	return 0;
 }
 
-int do_admin_raw(libnvme_mi_ep_t ep, int argc, char **argv)
+int do_admin_raw(nvme_mi_ep_t ep, int argc, char **argv)
 {
-	struct libnvme_mi_admin_req_hdr req;
-	struct libnvme_mi_admin_resp_hdr *resp;
+	struct nvme_mi_admin_req_hdr req;
+	struct nvme_mi_admin_resp_hdr *resp;
   	struct libnvme_transport_handle *hdl;
 	size_t resp_data_len;
 	unsigned long tmp;
@@ -478,7 +478,7 @@ int do_admin_raw(libnvme_mi_ep_t ep, int argc, char **argv)
 	memset(buf, 0, sizeof(buf));
 	resp = (void *)buf;
 
-	hdl = libnvme_mi_init_transport_handle(ep, ctrl_id);
+	hdl = nvme_mi_init_transport_handle(ep, ctrl_id);
 	if (!hdl) {
 		warn("can't create controller");
 		return -1;
@@ -486,7 +486,7 @@ int do_admin_raw(libnvme_mi_ep_t ep, int argc, char **argv)
 
 	resp_data_len = sizeof(buf) - sizeof(*resp);
 
-	rc = libnvme_mi_admin_xfer(hdl, &req, 0, resp, 0, &resp_data_len);
+	rc = nvme_mi_admin_xfer(hdl, &req, 0, resp, 0, &resp_data_len);
 	if (rc) {
 		warn("nvme_admin_xfer failed: %d", rc);
 		return -1;
@@ -530,7 +530,7 @@ static const char *sec_proto_description(uint8_t id)
 	return "unknown";
 }
 
-int do_security_info(libnvme_mi_ep_t ep, int argc, char **argv)
+int do_security_info(nvme_mi_ep_t ep, int argc, char **argv)
 {
 	struct libnvme_transport_handle *hdl;
 	struct libnvme_passthru_cmd cmd;
@@ -559,7 +559,7 @@ int do_security_info(libnvme_mi_ep_t ep, int argc, char **argv)
 
 	ctrl_id = tmp & 0xffff;
 
-	hdl = libnvme_mi_init_transport_handle(ep, ctrl_id);
+	hdl = nvme_mi_init_transport_handle(ep, ctrl_id);
 	if (!hdl) {
 		warn("can't create controller");
 		return -1;
@@ -589,7 +589,7 @@ int do_security_info(libnvme_mi_ep_t ep, int argc, char **argv)
 }
 
 struct {
-	enum libnvme_mi_config_smbus_freq id;
+	enum nvme_mi_config_smbus_freq id;
 	const char *str;
 } smbus_freqs[] = {
 	{ NVME_MI_CONFIG_SMBUS_FREQ_100kHz, "100k" },
@@ -597,7 +597,7 @@ struct {
 	{ NVME_MI_CONFIG_SMBUS_FREQ_1MHz,   "1M" },
 };
 
-static const char *smbus_freq_str(enum libnvme_mi_config_smbus_freq freq)
+static const char *smbus_freq_str(enum nvme_mi_config_smbus_freq freq)
 {
 	unsigned int i;
 
@@ -609,7 +609,7 @@ static const char *smbus_freq_str(enum libnvme_mi_config_smbus_freq freq)
 	return NULL;
 }
 
-static int smbus_freq_val(const char *str, enum libnvme_mi_config_smbus_freq *freq)
+static int smbus_freq_val(const char *str, enum nvme_mi_config_smbus_freq *freq)
 {
 	unsigned int i;
 
@@ -623,9 +623,9 @@ static int smbus_freq_val(const char *str, enum libnvme_mi_config_smbus_freq *fr
 	return -1;
 }
 
-int do_config_get(libnvme_mi_ep_t ep, int argc, char **argv)
+int do_config_get(nvme_mi_ep_t ep, int argc, char **argv)
 {
-	enum libnvme_mi_config_smbus_freq freq;
+	enum nvme_mi_config_smbus_freq freq;
 	uint16_t mtu;
 	uint8_t port;
 	int rc;
@@ -635,7 +635,7 @@ int do_config_get(libnvme_mi_ep_t ep, int argc, char **argv)
 	else
 		port = 0;
 
-	rc = libnvme_mi_mi_config_get_smbus_freq(ep, port, &freq);
+	rc = nvme_mi_mi_config_get_smbus_freq(ep, port, &freq);
 	if (rc) {
 		warn("can't query SMBus freq for port %d\n", port);
 	} else {
@@ -644,7 +644,7 @@ int do_config_get(libnvme_mi_ep_t ep, int argc, char **argv)
 		       fstr ?: "unknown", freq);
 	}
 
-	rc = libnvme_mi_mi_config_get_mctp_mtu(ep, port, &mtu);
+	rc = nvme_mi_mi_config_get_mctp_mtu(ep, port, &mtu);
 	if (rc)
 		warn("can't query MCTP MTU for port %d\n", port);
 	else
@@ -653,7 +653,7 @@ int do_config_get(libnvme_mi_ep_t ep, int argc, char **argv)
 	return 0;
 }
 
-int do_config_set(libnvme_mi_ep_t ep, int argc, char **argv)
+int do_config_set(nvme_mi_ep_t ep, int argc, char **argv)
 {
 	const char *name, *val;
 	uint8_t port;
@@ -669,14 +669,14 @@ int do_config_set(libnvme_mi_ep_t ep, int argc, char **argv)
 	val = argv[3];
 
 	if (!strcmp(name, "freq")) {
-		enum libnvme_mi_config_smbus_freq freq;
+		enum nvme_mi_config_smbus_freq freq;
 		rc = smbus_freq_val(val, &freq);
 		if (rc) {
 			fprintf(stderr, "unknown SMBus freq %s. "
 				"Try 100k, 400k or 1M\n", val);
 			return -1;
 		}
-		rc = libnvme_mi_mi_config_set_smbus_freq(ep, port, freq);
+		rc = nvme_mi_mi_config_set_smbus_freq(ep, port, freq);
 
 	} else if (!strcmp(name, "mtu")) {
 		uint16_t mtu;
@@ -688,7 +688,7 @@ int do_config_set(libnvme_mi_ep_t ep, int argc, char **argv)
 			fprintf(stderr, "MTU value too small\n");
 			return -1;
 		}
-		rc = libnvme_mi_mi_config_set_mctp_mtu(ep, port, mtu);
+		rc = nvme_mi_mi_config_set_mctp_mtu(ep, port, mtu);
 
 	} else {
 		fprintf(stderr, "Invalid configuration '%s', "
@@ -714,7 +714,7 @@ enum action {
 	ACTION_CONTROL_PRIMITIVE,
 };
 
-static int do_action_endpoint(enum action action, libnvme_mi_ep_t ep, int argc, char** argv)
+static int do_action_endpoint(enum action action, nvme_mi_ep_t ep, int argc, char** argv)
 {
 	int rc;
 
@@ -760,7 +760,7 @@ int main(int argc, char **argv)
 {
 	struct libnvme_global_ctx *ctx;
 	enum action action;
-	libnvme_mi_ep_t ep;
+	nvme_mi_ep_t ep;
 	bool dbus = false, usage = true;
 	uint8_t eid = 0;
 	int rc = 0, net = 0;
@@ -833,14 +833,14 @@ int main(int argc, char **argv)
 		struct libnvme_global_ctx *ctx;
 		int i = 0;
 
-		ctx = libnvme_mi_scan_mctp();
+		ctx = nvme_mi_scan_mctp();
 		if (!ctx)
 			errx(EXIT_FAILURE, "can't scan D-Bus entries");
 
-		libnvme_mi_for_each_endpoint(ctx, ep) i++;
+		nvme_mi_for_each_endpoint(ctx, ep) i++;
 		printf("Found %d endpoints in D-Bus:\n", i);
-		libnvme_mi_for_each_endpoint(ctx, ep) {
-			char *desc = libnvme_mi_endpoint_desc(ep);
+		nvme_mi_for_each_endpoint(ctx, ep) {
+			char *desc = nvme_mi_endpoint_desc(ep);
 			printf("%s\n", desc);
 			rc = do_action_endpoint(action, ep, argc, argv);
 			printf("---\n");
@@ -852,11 +852,11 @@ int main(int argc, char **argv)
 		if (!ctx)
 			err(EXIT_FAILURE, "can't create NVMe root");
 
-		ep = libnvme_mi_open_mctp(ctx, net, eid);
+		ep = nvme_mi_open_mctp(ctx, net, eid);
 		if (!ep)
 			errx(EXIT_FAILURE, "can't open MCTP endpoint %d:%d", net, eid);
 		rc = do_action_endpoint(action, ep, argc, argv);
-		libnvme_mi_close(ep);
+		nvme_mi_close(ep);
 		libnvme_free_global_ctx(ctx);
 	}
 

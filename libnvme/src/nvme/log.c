@@ -30,7 +30,7 @@ void __attribute__((format(printf, 4, 5)))
 __nvme_msg(struct libnvme_global_ctx *ctx, int level,
 	   const char *func, const char *format, ...)
 {
-	struct nvme_log *l = &ctx->log;
+	struct libnvme_log *l = &ctx->log;
 	va_list ap;
 	char pidbuf[16];
 	char timebuf[32];

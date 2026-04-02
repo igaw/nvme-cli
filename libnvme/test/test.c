@@ -330,7 +330,7 @@ static int test_namespace(libnvme_ns_t n)
 	__u64 result = 0;
 	__u8 flbas;
 
-	ret = nvme_ns_get_transport_handle(n, &hdl);
+	ret = libnvme_ns_get_transport_handle(n, &hdl);
 	if (ret)
 		return ret;
 

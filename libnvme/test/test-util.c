@@ -70,7 +70,7 @@ static bool test_ipaddrs_eq() {
 	}
 
 	for (i = 0; i < n; i++) {
-		bool result = nvme_ipaddrs_eq(addrs[i].a, addrs[i].b);
+		bool result = libnvme_ipaddrs_eq(addrs[i].a, addrs[i].b);
 		bool pass = result == addrs[i].exp_result;
 		int pad_a = longest_a - safe_strlen(addrs[i].a);
 		int pad_b = longest_b - safe_strlen(addrs[i].b);
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 
 	printf("\n------------------------------------------------------------------------------\n");
 	pass = test_ipaddrs_eq();
-	printf("nvme_ipaddrs_eq() %s", pass ? "[PASS]" : "[FAIL]");
+	printf("libnvme_ipaddrs_eq() %s", pass ? "[PASS]" : "[FAIL]");
 	if (!pass)
 		exit_val = EXIT_FAILURE;
 

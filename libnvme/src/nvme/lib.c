@@ -66,7 +66,7 @@ __public struct libnvme_global_ctx *libnvme_create_global_ctx(FILE *fp, int log_
 __public void libnvme_free_global_ctx(struct libnvme_global_ctx *ctx)
 {
 	struct libnvme_host *h, *_h;
-	libnvme_mi_ep_t ep, tmp;
+	nvme_mi_ep_t ep, tmp;
 
 	if (!ctx)
 		return;
@@ -77,11 +77,11 @@ __public void libnvme_free_global_ctx(struct libnvme_global_ctx *ctx)
 	free(ctx->options);
 	libnvme_for_each_host_safe(ctx, h, _h)
 		__nvme_free_host(h);
-	libnvme_mi_for_each_endpoint_safe(ctx, ep, tmp)
-		libnvme_mi_close(ep);
+	nvme_mi_for_each_endpoint_safe(ctx, ep, tmp)
+		nvme_mi_close(ep);
 	free(ctx->config_file);
 	free(ctx->application);
-	nvme_close_uring(ctx);
+	libnvme_close_uring(ctx);
 	free(ctx);
 }
 
@@ -134,7 +134,7 @@ static int __nvme_transport_handle_open_direct(
 
 	name = libnvme_basename(devname);
 
-	hdl->type = NVME_TRANSPORT_HANDLE_TYPE_DIRECT;
+	hdl->type = LIBNVME_TRANSPORT_HANDLE_TYPE_DIRECT;
 
 	ret = sscanf(name, "nvme%dn%d", &id, &ns);
 	if (ret == 2)
@@ -167,10 +167,10 @@ static int __nvme_transport_handle_open_direct(
 	}
 
 	if (hdl->ctx->ioctl_probing) {
-		ret = ioctl(hdl->fd, NVME_IOCTL_ADMIN64_CMD, &dummy);
+		ret = ioctl(hdl->fd, LIBNVME_IOCTL_ADMIN64_CMD, &dummy);
 		if (ret > 0) {
 			hdl->ioctl_admin64 = true;
-			ret = ioctl(hdl->fd, NVME_IOCTL_IO64_CMD, &dummy);
+			ret = ioctl(hdl->fd, LIBNVME_IOCTL_IO64_CMD, &dummy);
 			if (ret != -1 || errno != ENOTTY)
 				hdl->ioctl_io64 = true;
 		}
@@ -219,7 +219,7 @@ __public int libnvme_open(struct libnvme_global_ctx *ctx, const char *name,
 	}
 
 	if (!strncmp(name, "NVME_TEST_FD", 12)) {
-		hdl->type = NVME_TRANSPORT_HANDLE_TYPE_DIRECT;
+		hdl->type = LIBNVME_TRANSPORT_HANDLE_TYPE_DIRECT;
 		hdl->fd = 0xFD;
 
 		if (!strcmp(name, "NVME_TEST_FD64"))
@@ -252,13 +252,13 @@ __public void libnvme_close(struct libnvme_transport_handle *hdl)
 	free(hdl->name);
 
 	switch (hdl->type) {
-	case NVME_TRANSPORT_HANDLE_TYPE_DIRECT:
+	case LIBNVME_TRANSPORT_HANDLE_TYPE_DIRECT:
 		__nvme_transport_handle_close_direct(hdl);
 		break;
-	case NVME_TRANSPORT_HANDLE_TYPE_MI:
+	case LIBNVME_TRANSPORT_HANDLE_TYPE_MI:
 		__nvme_transport_handle_close_mi(hdl);
 		break;
-	case NVME_TRANSPORT_HANDLE_TYPE_UNKNOWN:
+	case LIBNVME_TRANSPORT_HANDLE_TYPE_UNKNOWN:
 		free(hdl);
 		break;
 	}
@@ -286,11 +286,11 @@ __public bool libnvme_transport_handle_is_chardev(struct libnvme_transport_handl
 
 __public bool libnvme_transport_handle_is_direct(struct libnvme_transport_handle *hdl)
 {
-	return hdl->type == NVME_TRANSPORT_HANDLE_TYPE_DIRECT;
+	return hdl->type == LIBNVME_TRANSPORT_HANDLE_TYPE_DIRECT;
 }
 
 __public bool libnvme_transport_handle_is_mi(struct libnvme_transport_handle *hdl)
 {
-	return hdl->type == NVME_TRANSPORT_HANDLE_TYPE_MI;
+	return hdl->type == LIBNVME_TRANSPORT_HANDLE_TYPE_MI;
 }
 

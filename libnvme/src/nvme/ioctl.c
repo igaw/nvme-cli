@@ -46,7 +46,7 @@ __public int libnvme_reset_subsystem(struct libnvme_transport_handle *hdl)
 	if (ret)
 		return ret;
 
-	ret = ioctl(hdl->fd, NVME_IOCTL_SUBSYS_RESET);
+	ret = ioctl(hdl->fd, LIBNVME_IOCTL_SUBSYS_RESET);
 	if (ret < 0)
 		return -errno;
 	return ret;
@@ -60,7 +60,7 @@ __public int libnvme_reset_ctrl(struct libnvme_transport_handle *hdl)
 	if (ret)
 		return ret;
 
-	ret = ioctl(hdl->fd, NVME_IOCTL_RESET);
+	ret = ioctl(hdl->fd, LIBNVME_IOCTL_RESET);
 	if (ret < 0)
 		return -errno;
 	return ret;
@@ -74,7 +74,7 @@ __public int libnvme_rescan_ns(struct libnvme_transport_handle *hdl)
 	if (ret)
 		return ret;
 
-	ret = ioctl(hdl->fd, NVME_IOCTL_RESCAN);
+	ret = ioctl(hdl->fd, LIBNVME_IOCTL_RESCAN);
 	if (ret < 0)
 		return -errno;
 	return ret;
@@ -85,7 +85,7 @@ __public int libnvme_get_nsid(struct libnvme_transport_handle *hdl, __u32 *nsid)
 	__u32 tmp;
 
 	errno = 0;
-	tmp = ioctl(hdl->fd, NVME_IOCTL_ID);
+	tmp = ioctl(hdl->fd, LIBNVME_IOCTL_ID);
 	if (errno)
 		return -errno;
 
@@ -175,24 +175,24 @@ __public int libnvme_submit_io_passthru(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd)
 {
 	if (hdl->ioctl_io64)
-		return nvme_submit_passthru64(hdl, NVME_IOCTL_IO64_CMD, cmd);
-	return nvme_submit_passthru32(hdl, NVME_IOCTL_IO_CMD, cmd);
+		return nvme_submit_passthru64(hdl, LIBNVME_IOCTL_IO64_CMD, cmd);
+	return nvme_submit_passthru32(hdl, LIBNVME_IOCTL_IO_CMD, cmd);
 }
 
 __public int libnvme_submit_admin_passthru(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd)
 {
 	switch (hdl->type) {
-	case NVME_TRANSPORT_HANDLE_TYPE_DIRECT:
+	case LIBNVME_TRANSPORT_HANDLE_TYPE_DIRECT:
 		if (hdl->ioctl_admin64)
 			return nvme_submit_passthru64(hdl,
-				NVME_IOCTL_ADMIN64_CMD, cmd);
+				LIBNVME_IOCTL_ADMIN64_CMD, cmd);
 		if (cmd->opcode == nvme_admin_fabrics)
 			return -ENOTSUP;
 		return nvme_submit_passthru32(hdl,
-				NVME_IOCTL_ADMIN_CMD, cmd);
-	case NVME_TRANSPORT_HANDLE_TYPE_MI:
-		return nvme_mi_admin_admin_passthru(hdl, cmd);
+				LIBNVME_IOCTL_ADMIN_CMD, cmd);
+	case LIBNVME_TRANSPORT_HANDLE_TYPE_MI:
+		return libnvme_mi_admin_admin_passthru(hdl, cmd);
 	default:
 		break;
 	}

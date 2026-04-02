@@ -31,7 +31,7 @@
  * @hdl:	Transport handle
  * @cmd:	The nvme admin command to send
  *
- * Uses NVME_IOCTL_ADMIN_CMD for the ioctl request.
+ * Uses LIBNVME_IOCTL_ADMIN_CMD for the ioctl request.
  *
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
@@ -44,7 +44,7 @@ int libnvme_submit_admin_passthru(struct libnvme_transport_handle *hdl,
  * @hdl:	Transport handle
  * @cmd:	The nvme io command to send
  *
- * Uses NVME_IOCTL_IO_CMD for the ioctl request.
+ * Uses LIBNVME_IOCTL_IO_CMD for the ioctl request.
  *
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.

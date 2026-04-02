@@ -86,7 +86,7 @@ __public int nvme_get_log(struct libnvme_transport_handle *hdl,
 		cmd->addr = (__u64)(uintptr_t)ptr;
 
 		if (hdl->uring_enabled)
-			ret = nvme_submit_admin_passthru_async(hdl, cmd);
+			ret = libnvme_submit_admin_passthru_async(hdl, cmd);
 		else
 			ret = libnvme_submit_admin_passthru(hdl, cmd);
 		if (ret)
@@ -97,7 +97,7 @@ __public int nvme_get_log(struct libnvme_transport_handle *hdl,
 	} while (offset < data_len);
 
 	if (hdl->uring_enabled) {
-		ret = nvme_wait_complete_passthru(hdl);
+		ret = libnvme_wait_complete_passthru(hdl);
 		if (ret)
 			return ret;
 	}
@@ -296,7 +296,7 @@ __public int nvme_get_uuid_list(struct libnvme_transport_handle *hdl,
 	nvme_init_identify_ctrl(&cmd, &ctrl);
 	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (err) {
-		nvme_msg(hdl->ctx, LOG_ERR,
+		libnvme_msg(hdl->ctx, LOG_ERR,
 			 "ERROR: nvme_identify_ctrl() failed 0x%x\n", err);
 		return err;
 	}

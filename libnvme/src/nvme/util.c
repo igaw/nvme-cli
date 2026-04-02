@@ -464,7 +464,7 @@ int hostname2traddr(struct libnvme_global_ctx *ctx, const char *traddr,
 
 	ret = getaddrinfo(traddr, NULL, &hints, &host_info);
 	if (ret) {
-		nvme_msg(ctx, LOG_ERR, "failed to resolve host %s info\n",
+		libnvme_msg(ctx, LOG_ERR, "failed to resolve host %s info\n",
 			 traddr);
 		return -errno;
 	}
@@ -481,13 +481,13 @@ int hostname2traddr(struct libnvme_global_ctx *ctx, const char *traddr,
 			addrstr, NVMF_TRADDR_SIZE);
 		break;
 	default:
-		nvme_msg(ctx, LOG_ERR, "unrecognized address family (%d) %s\n",
+		libnvme_msg(ctx, LOG_ERR, "unrecognized address family (%d) %s\n",
 			 host_info->ai_family, traddr);
 		return -EINVAL;
 	}
 
 	if (!p) {
-		nvme_msg(ctx, LOG_ERR, "failed to get traddr for %s\n",
+		libnvme_msg(ctx, LOG_ERR, "failed to get traddr for %s\n",
 			 traddr);
 		return -EIO;
 	}
@@ -500,7 +500,7 @@ int hostname2traddr(struct libnvme_global_ctx *ctx, const char *traddr,
 #else /* HAVE_NETDB */
 int hostname2traddr(struct libnvme_global_ctx *ctx, const char *traddr, char **hostname)
 {
-	nvme_msg(ctx, LOG_ERR, "No support for hostname IP address resolution; " \
+	libnvme_msg(ctx, LOG_ERR, "No support for hostname IP address resolution; " \
 		"recompile with libnss support.\n");
 
 	return -ENOTSUP;
@@ -833,7 +833,7 @@ static bool _nvme_ipaddrs_eq(struct sockaddr *addr1, struct sockaddr *addr2)
 	return false;
 }
 
-bool nvme_ipaddrs_eq(const char *addr1, const char *addr2)
+bool libnvme_ipaddrs_eq(const char *addr1, const char *addr2)
 {
 	bool result = false;
 	struct addrinfo *info1 = NULL, hint1 = { .ai_flags=AI_NUMERICHOST, .ai_family=AF_UNSPEC };
@@ -861,9 +861,9 @@ ipaddrs_eq_fail:
 	return result;
 }
 #else /* HAVE_NETDB */
-bool nvme_ipaddrs_eq(const char *addr1, const char *addr2)
+bool libnvme_ipaddrs_eq(const char *addr1, const char *addr2)
 {
-	nvme_msg(NULL, LOG_ERR, "no support for hostname ip address resolution; " \
+	libnvme_msg(NULL, LOG_ERR, "no support for hostname ip address resolution; " \
 		"recompile with libnss support.\n");
 
 	return false;
@@ -871,7 +871,7 @@ bool nvme_ipaddrs_eq(const char *addr1, const char *addr2)
 #endif /* HAVE_NETDB */
 
 #ifdef HAVE_NETDB
-const char *nvme_iface_matching_addr(const struct ifaddrs *iface_list, const char *addr)
+const char *libnvme_iface_matching_addr(const struct ifaddrs *iface_list, const char *addr)
 {
 	const struct ifaddrs *iface_it;
 	struct addrinfo *info = NULL, hint = { .ai_flags = AI_NUMERICHOST, .ai_family = AF_UNSPEC };
@@ -896,7 +896,7 @@ const char *nvme_iface_matching_addr(const struct ifaddrs *iface_list, const cha
 	return iface_name;
 }
 
-bool nvme_iface_primary_addr_matches(const struct ifaddrs *iface_list, const char *iface, const char *addr)
+bool libnvme_iface_primary_addr_matches(const struct ifaddrs *iface_list, const char *iface, const char *addr)
 {
 	const struct ifaddrs *iface_it;
 	struct addrinfo *info = NULL, hint = { .ai_flags = AI_NUMERICHOST, .ai_family = AF_UNSPEC };
@@ -928,17 +928,17 @@ bool nvme_iface_primary_addr_matches(const struct ifaddrs *iface_list, const cha
 
 #else /* HAVE_NETDB */
 
-const char *nvme_iface_matching_addr(const struct ifaddrs *iface_list, const char *addr)
+const char *libnvme_iface_matching_addr(const struct ifaddrs *iface_list, const char *addr)
 {
-	nvme_msg(NULL, LOG_ERR, "no support for interface lookup; "
+	libnvme_msg(NULL, LOG_ERR, "no support for interface lookup; "
 		"recompile with libnss support.\n");
 
 	return NULL;
 }
 
-bool nvme_iface_primary_addr_matches(const struct ifaddrs *iface_list, const char *iface, const char *addr)
+bool libnvme_iface_primary_addr_matches(const struct ifaddrs *iface_list, const char *iface, const char *addr)
 {
-	nvme_msg(NULL, LOG_ERR, "no support for interface lookup; "
+	libnvme_msg(NULL, LOG_ERR, "no support for interface lookup; "
 		"recompile with libnss support.\n");
 
 	return false;
@@ -972,7 +972,7 @@ void *__nvme_realloc(void *p, size_t len)
 	return result;
 }
 
-const struct ifaddrs *nvme_getifaddrs(struct libnvme_global_ctx *ctx)
+const struct ifaddrs *libnvme_getifaddrs(struct libnvme_global_ctx *ctx)
 {
 	if (!ctx->ifaddrs_cache) {
 		struct ifaddrs *p;
