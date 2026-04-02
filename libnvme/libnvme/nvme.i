@@ -427,7 +427,7 @@ struct libnvme_ctrl {
 		 * accessing the members directly.
 		 *
 		 * For example, SWIG will generate code like this:
-		 *    name = nvme_ctrl_name_get(ctrl)
+		 *    name = libnvme_ctrl_name_get(ctrl)
 		 *
 		 * instead of that:
 		 *    name = ctrl->name
@@ -593,10 +593,10 @@ struct libnvme_ns {
 }
 
 %{
-	const char *nvme_host_dhchap_host_key_get(struct libnvme_host *h) {
+	const char *libnvme_host_dhchap_host_key_get(struct libnvme_host *h) {
 		return libnvme_host_get_dhchap_host_key(h);
 	}
-	void nvme_host_dhchap_host_key_set(struct libnvme_host *h, char *key) {
+	void libnvme_host_dhchap_host_key_set(struct libnvme_host *h, char *key) {
 		libnvme_host_set_dhchap_host_key(h, key);
 	}
 %};
@@ -653,22 +653,22 @@ struct libnvme_ns {
 }
 
 %{
-	const char *nvme_subsystem_name_get(struct libnvme_subsystem *s) {
+	const char *libnvme_subsystem_name_get(struct libnvme_subsystem *s) {
 		return libnvme_subsystem_get_name(s);
 	}
-	struct libnvme_host *nvme_subsystem_host_get(struct libnvme_subsystem *s) {
+	struct libnvme_host *libnvme_subsystem_host_get(struct libnvme_subsystem *s) {
 		return libnvme_subsystem_get_host(s);
 	}
-	const char *nvme_subsystem_sysfs_dir_get(struct libnvme_subsystem *s) {
+	const char *libnvme_subsystem_sysfs_dir_get(struct libnvme_subsystem *s) {
 		return libnvme_subsystem_get_sysfs_dir(s);
 	}
-	const char *nvme_subsystem_iopolicy_get(struct libnvme_subsystem *s) {
+	const char *libnvme_subsystem_iopolicy_get(struct libnvme_subsystem *s) {
 		return libnvme_subsystem_get_iopolicy(s);
 	}
-	const char *nvme_subsystem_application_get(struct libnvme_subsystem *s) {
+	const char *libnvme_subsystem_application_get(struct libnvme_subsystem *s) {
 		return libnvme_subsystem_get_application(s);
 	}
-	void nvme_subsystem_application_set(struct libnvme_subsystem *s, const char *a) {
+	void libnvme_subsystem_application_set(struct libnvme_subsystem *s, const char *a) {
 		libnvme_subsystem_set_application(s, a);
 	}
 %};
@@ -851,128 +851,128 @@ struct libnvme_ns {
 	 *
 	 * SWIG                       libnvme.map
 	 * ======================     =======================
-	 * nvme_ctrl_[member]_get  -> nvme_ctrl_get_[member]
-	 * nvme_ctrl_[member]_set  -> nvme_ctrl_set_[member]
+	 * libnvme_ctrl_[member]_get  -> libnvme_ctrl_get_[member]
+	 * libnvme_ctrl_[member]_set  -> libnvme_ctrl_set_[member]
 	 *
 	 */
 
-	const char *nvme_ctrl_name_get(struct libnvme_ctrl *c) {
+	const char *libnvme_ctrl_name_get(struct libnvme_ctrl *c) {
 		return libnvme_ctrl_get_name(c);
 	}
-	struct libnvme_subsystem *nvme_ctrl_subsystem_get(struct libnvme_ctrl *c) {
+	struct libnvme_subsystem *libnvme_ctrl_subsystem_get(struct libnvme_ctrl *c) {
 		return libnvme_ctrl_get_subsystem(c);
 	}
-	const char *nvme_ctrl_state_get(struct libnvme_ctrl *c) {
+	const char *libnvme_ctrl_state_get(struct libnvme_ctrl *c) {
 		return libnvme_ctrl_get_state(c);
 	}
-	const char *nvme_ctrl_dhchap_ctrl_key_get(struct libnvme_ctrl *c) {
+	const char *libnvme_ctrl_dhchap_ctrl_key_get(struct libnvme_ctrl *c) {
 		return libnvme_ctrl_get_dhchap_ctrl_key(c);
 	}
-	void nvme_ctrl_dhchap_ctrl_key_set(struct libnvme_ctrl *c, const char *key) {
+	void libnvme_ctrl_dhchap_ctrl_key_set(struct libnvme_ctrl *c, const char *key) {
 		libnvme_ctrl_set_dhchap_ctrl_key(c, key);
 	}
-	const char *nvme_ctrl_dhchap_host_key_get(struct libnvme_ctrl *c) {
+	const char *libnvme_ctrl_dhchap_host_key_get(struct libnvme_ctrl *c) {
 		return libnvme_ctrl_get_dhchap_host_key(c);
 	}
-	void nvme_ctrl_dhchap_host_key_set(struct libnvme_ctrl *c, const char *key) {
+	void libnvme_ctrl_dhchap_host_key_set(struct libnvme_ctrl *c, const char *key) {
 		libnvme_ctrl_set_dhchap_host_key(c, key);
 	}
 
-	const char *nvme_ctrl_cntlid_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_cntlid_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_cntlid(c);
 	}
 
-	bool nvme_ctrl_persistent_get(struct libnvme_ctrl *c) {
+	bool libnvme_ctrl_persistent_get(struct libnvme_ctrl *c) {
 		return libnvme_ctrl_get_persistent(c);
 	}
-	void nvme_ctrl_persistent_set(struct libnvme_ctrl *c, bool persistent) {
+	void libnvme_ctrl_persistent_set(struct libnvme_ctrl *c, bool persistent) {
 		libnvme_ctrl_set_persistent(c, persistent);
 	}
 
-	const char *nvme_ctrl_phy_slot_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_phy_slot_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_phy_slot(c);
 	}
 
-	const char *nvme_ctrl_trsvcid_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_trsvcid_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_trsvcid(c);
 	}
 
-	const char *nvme_ctrl_traddr_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_traddr_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_traddr(c);
 	}
 
-	const char *nvme_ctrl_subsysnqn_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_subsysnqn_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_subsysnqn(c);
 	}
 
-	const char *nvme_ctrl_transport_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_transport_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_transport(c);
 	}
 
-	const char *nvme_ctrl_sqsize_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_sqsize_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_sqsize(c);
 	}
 
-	const char *nvme_ctrl_serial_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_serial_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_serial(c);
 	}
 
-	const char *nvme_ctrl_queue_count_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_queue_count_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_queue_count(c);
 	}
 
-	const char *nvme_ctrl_numa_node_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_numa_node_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_numa_node(c);
 	}
 
-	const char *nvme_ctrl_model_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_model_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_model(c);
 	}
 
-	const char *nvme_ctrl_firmware_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_firmware_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_firmware(c);
 	}
 
-	const char *nvme_ctrl_address_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_address_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_traddr(c);
 	}
 
-	const char *nvme_ctrl_sysfs_dir_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_sysfs_dir_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_sysfs_dir(c);
 	}
 
-	bool nvme_ctrl_discovery_ctrl_get(struct libnvme_ctrl *c) {
+	bool libnvme_ctrl_discovery_ctrl_get(struct libnvme_ctrl *c) {
 		return libnvme_ctrl_get_discovery_ctrl(c);
 	}
-	void nvme_ctrl_discovery_ctrl_set(struct libnvme_ctrl *c, bool discovery) {
+	void libnvme_ctrl_discovery_ctrl_set(struct libnvme_ctrl *c, bool discovery) {
 		libnvme_ctrl_set_discovery_ctrl(c, discovery);
 	}
 
-	bool nvme_ctrl_unique_discovery_ctrl_get(libnvme_ctrl_t c) {
+	bool libnvme_ctrl_unique_discovery_ctrl_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_unique_discovery_ctrl(c);
 	}
-	void nvme_ctrl_unique_discovery_ctrl_set(libnvme_ctrl_t c, bool unique) {
+	void libnvme_ctrl_unique_discovery_ctrl_set(libnvme_ctrl_t c, bool unique) {
 		libnvme_ctrl_set_unique_discovery_ctrl(c, unique);
 	}
 
-	const char *nvme_ctrl_keyring_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_keyring_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_keyring(c);
 	}
-	void nvme_ctrl_keyring_set(libnvme_ctrl_t c, const char *keyring) {
+	void libnvme_ctrl_keyring_set(libnvme_ctrl_t c, const char *keyring) {
 		libnvme_ctrl_set_keyring(c, keyring);
 	}
 
-	const char *nvme_ctrl_tls_key_identity_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_tls_key_identity_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_tls_key_identity(c);
 	}
-	void nvme_ctrl_tls_key_identity_set(libnvme_ctrl_t c, const char *identity) {
+	void libnvme_ctrl_tls_key_identity_set(libnvme_ctrl_t c, const char *identity) {
 		libnvme_ctrl_set_tls_key_identity(c, identity);
 	}
 
-	const char *nvme_ctrl_tls_key_get(libnvme_ctrl_t c) {
+	const char *libnvme_ctrl_tls_key_get(libnvme_ctrl_t c) {
 		return libnvme_ctrl_get_tls_key(c);
 	}
-	void nvme_ctrl_tls_key_set(libnvme_ctrl_t c, const char *key) {
+	void libnvme_ctrl_tls_key_set(libnvme_ctrl_t c, const char *key) {
 		libnvme_ctrl_set_tls_key(c, key);
 	}
 %}
@@ -1002,7 +1002,7 @@ struct libnvme_ns {
 }
 
 %{
-	const char *nvme_ns_name_get(struct libnvme_ns *n) {
+	const char *libnvme_ns_name_get(struct libnvme_ns *n) {
 		return libnvme_ns_get_name(n);
 	}
 %};
