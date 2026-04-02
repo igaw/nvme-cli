@@ -317,7 +317,7 @@ __public int nvme_get_telemetry_max(struct libnvme_transport_handle *hdl,
 	struct libnvme_passthru_cmd cmd;
 	int err;
 
-	id_ctrl = __nvme_alloc(sizeof(*id_ctrl));
+	id_ctrl = __libnvme_alloc(sizeof(*id_ctrl));
 	if (!id_ctrl)
 		return -ENOMEM;
 
@@ -361,7 +361,7 @@ __public int nvme_get_telemetry_log(struct libnvme_transport_handle *hdl, bool c
 
 	*size = 0;
 
-	log = __nvme_alloc(xfer);
+	log = __libnvme_alloc(xfer);
 	if (!log)
 		return -ENOMEM;
 
@@ -412,7 +412,7 @@ __public int nvme_get_telemetry_log(struct libnvme_transport_handle *hdl, bool c
 		return -ENOENT;
 
 	*size = (dalb + 1) * xfer;
-	tmp = __nvme_realloc(log, *size);
+	tmp = __libnvme_realloc(log, *size);
 	if (!tmp)
 		return -ENOMEM;
 	log = tmp;
@@ -536,7 +536,7 @@ __public int nvme_get_ana_log_len(struct libnvme_transport_handle *hdl, size_t *
 	struct libnvme_passthru_cmd cmd;
 	int ret;
 
-	ctrl = __nvme_alloc(sizeof(*ctrl));
+	ctrl = __libnvme_alloc(sizeof(*ctrl));
 	if (!ctrl)
 		return -ENOMEM;
 
@@ -557,7 +557,7 @@ __public int nvme_get_logical_block_size(struct libnvme_transport_handle *hdl,
 	__u8 flbas;
 	int ret;
 
-	ns = __nvme_alloc(sizeof(*ns));
+	ns = __libnvme_alloc(sizeof(*ns));
 	if (!ns)
 		return -ENOMEM;
 

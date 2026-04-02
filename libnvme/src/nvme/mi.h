@@ -652,7 +652,7 @@ struct nvme_mi_control_resp {
 const char *nvme_mi_status_to_string(int status);
 
 /* Top level management object: NVMe-MI Management Endpoint */
-struct nvme_mi_ep;
+struct libnvme_mi_ep;
 
 /**
  * typedef nvme_mi_ep_t - MI Endpoint object.
@@ -667,7 +667,7 @@ struct nvme_mi_ep;
  * Subsequent operations on the endpoint (and related controllers) are
  * transport-independent.
  */
-typedef struct nvme_mi_ep * nvme_mi_ep_t;
+typedef struct libnvme_mi_ep * nvme_mi_ep_t;
 
 /**
  * nvme_mi_set_csi - Assign a CSI to an endpoint.

@@ -121,7 +121,7 @@ struct libnvme_transport_handle {
 	bool uring_enabled;
 
 	/* mi */
-	struct nvme_mi_ep *ep;
+	struct libnvme_mi_ep *ep;
 	__u16 id;
 	struct list_node ep_entry;
 
@@ -370,27 +370,27 @@ int json_update_config(struct libnvme_global_ctx *ctx, int fd);
 
 int json_dump_tree(struct libnvme_global_ctx *ctx);
 
-void *__nvme_submit_entry(struct libnvme_transport_handle *hdl,
+void *__libnvme_submit_entry(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd);
-void __nvme_submit_exit(struct libnvme_transport_handle *hdl,
+void __libnvme_submit_exit(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd, int err, void *user_data);
-bool __nvme_decide_retry(struct libnvme_transport_handle *hdl,
+bool __libnvme_decide_retry(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd, int err);
 
-struct libnvme_transport_handle *__nvme_open(struct libnvme_global_ctx *ctx, const char *name);
-struct libnvme_transport_handle *__nvme_create_transport_handle(struct libnvme_global_ctx *ctx);
-int __nvme_transport_handle_open_mi(struct libnvme_transport_handle *hdl, const char *devname);
-int __nvme_transport_handle_init_mi(struct libnvme_transport_handle *hdl);
-void __nvme_transport_handle_close_mi(struct libnvme_transport_handle *hdl);
+struct libnvme_transport_handle *__libnvme_open(struct libnvme_global_ctx *ctx, const char *name);
+struct libnvme_transport_handle *__libnvme_create_transport_handle(struct libnvme_global_ctx *ctx);
+int __libnvme_transport_handle_open_mi(struct libnvme_transport_handle *hdl, const char *devname);
+int __libnvme_transport_handle_init_mi(struct libnvme_transport_handle *hdl);
+void __libnvme_transport_handle_close_mi(struct libnvme_transport_handle *hdl);
 
-int _nvme_create_ctrl(struct libnvme_global_ctx *ctx,
+int _libnvme_create_ctrl(struct libnvme_global_ctx *ctx,
 		      struct nvmf_context *fctx,
 		      libnvme_ctrl_t *cp);
-bool _nvme_ctrl_match_config(struct libnvme_ctrl *c, struct nvmf_context *fctx);
+bool _libnvme_ctrl_match_config(struct libnvme_ctrl *c, struct nvmf_context *fctx);
 
-void *__nvme_alloc(size_t len);
+void *__libnvme_alloc(size_t len);
 
-void *__nvme_realloc(void *p, size_t len);
+void *__libnvme_realloc(void *p, size_t len);
 
 libnvme_host_t libnvme_lookup_host(struct libnvme_global_ctx *ctx, const char *hostnqn,
 			     const char *hostid);
@@ -402,19 +402,19 @@ libnvme_ctrl_t libnvme_lookup_ctrl(libnvme_subsystem_t s,
 			     libnvme_ctrl_t p);
 libnvme_ctrl_t libnvme_ctrl_find(libnvme_subsystem_t s, struct nvmf_context *fctx);
 
-void __nvme_free_host(libnvme_host_t h);
+void __libnvme_free_host(libnvme_host_t h);
 
 #if (LOG_FUNCNAME == 1)
-#define __nvme_log_func __func__
+#define __libnvme_log_func __func__
 #else
-#define __nvme_log_func NULL
+#define __libnvme_log_func NULL
 #endif
 
 void __attribute__((format(printf, 4, 5)))
-__nvme_msg(struct libnvme_global_ctx *ctx, int level, const char *func, const char *format, ...);
+__libnvme_msg(struct libnvme_global_ctx *ctx, int level, const char *func, const char *format, ...);
 
 #define libnvme_msg(ctx, level, format, ...)					\
-	__nvme_msg(ctx, level, __nvme_log_func, format, ##__VA_ARGS__)
+	__libnvme_msg(ctx, level, __libnvme_log_func, format, ##__VA_ARGS__)
 
 /* mi internal headers */
 
@@ -435,20 +435,20 @@ struct libnvme_mi_resp {
 	__u32 mic;
 };
 
-struct nvme_mi_ep;
+struct libnvme_mi_ep;
 struct libnvme_mi_transport {
 	const char *name;
 	bool mic_enabled;
-	int (*submit)(struct nvme_mi_ep *ep,
+	int (*submit)(struct libnvme_mi_ep *ep,
 		      struct libnvme_mi_req *req,
 		      struct libnvme_mi_resp *resp);
-	void (*close)(struct nvme_mi_ep *ep);
-	int (*desc_ep)(struct nvme_mi_ep *ep, char *buf, size_t len);
-	int (*check_timeout)(struct nvme_mi_ep *ep, unsigned int timeout);
-	int (*aem_fd)(struct nvme_mi_ep *ep);
-	int (*aem_read)(struct nvme_mi_ep *ep,
+	void (*close)(struct libnvme_mi_ep *ep);
+	int (*desc_ep)(struct libnvme_mi_ep *ep, char *buf, size_t len);
+	int (*check_timeout)(struct libnvme_mi_ep *ep, unsigned int timeout);
+	int (*aem_fd)(struct libnvme_mi_ep *ep);
+	int (*aem_read)(struct libnvme_mi_ep *ep,
 			  struct libnvme_mi_resp *resp);
-	int (*aem_purge)(struct nvme_mi_ep *ep);
+	int (*aem_purge)(struct libnvme_mi_ep *ep);
 };
 
 struct libnvme_mi_aem_ctx {
@@ -474,7 +474,7 @@ struct libnvme_mi_aem_ctx {
  */
 #define LIBNVME_QUIRK_CSI_1_NOT_SUPPORTED          (1 << 1)
 
-struct nvme_mi_ep {
+struct libnvme_mi_ep {
 	struct libnvme_global_ctx *ctx;
 	const struct libnvme_mi_transport *transport;
 	void *transport_data;
@@ -496,8 +496,8 @@ struct nvme_mi_ep {
 	struct libnvme_mi_aem_ctx *aem_ctx;
 };
 
-struct nvme_mi_ep *libnvme_mi_init_ep(struct libnvme_global_ctx *ctx);
-void libnvme_mi_ep_probe(struct nvme_mi_ep *ep);
+struct libnvme_mi_ep *libnvme_mi_init_ep(struct libnvme_global_ctx *ctx);
+void libnvme_mi_ep_probe(struct libnvme_mi_ep *ep);
 
 /* for tests, we need to calculate the correct MICs */
 __u32 libnvme_mi_crc32_update(__u32 crc, void *data, size_t len);
@@ -514,12 +514,12 @@ struct __mi_mctp_socket_ops {
 	int (*poll)(struct pollfd *, nfds_t, int);
 	int (*ioctl_tag)(int, unsigned long, struct mctp_ioc_tag_ctl *);
 };
-void __nvme_mi_mctp_set_ops(const struct __mi_mctp_socket_ops *newops);
+void __libnvme_mi_mctp_set_ops(const struct __mi_mctp_socket_ops *newops);
 
 #define SECTOR_SIZE	512
 #define SECTOR_SHIFT	9
 
-int __nvme_import_keys_from_config(libnvme_host_t h, libnvme_ctrl_t c,
+int __libnvme_import_keys_from_config(libnvme_host_t h, libnvme_ctrl_t c,
 		long *keyring_id, long *key_id);
 
 static inline char *xstrdup(const char *s)
@@ -742,7 +742,7 @@ int libnvme_mi_admin_admin_passthru(struct libnvme_transport_handle *hdl,
 #ifdef CONFIG_LIBURING
 int libnvme_open_uring(struct libnvme_global_ctx *ctx);
 void libnvme_close_uring(struct libnvme_global_ctx *ctx);
-int __nvme_transport_handle_open_uring(struct libnvme_transport_handle *hdl);
+int __libnvme_transport_handle_open_uring(struct libnvme_transport_handle *hdl);
 int libnvme_submit_admin_passthru_async(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd);
 int libnvme_wait_complete_passthru(struct libnvme_transport_handle *hdl);
@@ -757,7 +757,7 @@ libnvme_close_uring(struct libnvme_global_ctx *ctx)
 {
 }
 static inline int
-__nvme_transport_handle_open_uring(struct libnvme_transport_handle *hdl)
+__libnvme_transport_handle_open_uring(struct libnvme_transport_handle *hdl)
 {
 	hdl->ctx->uring_state = LIBNVME_IO_URING_STATE_NOT_AVAILABLE;
 	return -ENOTSUP;

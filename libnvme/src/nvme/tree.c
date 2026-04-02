@@ -418,7 +418,7 @@ __public void libnvme_refresh_topology(struct libnvme_global_ctx *ctx)
 	struct libnvme_host *h, *_h;
 
 	libnvme_for_each_host_safe(ctx, h, _h)
-		__nvme_free_host(h);
+		__libnvme_free_host(h);
 	libnvme_scan_topology(ctx, NULL, NULL);
 }
 
@@ -593,7 +593,7 @@ __public int libnvme_get_subsystem(struct libnvme_global_ctx *ctx,
 	return 0;
 }
 
-void __nvme_free_host(struct libnvme_host *h)
+void __libnvme_free_host(struct libnvme_host *h)
 {
 	struct libnvme_subsystem *s, *_s;
 
@@ -618,7 +618,7 @@ __public void libnvme_host_release_fds(struct libnvme_host *h)
 /* Stub for SWIG */
 __public void libnvme_free_host(struct libnvme_host *h)
 {
-	__nvme_free_host(h);
+	__libnvme_free_host(h);
 }
 
 static int nvme_create_host(struct libnvme_global_ctx *ctx, const char *hostnqn,
@@ -1064,7 +1064,7 @@ __public void nvmf_default_config(struct libnvme_fabrics_config *cfg)
 	cfg->ctrl_loss_tmo = NVMF_DEF_CTRL_LOSS_TMO;
 }
 
-int _nvme_create_ctrl(struct libnvme_global_ctx *ctx,
+int _libnvme_create_ctrl(struct libnvme_global_ctx *ctx,
 		      struct nvmf_context *fctx,
 		      libnvme_ctrl_t *cp)
 {
@@ -1130,7 +1130,7 @@ __public int libnvme_create_ctrl(struct libnvme_global_ctx *ctx,
 		.subsysnqn = subsysnqn,
 	};
 
-	return _nvme_create_ctrl(ctx, &fctx, cp);
+	return _libnvme_create_ctrl(ctx, &fctx, cp);
 }
 
 /**
@@ -1475,7 +1475,7 @@ static libnvme_ctrl_t __nvme_ctrl_find(libnvme_subsystem_t s,
 	return matching_c;
 }
 
-bool _nvme_ctrl_match_config(struct libnvme_ctrl *c, struct nvmf_context *fctx)
+bool _libnvme_ctrl_match_config(struct libnvme_ctrl *c, struct nvmf_context *fctx)
 {
 	struct candidate_args candidate = {};
 	ctrl_match_t ctrl_match;
@@ -1500,7 +1500,7 @@ __public bool libnvme_ctrl_match_config(struct libnvme_ctrl *c, const char *tran
 		.subsysnqn = subsysnqn,
 	};
 
-	return _nvme_ctrl_match_config(c, &fctx);
+	return _libnvme_ctrl_match_config(c, &fctx);
 }
 
 libnvme_ctrl_t libnvme_ctrl_find(libnvme_subsystem_t s, struct nvmf_context *fctx)
@@ -1531,7 +1531,7 @@ libnvme_ctrl_t libnvme_lookup_ctrl(libnvme_subsystem_t s,
 	ctx = s->h ? s->h->ctx : NULL;
 	/* Set the NQN to the subsystem the controller should be created in */
 	fctx->subsysnqn = s->subsysnqn;
-	ret = _nvme_create_ctrl(ctx, fctx, &c);
+	ret = _libnvme_create_ctrl(ctx, fctx, &c);
 	/* And restore NQN to avoid issues with repetitive calls */
 	fctx->subsysnqn = subsysnqn;
 	if (ret)
@@ -2425,7 +2425,7 @@ static int nvme_ns_init(const char *path, struct libnvme_ns *ns)
 		_cleanup_free_ struct nvme_id_ns *id = NULL;
 		uint8_t flbas;
 
-		id = __nvme_alloc(sizeof(*ns));
+		id = __libnvme_alloc(sizeof(*ns));
 		if (!id)
 			return -ENOMEM;
 

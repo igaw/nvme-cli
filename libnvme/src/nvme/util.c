@@ -946,7 +946,7 @@ bool libnvme_iface_primary_addr_matches(const struct ifaddrs *iface_list, const 
 
 #endif /* HAVE_NETDB */
 
-void *__nvme_alloc(size_t len)
+void *__libnvme_alloc(size_t len)
 {
 	size_t _len = round_up(len, 0x1000);
 	void *p;
@@ -958,11 +958,11 @@ void *__nvme_alloc(size_t len)
 	return p;
 }
 
-void *__nvme_realloc(void *p, size_t len)
+void *__libnvme_realloc(void *p, size_t len)
 {
 	size_t old_len = malloc_usable_size(p);
 
-	void *result = __nvme_alloc(len);
+	void *result = __libnvme_alloc(len);
 
 	if (p && result) {
 		memcpy(result, p, min(old_len, len));

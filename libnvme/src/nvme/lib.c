@@ -76,7 +76,7 @@ __public void libnvme_free_global_ctx(struct libnvme_global_ctx *ctx)
 
 	free(ctx->options);
 	libnvme_for_each_host_safe(ctx, h, _h)
-		__nvme_free_host(h);
+		__libnvme_free_host(h);
 	nvme_mi_for_each_endpoint_safe(ctx, ep, tmp)
 		nvme_mi_close(ep);
 	free(ctx->config_file);
@@ -101,7 +101,7 @@ __public void libnvme_transport_handle_set_submit_entry(struct libnvme_transport
 {
 	hdl->submit_entry = submit_entry;
 	if (!hdl->submit_exit)
-		hdl->submit_exit = __nvme_submit_exit;
+		hdl->submit_exit = __libnvme_submit_exit;
 }
 
 __public void libnvme_transport_handle_set_submit_exit(struct libnvme_transport_handle *hdl,
@@ -111,7 +111,7 @@ __public void libnvme_transport_handle_set_submit_exit(struct libnvme_transport_
 {
 	hdl->submit_exit = submit_exit;
 	if (!hdl->submit_exit)
-		hdl->submit_exit = __nvme_submit_exit;
+		hdl->submit_exit = __libnvme_submit_exit;
 }
 
 __public void libnvme_transport_handle_set_decide_retry(struct libnvme_transport_handle *hdl,
@@ -120,7 +120,7 @@ __public void libnvme_transport_handle_set_decide_retry(struct libnvme_transport
 {
 	hdl->decide_retry = decide_retry;
 	if (!hdl->decide_retry)
-		hdl->decide_retry = __nvme_decide_retry;
+		hdl->decide_retry = __libnvme_decide_retry;
 }
 
 static int __nvme_transport_handle_open_direct(
@@ -157,7 +157,7 @@ static int __nvme_transport_handle_open_direct(
 	if (c) {
 		if (!S_ISCHR(hdl->stat.st_mode))
 			return -EINVAL;
-		ret = __nvme_transport_handle_open_uring(hdl);
+		ret = __libnvme_transport_handle_open_uring(hdl);
 		if (ret && ret != -ENOTSUP) {
 			close(hdl->fd);
 			return ret;
@@ -185,7 +185,7 @@ void __nvme_transport_handle_close_direct(struct libnvme_transport_handle *hdl)
 	free(hdl);
 }
 
-struct libnvme_transport_handle *__nvme_create_transport_handle(
+struct libnvme_transport_handle *__libnvme_create_transport_handle(
 		struct libnvme_global_ctx *ctx)
 {
 	struct libnvme_transport_handle *hdl;
@@ -195,9 +195,9 @@ struct libnvme_transport_handle *__nvme_create_transport_handle(
 		return NULL;
 
 	hdl->ctx = ctx;
-	hdl->submit_entry = __nvme_submit_entry;
-	hdl->submit_exit = __nvme_submit_exit;
-	hdl->decide_retry = __nvme_decide_retry;
+	hdl->submit_entry = __libnvme_submit_entry;
+	hdl->submit_exit = __libnvme_submit_exit;
+	hdl->decide_retry = __libnvme_decide_retry;
 
 	return hdl;
 }
@@ -208,7 +208,7 @@ __public int libnvme_open(struct libnvme_global_ctx *ctx, const char *name,
 	struct libnvme_transport_handle *hdl;
 	int ret;
 
-	hdl = __nvme_create_transport_handle(ctx);
+	hdl = __libnvme_create_transport_handle(ctx);
 	if (!hdl)
 		return -ENOMEM;
 
@@ -230,7 +230,7 @@ __public int libnvme_open(struct libnvme_global_ctx *ctx, const char *name,
 	}
 
 	if (!strncmp(name, "mctp:", strlen("mctp:")))
-		ret = __nvme_transport_handle_open_mi(hdl, name);
+		ret = __libnvme_transport_handle_open_mi(hdl, name);
 	else
 		ret = __nvme_transport_handle_open_direct(hdl, name);
 
@@ -256,7 +256,7 @@ __public void libnvme_close(struct libnvme_transport_handle *hdl)
 		__nvme_transport_handle_close_direct(hdl);
 		break;
 	case LIBNVME_TRANSPORT_HANDLE_TYPE_MI:
-		__nvme_transport_handle_close_mi(hdl);
+		__libnvme_transport_handle_close_mi(hdl);
 		break;
 	case LIBNVME_TRANSPORT_HANDLE_TYPE_UNKNOWN:
 		free(hdl);

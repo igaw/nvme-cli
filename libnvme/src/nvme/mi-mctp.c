@@ -142,13 +142,13 @@ static struct __mi_mctp_socket_ops ops = {
 	ioctl_tag,
 };
 
-void __nvme_mi_mctp_set_ops(const struct __mi_mctp_socket_ops *newops)
+void __libnvme_mi_mctp_set_ops(const struct __mi_mctp_socket_ops *newops)
 {
 	ops = *newops;
 }
 static const struct libnvme_mi_transport nvme_mi_transport_mctp;
 
-static __u8 nvme_mi_mctp_tag_alloc(struct nvme_mi_ep *ep)
+static __u8 nvme_mi_mctp_tag_alloc(struct libnvme_mi_ep *ep)
 {
 	struct nvme_mi_transport_mctp *mctp;
 	struct mctp_ioc_tag_ctl ctl = { 0 };
@@ -175,7 +175,7 @@ static __u8 nvme_mi_mctp_tag_alloc(struct nvme_mi_ep *ep)
 	return ctl.tag;
 }
 
-static void nvme_mi_mctp_tag_drop(struct nvme_mi_ep *ep, __u8 tag)
+static void nvme_mi_mctp_tag_drop(struct libnvme_mi_ep *ep, __u8 tag)
 {
 	struct nvme_mi_transport_mctp *mctp;
 	struct mctp_ioc_tag_ctl ctl = { 0 };
@@ -243,7 +243,7 @@ static bool nvme_mi_mctp_resp_is_mpr(void *buf, size_t len,
 	return true;
 }
 
-static int nvme_mi_mctp_aem_fd(struct nvme_mi_ep *ep)
+static int nvme_mi_mctp_aem_fd(struct libnvme_mi_ep *ep)
 {
 	struct nvme_mi_transport_mctp *mctp;
 
@@ -256,7 +256,7 @@ static int nvme_mi_mctp_aem_fd(struct nvme_mi_ep *ep)
 	return mctp->sd_aem;
 }
 
-static int nvme_mi_mctp_aem_purge(struct nvme_mi_ep *ep)
+static int nvme_mi_mctp_aem_purge(struct libnvme_mi_ep *ep)
 {
 	struct nvme_mi_transport_mctp *mctp = ep->transport_data;
 	struct msghdr msg = {0};
@@ -276,7 +276,7 @@ static int nvme_mi_mctp_aem_purge(struct nvme_mi_ep *ep)
 }
 
 
-static int nvme_mi_mctp_aem_read(struct nvme_mi_ep *ep,
+static int nvme_mi_mctp_aem_read(struct libnvme_mi_ep *ep,
 			       struct libnvme_mi_resp *resp)
 {
 	ssize_t len, resp_len, resp_hdr_len, resp_data_len;
@@ -405,7 +405,7 @@ out:
 	return rc;
 }
 
-static int nvme_mi_mctp_submit(struct nvme_mi_ep *ep,
+static int nvme_mi_mctp_submit(struct libnvme_mi_ep *ep,
 			       struct libnvme_mi_req *req,
 			       struct libnvme_mi_resp *resp)
 {
@@ -609,7 +609,7 @@ out:
 	return rc;
 }
 
-static void nvme_mi_mctp_close(struct nvme_mi_ep *ep)
+static void nvme_mi_mctp_close(struct libnvme_mi_ep *ep)
 {
 	struct nvme_mi_transport_mctp *mctp;
 
@@ -625,7 +625,7 @@ static void nvme_mi_mctp_close(struct nvme_mi_ep *ep)
 	free(ep->transport_data);
 }
 
-static int nvme_mi_mctp_desc_ep(struct nvme_mi_ep *ep, char *buf, size_t len)
+static int nvme_mi_mctp_desc_ep(struct libnvme_mi_ep *ep, char *buf, size_t len)
 {
 	struct nvme_mi_transport_mctp *mctp;
 
@@ -679,7 +679,7 @@ __public nvme_mi_ep_t nvme_mi_open_mctp(struct libnvme_global_ctx *ctx,
 			       unsigned int netid, __u8 eid)
 {
 	struct nvme_mi_transport_mctp *mctp;
-	struct nvme_mi_ep *ep;
+	struct libnvme_mi_ep *ep;
 	int errno_save;
 
 	ep = libnvme_mi_init_ep(ctx);

@@ -93,18 +93,18 @@ __public int libnvme_get_nsid(struct libnvme_transport_handle *hdl, __u32 *nsid)
 	return 0;
 }
 
-void *__nvme_submit_entry(struct libnvme_transport_handle *hdl,
+void *__libnvme_submit_entry(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd)
 {
 	return NULL;
 }
 
-void __nvme_submit_exit(struct libnvme_transport_handle *hdl,
+void __libnvme_submit_exit(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd, int err, void *user_data)
 {
 }
 
-bool __nvme_decide_retry(struct libnvme_transport_handle *hdl,
+bool __libnvme_decide_retry(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd, int err)
 {
 	return false;

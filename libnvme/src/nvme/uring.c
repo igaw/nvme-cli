@@ -53,7 +53,7 @@ void libnvme_close_uring(struct libnvme_global_ctx *ctx)
 	free(ctx->ring);
 }
 
-int __nvme_transport_handle_open_uring(struct libnvme_transport_handle *hdl)
+int __libnvme_transport_handle_open_uring(struct libnvme_transport_handle *hdl)
 {
 	int err;
 

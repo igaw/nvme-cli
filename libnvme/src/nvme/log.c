@@ -27,7 +27,7 @@
 #endif
 
 void __attribute__((format(printf, 4, 5)))
-__nvme_msg(struct libnvme_global_ctx *ctx, int level,
+__libnvme_msg(struct libnvme_global_ctx *ctx, int level,
 	   const char *func, const char *format, ...)
 {
 	struct libnvme_log *l = &ctx->log;

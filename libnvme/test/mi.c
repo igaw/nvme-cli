@@ -21,7 +21,7 @@
 
 #include "utils.h"
 
-typedef int (*test_submit_cb)(struct nvme_mi_ep *ep,
+typedef int (*test_submit_cb)(struct libnvme_mi_ep *ep,
 			      struct libnvme_mi_req *req,
 			      struct libnvme_mi_resp *resp,
 			      void *data);
@@ -35,7 +35,7 @@ struct test_transport_data {
 
 static const int test_transport_magic = 0x74657374;
 
-static int test_transport_submit(struct nvme_mi_ep *ep,
+static int test_transport_submit(struct libnvme_mi_ep *ep,
 				 struct libnvme_mi_req *req,
 				 struct libnvme_mi_resp *resp)
 {
@@ -56,14 +56,14 @@ static int test_transport_submit(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_transport_close(struct nvme_mi_ep *ep)
+static void test_transport_close(struct libnvme_mi_ep *ep)
 {
 	struct test_transport_data *tpd = ep->transport_data;
 	assert(tpd->magic == test_transport_magic);
 	free(tpd);
 }
 
-static int test_transport_desc_ep(struct nvme_mi_ep *ep,
+static int test_transport_desc_ep(struct libnvme_mi_ep *ep,
 				    char *buf, size_t len)
 {
 	struct test_transport_data *tpd = ep->transport_data;
@@ -115,7 +115,7 @@ static void test_set_transport_callback(nvme_mi_ep_t ep, test_submit_cb cb,
 nvme_mi_ep_t nvme_mi_open_test(struct libnvme_global_ctx *ctx)
 {
 	struct test_transport_data *tpd;
-	struct nvme_mi_ep *ep;
+	struct libnvme_mi_ep *ep;
 
 	ep = libnvme_mi_init_ep(ctx);
 	assert(ep);
@@ -208,7 +208,7 @@ static void test_ctrl_lifetime(nvme_mi_ep_t ep)
 
 
 /* test: basic read MI datastructure command */
-static int test_read_mi_data_cb(struct nvme_mi_ep *ep,
+static int test_read_mi_data_cb(struct libnvme_mi_ep *ep,
 				 struct libnvme_mi_req *req,
 				 struct libnvme_mi_resp *resp,
 				 void *data)
@@ -259,7 +259,7 @@ static void test_read_mi_data(nvme_mi_ep_t ep)
 }
 
 /* test: failed transport */
-static int test_transport_fail_cb(struct nvme_mi_ep *ep,
+static int test_transport_fail_cb(struct libnvme_mi_ep *ep,
 				  struct libnvme_mi_req *req,
 				  struct libnvme_mi_resp *resp,
 				  void *data)
@@ -298,7 +298,7 @@ static void test_transport_describe(nvme_mi_ep_t ep)
 }
 
 /* test: invalid crc */
-static int test_invalid_crc_cb(struct nvme_mi_ep *ep,
+static int test_invalid_crc_cb(struct libnvme_mi_ep *ep,
 				      struct libnvme_mi_req *req,
 				      struct libnvme_mi_resp *resp,
 				      void *data)
@@ -319,7 +319,7 @@ static void test_invalid_crc(nvme_mi_ep_t ep)
 
 /* test: test that the controller list populates the endpoint's list of
  * controllers */
-static int test_scan_ctrl_list_cb(struct nvme_mi_ep *ep,
+static int test_scan_ctrl_list_cb(struct libnvme_mi_ep *ep,
 				  struct libnvme_mi_req *req,
 				  struct libnvme_mi_resp *resp,
 				  void *data)
@@ -387,7 +387,7 @@ static void test_scan_ctrl_list(nvme_mi_ep_t ep)
 }
 
 /* test: simple NVMe admin request/response */
-static int test_admin_id_cb(struct nvme_mi_ep *ep,
+static int test_admin_id_cb(struct libnvme_mi_ep *ep,
 				  struct libnvme_mi_req *req,
 				  struct libnvme_mi_resp *resp,
 				  void *data)
@@ -454,7 +454,7 @@ static void test_admin_id(nvme_mi_ep_t ep)
 }
 
 /* test: simple NVMe error response, error reported in the MI header */
-static int test_admin_err_mi_resp_cb(struct nvme_mi_ep *ep,
+static int test_admin_err_mi_resp_cb(struct libnvme_mi_ep *ep,
 				  struct libnvme_mi_req *req,
 				  struct libnvme_mi_resp *resp,
 				  void *data)
@@ -512,7 +512,7 @@ static void test_admin_err_mi_resp(nvme_mi_ep_t ep)
 }
 
 /* test: NVMe Admin error, with the error reported in the Admin response */
-static int test_admin_err_nvme_resp_cb(struct nvme_mi_ep *ep,
+static int test_admin_err_nvme_resp_cb(struct libnvme_mi_ep *ep,
 				  struct libnvme_mi_req *req,
 				  struct libnvme_mi_resp *resp,
 				  void *data)
@@ -578,7 +578,7 @@ static void test_admin_err_nvme_resp(nvme_mi_ep_t ep)
 }
 
 /* invalid command transfers */
-static int test_rejected_command_cb(struct nvme_mi_ep *ep,
+static int test_rejected_command_cb(struct libnvme_mi_ep *ep,
 					 struct libnvme_mi_req *req,
 					 struct libnvme_mi_resp *resp,
 					 void *data)
@@ -663,7 +663,7 @@ static void test_mi_invalid_formats(nvme_mi_ep_t ep)
 }
 
 /* test: header length too small */
-static int test_resp_hdr_small_cb(struct nvme_mi_ep *ep,
+static int test_resp_hdr_small_cb(struct libnvme_mi_ep *ep,
 				  struct libnvme_mi_req *req,
 				  struct libnvme_mi_resp *resp,
 				  void *data)
@@ -685,7 +685,7 @@ static void test_resp_hdr_small(nvme_mi_ep_t ep)
 }
 
 /* test: respond with a request message */
-static int test_resp_req_cb(struct nvme_mi_ep *ep,
+static int test_resp_req_cb(struct libnvme_mi_ep *ep,
 			    struct libnvme_mi_req *req,
 			    struct libnvme_mi_resp *resp,
 			    void *data)
@@ -707,7 +707,7 @@ static void test_resp_req(nvme_mi_ep_t ep)
 }
 
 /* test: invalid MCTP type in response */
-static int test_resp_invalid_type_cb(struct nvme_mi_ep *ep,
+static int test_resp_invalid_type_cb(struct libnvme_mi_ep *ep,
 				     struct libnvme_mi_req *req,
 				     struct libnvme_mi_resp *resp,
 				     void *data)
@@ -729,7 +729,7 @@ static void test_resp_invalid_type(nvme_mi_ep_t ep)
 }
 
 /* test: response with mis-matching command slot */
-static int test_resp_csi_invert_cb(struct nvme_mi_ep *ep,
+static int test_resp_csi_invert_cb(struct libnvme_mi_ep *ep,
 			    struct libnvme_mi_req *req,
 			    struct libnvme_mi_resp *resp,
 			    void *data)
@@ -740,7 +740,7 @@ static int test_resp_csi_invert_cb(struct nvme_mi_ep *ep,
 }
 
 /* test: validation of proper csi setting */
-static int test_resp_csi_check_cb(struct nvme_mi_ep *ep,
+static int test_resp_csi_check_cb(struct libnvme_mi_ep *ep,
 	struct libnvme_mi_req *req,
 	struct libnvme_mi_resp *resp,
 	void *data)
@@ -791,7 +791,7 @@ static void test_resp_csi_mismatch(nvme_mi_ep_t ep)
 
 /* test: config get MTU request & response layout, ensure we're handling
  * endianness in the 3-byte NMRESP field correctly */
-static int test_mi_config_get_mtu_cb(struct nvme_mi_ep *ep,
+static int test_mi_config_get_mtu_cb(struct libnvme_mi_ep *ep,
 			    struct libnvme_mi_req *req,
 			    struct libnvme_mi_resp *resp,
 			    void *data)
@@ -833,7 +833,7 @@ static void test_mi_config_get_mtu(nvme_mi_ep_t ep)
 }
 
 /* test: config set SMBus freq, both valid and invalid */
-static int test_mi_config_set_freq_cb(struct nvme_mi_ep *ep,
+static int test_mi_config_set_freq_cb(struct libnvme_mi_ep *ep,
 			    struct libnvme_mi_req *req,
 			    struct libnvme_mi_resp *resp,
 			    void *data)
@@ -896,7 +896,7 @@ static void test_mi_config_set_freq_invalid(nvme_mi_ep_t ep)
 /* Get Features callback, implementing Arbitration (which doesn't return
  * additional data) and Timestamp (which does).
  */
-static int test_admin_get_features_cb(struct nvme_mi_ep *ep,
+static int test_admin_get_features_cb(struct libnvme_mi_ep *ep,
 			    struct libnvme_mi_req *req,
 			    struct libnvme_mi_resp *resp,
 			    void *data)
@@ -983,7 +983,7 @@ static void test_get_features(nvme_mi_ep_t ep)
 }
 
 /* Set Features callback for timestamp */
-static int test_admin_set_features_cb(struct nvme_mi_ep *ep,
+static int test_admin_set_features_cb(struct libnvme_mi_ep *ep,
 			    struct libnvme_mi_req *req,
 			    struct libnvme_mi_resp *resp,
 			    void *data)
@@ -1056,7 +1056,7 @@ enum ns_type {
 	NS_ALLOC,
 };
 
-static int test_admin_id_ns_list_cb(struct nvme_mi_ep *ep,
+static int test_admin_id_ns_list_cb(struct libnvme_mi_ep *ep,
 				    struct libnvme_mi_req *req,
 				    struct libnvme_mi_resp *resp,
 				    void *data)
@@ -1102,7 +1102,7 @@ static int test_admin_id_ns_list_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_id_alloc_ns_list(struct nvme_mi_ep *ep)
+static void test_admin_id_alloc_ns_list(struct libnvme_mi_ep *ep)
 {
 	struct libnvme_transport_handle *hdl;
 	struct libnvme_passthru_cmd cmd;
@@ -1125,7 +1125,7 @@ static void test_admin_id_alloc_ns_list(struct nvme_mi_ep *ep)
 	assert(le32_to_cpu(list.ns[2]) == 0);
 }
 
-static void test_admin_id_active_ns_list(struct nvme_mi_ep *ep)
+static void test_admin_id_active_ns_list(struct libnvme_mi_ep *ep)
 {
 	struct libnvme_transport_handle *hdl;
 	struct libnvme_passthru_cmd cmd;
@@ -1148,7 +1148,7 @@ static void test_admin_id_active_ns_list(struct nvme_mi_ep *ep)
 	assert(le32_to_cpu(list.ns[2]) == 0);
 }
 
-static int test_admin_id_ns_cb(struct nvme_mi_ep *ep,
+static int test_admin_id_ns_cb(struct libnvme_mi_ep *ep,
 			       struct libnvme_mi_req *req,
 			       struct libnvme_mi_resp *resp,
 			       void *data)
@@ -1190,7 +1190,7 @@ static int test_admin_id_ns_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_id_alloc_ns(struct nvme_mi_ep *ep)
+static void test_admin_id_alloc_ns(struct libnvme_mi_ep *ep)
 {
 	struct libnvme_transport_handle *hdl;
 	struct libnvme_passthru_cmd cmd;
@@ -1210,7 +1210,7 @@ static void test_admin_id_alloc_ns(struct nvme_mi_ep *ep)
 	assert(le64_to_cpu(id.nsze) == 1);
 }
 
-static void test_admin_id_active_ns(struct nvme_mi_ep *ep)
+static void test_admin_id_active_ns(struct libnvme_mi_ep *ep)
 {
 	struct libnvme_transport_handle *hdl;
 	struct libnvme_passthru_cmd cmd;
@@ -1230,7 +1230,7 @@ static void test_admin_id_active_ns(struct nvme_mi_ep *ep)
 	assert(le64_to_cpu(id.nsze) == 1);
 }
 
-static int test_admin_id_ns_ctrl_list_cb(struct nvme_mi_ep *ep,
+static int test_admin_id_ns_ctrl_list_cb(struct libnvme_mi_ep *ep,
 					 struct libnvme_mi_req *req,
 					 struct libnvme_mi_resp *resp,
 					 void *data)
@@ -1259,7 +1259,7 @@ static int test_admin_id_ns_ctrl_list_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_id_ns_ctrl_list(struct nvme_mi_ep *ep)
+static void test_admin_id_ns_ctrl_list(struct libnvme_mi_ep *ep)
 {
 	struct libnvme_transport_handle *hdl;
 	struct libnvme_passthru_cmd cmd;
@@ -1276,7 +1276,7 @@ static void test_admin_id_ns_ctrl_list(struct nvme_mi_ep *ep)
 	assert(!rc);
 }
 
-static int test_admin_id_secondary_ctrl_list_cb(struct nvme_mi_ep *ep,
+static int test_admin_id_secondary_ctrl_list_cb(struct libnvme_mi_ep *ep,
 						struct libnvme_mi_req *req,
 						struct libnvme_mi_resp *resp,
 						void *data)
@@ -1301,7 +1301,7 @@ static int test_admin_id_secondary_ctrl_list_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_id_secondary_ctrl_list(struct nvme_mi_ep *ep)
+static void test_admin_id_secondary_ctrl_list(struct libnvme_mi_ep *ep)
 {
 	struct nvme_secondary_ctrl_list list;
 	struct libnvme_transport_handle *hdl;
@@ -1319,7 +1319,7 @@ static void test_admin_id_secondary_ctrl_list(struct nvme_mi_ep *ep)
 	assert(!rc);
 }
 
-static int test_admin_ns_mgmt_cb(struct nvme_mi_ep *ep,
+static int test_admin_ns_mgmt_cb(struct libnvme_mi_ep *ep,
 				 struct libnvme_mi_req *req,
 				 struct libnvme_mi_resp *resp,
 				 void *data)
@@ -1374,7 +1374,7 @@ static int test_admin_ns_mgmt_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_ns_mgmt_create(struct nvme_mi_ep *ep)
+static void test_admin_ns_mgmt_create(struct libnvme_mi_ep *ep)
 {
 	struct nvme_ns_mgmt_host_sw_specified data = { 0 };
 	struct libnvme_transport_handle *hdl;
@@ -1399,7 +1399,7 @@ static void test_admin_ns_mgmt_create(struct nvme_mi_ep *ep)
 	assert(rc);
 }
 
-static void test_admin_ns_mgmt_delete(struct nvme_mi_ep *ep)
+static void test_admin_ns_mgmt_delete(struct libnvme_mi_ep *ep)
 {
 	struct libnvme_transport_handle *hdl;
 	struct libnvme_passthru_cmd cmd;
@@ -1423,7 +1423,7 @@ struct attach_op {
 	struct nvme_ctrl_list *list;
 };
 
-static int test_admin_ns_attach_cb(struct nvme_mi_ep *ep,
+static int test_admin_ns_attach_cb(struct libnvme_mi_ep *ep,
 				   struct libnvme_mi_req *req,
 				   struct libnvme_mi_resp *resp,
 				   void *data)
@@ -1459,7 +1459,7 @@ static int test_admin_ns_attach_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_ns_attach(struct nvme_mi_ep *ep)
+static void test_admin_ns_attach(struct libnvme_mi_ep *ep)
 {
 	struct nvme_ctrl_list list = { 0 };
 	struct attach_op aop;
@@ -1484,7 +1484,7 @@ static void test_admin_ns_attach(struct nvme_mi_ep *ep)
 	assert(!rc);
 }
 
-static void test_admin_ns_detach(struct nvme_mi_ep *ep)
+static void test_admin_ns_detach(struct libnvme_mi_ep *ep)
 {
 	struct nvme_ctrl_list list = { 0 };
 	struct attach_op aop;
@@ -1515,7 +1515,7 @@ struct fw_download_info {
 	void *data;
 };
 
-static int test_admin_fw_download_cb(struct nvme_mi_ep *ep,
+static int test_admin_fw_download_cb(struct libnvme_mi_ep *ep,
 				     struct libnvme_mi_req *req,
 				     struct libnvme_mi_resp *resp,
 				     void *data)
@@ -1543,7 +1543,7 @@ static int test_admin_fw_download_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_fw_download(struct nvme_mi_ep *ep)
+static void test_admin_fw_download(struct libnvme_mi_ep *ep)
 {
 	struct fw_download_info info;
 	unsigned char fw[4096];
@@ -1612,7 +1612,7 @@ struct fw_commit_info {
 	__u8 slot;
 };
 
-static int test_admin_fw_commit_cb(struct nvme_mi_ep *ep,
+static int test_admin_fw_commit_cb(struct libnvme_mi_ep *ep,
 				   struct libnvme_mi_req *req,
 				   struct libnvme_mi_resp *resp,
 				   void *data)
@@ -1637,7 +1637,7 @@ static int test_admin_fw_commit_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_fw_commit(struct nvme_mi_ep *ep)
+static void test_admin_fw_commit(struct libnvme_mi_ep *ep)
 {
 	struct libnvme_transport_handle *hdl;
 	struct libnvme_passthru_cmd cmd;
@@ -1685,7 +1685,7 @@ struct format_data {
 	__u8 lbaf;
 };
 
-static int test_admin_format_nvm_cb(struct nvme_mi_ep *ep,
+static int test_admin_format_nvm_cb(struct libnvme_mi_ep *ep,
 				    struct libnvme_mi_req *req,
 				    struct libnvme_mi_resp *resp,
 				    void *data)
@@ -1719,7 +1719,7 @@ static int test_admin_format_nvm_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_format_nvm(struct nvme_mi_ep *ep)
+static void test_admin_format_nvm(struct libnvme_mi_ep *ep)
 {
 	struct format_data args = { 0 };
 	struct libnvme_transport_handle *hdl;
@@ -1768,7 +1768,7 @@ struct nvme_sanitize_nvm_args {
 	bool emvs;
 };
 
-static int test_admin_sanitize_nvm_cb(struct nvme_mi_ep *ep,
+static int test_admin_sanitize_nvm_cb(struct libnvme_mi_ep *ep,
 				      struct libnvme_mi_req *req,
 				      struct libnvme_mi_resp *resp,
 				      void *data)
@@ -1799,7 +1799,7 @@ static int test_admin_sanitize_nvm_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_sanitize_nvm(struct nvme_mi_ep *ep)
+static void test_admin_sanitize_nvm(struct libnvme_mi_ep *ep)
 {
 	struct nvme_sanitize_nvm_args args = { 0 };
 	struct libnvme_transport_handle *hdl;
@@ -1842,7 +1842,7 @@ struct log_data {
 	int n;
 };
 
-static int test_admin_get_log_split_cb(struct nvme_mi_ep *ep,
+static int test_admin_get_log_split_cb(struct libnvme_mi_ep *ep,
 				       struct libnvme_mi_req *req,
 				       struct libnvme_mi_resp *resp,
 				       void *data)
@@ -1897,7 +1897,7 @@ static int test_admin_get_log_split_cb(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_admin_get_log_split(struct nvme_mi_ep *ep)
+static void test_admin_get_log_split(struct libnvme_mi_ep *ep)
 {
 	unsigned char buf[4096 * 2 + 4];
 	struct log_data ldata;
@@ -1919,7 +1919,7 @@ static void test_admin_get_log_split(struct nvme_mi_ep *ep)
 	assert(ldata.n == 3);
 }
 
-static int test_endpoint_quirk_probe_cb_stage2(struct nvme_mi_ep *ep,
+static int test_endpoint_quirk_probe_cb_stage2(struct libnvme_mi_ep *ep,
 						struct libnvme_mi_req *req,
 						struct libnvme_mi_resp *resp,
 						void *data)
@@ -1927,7 +1927,7 @@ static int test_endpoint_quirk_probe_cb_stage2(struct nvme_mi_ep *ep,
 	return test_read_mi_data_cb(ep, req, resp, data);
 }
 
-static int test_endpoint_quirk_probe_cb_stage1(struct nvme_mi_ep *ep,
+static int test_endpoint_quirk_probe_cb_stage1(struct libnvme_mi_ep *ep,
 						struct libnvme_mi_req *req,
 						struct libnvme_mi_resp *resp,
 						void *data)
@@ -1954,7 +1954,7 @@ static int test_endpoint_quirk_probe_cb_stage1(struct nvme_mi_ep *ep,
 	return 0;
 }
 
-static void test_endpoint_quirk_probe(struct nvme_mi_ep *ep)
+static void test_endpoint_quirk_probe(struct libnvme_mi_ep *ep)
 {
 	struct nvme_mi_read_nvm_ss_info ss_info;
 	int rc;
@@ -1978,7 +1978,7 @@ struct req_dlen_doff_data {
 	unsigned int exp_doff;
 };
 
-static int test_admin_dlen_doff_cb(struct nvme_mi_ep *ep,
+static int test_admin_dlen_doff_cb(struct libnvme_mi_ep *ep,
 			      struct libnvme_mi_req *req,
 			      struct libnvme_mi_resp *resp,
 			      void *data)
@@ -2010,7 +2010,7 @@ static int test_admin_dlen_doff_cb(struct nvme_mi_ep *ep,
 }
 
 /* Check dlen value on admin_xfer requests that include data. */
-static void test_admin_dlen_doff_req(struct nvme_mi_ep *ep)
+static void test_admin_dlen_doff_req(struct libnvme_mi_ep *ep)
 {
 	struct {
 		struct nvme_mi_admin_req_hdr	hdr;
@@ -2038,7 +2038,7 @@ static void test_admin_dlen_doff_req(struct nvme_mi_ep *ep)
 
 /* Check dlen value on admin_xfer requests that return data in their response.
  */
-static void test_admin_dlen_doff_resp(struct nvme_mi_ep *ep)
+static void test_admin_dlen_doff_resp(struct libnvme_mi_ep *ep)
 {
 	struct {
 		struct nvme_mi_admin_resp_hdr	hdr;

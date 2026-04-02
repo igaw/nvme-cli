@@ -776,7 +776,7 @@ static int build_options(libnvme_host_t h, libnvme_ctrl_t c, char **argstr)
 	}
 
 	if (cfg->tls) {
-		ret = __nvme_import_keys_from_config(h, c,
+		ret = __libnvme_import_keys_from_config(h, c,
 			&keyring_id, &key_id);
 		if (ret)
 			return ret;
@@ -1226,7 +1226,7 @@ static int nvmf_connect_disc_entry(libnvme_host_t h,
 		 "(transport: %s, traddr: %s, trsvcid %s)\n",
 		 fctx->transport, fctx->traddr, fctx->trsvcid);
 
-	ret = _nvme_create_ctrl(h->ctx, fctx, &c);
+	ret = _libnvme_create_ctrl(h->ctx, fctx, &c);
 	if (ret) {
 		libnvme_msg(h->ctx, LOG_DEBUG, "skipping discovery entry, "
 			 "failed to allocate %s controller with traddr %s\n",
@@ -1309,7 +1309,7 @@ static int nvme_discovery_log(const struct libnvme_get_discovery_args *args,
 	struct libnvme_transport_handle *hdl = libnvme_ctrl_get_transport_handle(args->c);
 	struct libnvme_passthru_cmd cmd;
 
-	log = __nvme_alloc(sizeof(*log));
+	log = __libnvme_alloc(sizeof(*log));
 	if (!log) {
 		libnvme_msg(ctx, LOG_ERR,
 			 "could not allocate memory for discovery log header\n");
@@ -1338,7 +1338,7 @@ static int nvme_discovery_log(const struct libnvme_get_discovery_args *args,
 
 		free(log);
 		entries_size = sizeof(*log->entries) * numrec;
-		log = __nvme_alloc(sizeof(*log) + entries_size);
+		log = __libnvme_alloc(sizeof(*log) + entries_size);
 		if (!log) {
 		libnvme_msg(ctx, LOG_ERR,
 				 "could not alloc memory for discovery log page\n");
@@ -1686,7 +1686,7 @@ static int nvme_fetch_cntrltype_dctype_from_id(libnvme_ctrl_t c)
 	_cleanup_free_ struct nvme_id_ctrl *id = NULL;
 	int ret;
 
-	id = __nvme_alloc(sizeof(*id));
+	id = __libnvme_alloc(sizeof(*id));
 	if (!id)
 		return -ENOMEM;
 
@@ -2134,7 +2134,7 @@ static int __create_discovery_ctrl(struct libnvme_global_ctx *ctx,
 	libnvme_ctrl_t c;
 	int tmo, ret;
 
-	ret = _nvme_create_ctrl(ctx, fctx, &c);
+	ret = _libnvme_create_ctrl(ctx, fctx, &c);
 	if (ret)
 		return ret;
 
@@ -2178,7 +2178,7 @@ static int nvmf_create_discovery_ctrl(struct libnvme_global_ctx *ctx,
 		return 0;
 	}
 
-	id = __nvme_alloc(sizeof(*id));
+	id = __libnvme_alloc(sizeof(*id));
 	if (!id) {
 		libnvme_free_ctrl(c);
 		return -ENOMEM;
@@ -2611,7 +2611,7 @@ static int nbft_connect(struct libnvme_global_ctx *ctx,
 	if (c && libnvme_ctrl_get_name(c))
 		return 0;
 
-	ret = _nvme_create_ctrl(ctx, fctx, &c);
+	ret = _libnvme_create_ctrl(ctx, fctx, &c);
 	if (ret)
 		return ret;
 
@@ -2987,7 +2987,7 @@ __public int nvmf_discovery(struct libnvme_global_ctx *ctx, struct nvmf_context 
 		ret = libnvme_scan_ctrl(ctx, fctx->device, &c);
 		if (!ret) {
 			/* Check if device matches command-line options */
-			if (!_nvme_ctrl_match_config(c, fctx)) {
+			if (!_libnvme_ctrl_match_config(c, fctx)) {
 				libnvme_msg(ctx, LOG_ERR,
 				    "ctrl device %s found, ignoring non matching command-line options\n",
 				    fctx->device);
@@ -3085,7 +3085,7 @@ __public int nvmf_connect(struct libnvme_global_ctx *ctx, struct nvmf_context *f
 		return -EALREADY;
 	}
 
-	err = _nvme_create_ctrl(ctx, fctx, &c);
+	err = _libnvme_create_ctrl(ctx, fctx, &c);
 	if (err)
 		return err;
 

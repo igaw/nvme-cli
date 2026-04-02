@@ -1108,7 +1108,7 @@ static bool ctrl_config_match(const char *tag,
 		reference_ctrl->address = (char *)reference->address;
 	}
 
-	match = _nvme_ctrl_match_config(reference_ctrl, &candidate->f);
+	match = _libnvme_ctrl_match_config(reference_ctrl, &candidate->f);
 
 	if (should_match) {
 		if (!match) {

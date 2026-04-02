@@ -1460,7 +1460,7 @@ int main(void)
 
 	fd = test_setup_log();
 
-	__nvme_mi_mctp_set_ops(&ops);
+	__libnvme_mi_mctp_set_ops(&ops);
 
 	ctx = libnvme_create_global_ctx(fd, DEFAULT_LOGLEVEL);
 	assert(ctx);

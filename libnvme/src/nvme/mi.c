@@ -62,7 +62,7 @@ static int parse_devname(const char *dev, unsigned int *net, uint8_t *eid,
 	return -EINVAL;
 }
 
-int __nvme_transport_handle_init_mi(struct libnvme_transport_handle *hdl)
+int __libnvme_transport_handle_init_mi(struct libnvme_transport_handle *hdl)
 {
 	if (hdl->type != LIBNVME_TRANSPORT_HANDLE_TYPE_UNKNOWN)
 		return -EALREADY;
@@ -72,13 +72,13 @@ int __nvme_transport_handle_init_mi(struct libnvme_transport_handle *hdl)
 	return 0;
 }
 
-int __nvme_transport_handle_open_mi(struct libnvme_transport_handle *hdl, const char *devname)
+int __libnvme_transport_handle_open_mi(struct libnvme_transport_handle *hdl, const char *devname)
 {
 	unsigned int rc, net, ctrl_id;
 	unsigned char eid;
-	struct nvme_mi_ep *ep;
+	struct libnvme_mi_ep *ep;
 
-	rc = __nvme_transport_handle_init_mi(hdl);
+	rc = __libnvme_transport_handle_init_mi(hdl);
 	if (rc)
 		return rc;
 
@@ -93,13 +93,13 @@ int __nvme_transport_handle_open_mi(struct libnvme_transport_handle *hdl, const 
 	return 0;
 }
 
-void __nvme_transport_handle_close_mi(struct libnvme_transport_handle *hdl)
+void __libnvme_transport_handle_close_mi(struct libnvme_transport_handle *hdl)
 {
 	list_del(&hdl->ep_entry);
 	free(hdl);
 }
 
-static void nvme_mi_record_resp_time(struct nvme_mi_ep *ep)
+static void nvme_mi_record_resp_time(struct libnvme_mi_ep *ep)
 {
 	int rc;
 
@@ -107,7 +107,7 @@ static void nvme_mi_record_resp_time(struct nvme_mi_ep *ep)
 	ep->last_resp_time_valid = !rc;
 }
 
-static bool nvme_mi_compare_vid_mn(struct nvme_mi_ep *ep,
+static bool nvme_mi_compare_vid_mn(struct libnvme_mi_ep *ep,
 				   struct nvme_id_ctrl *id,
 				   __u16 vid, const char *mn)
 
@@ -149,7 +149,7 @@ static void __nvme_mi_format_mn(struct nvme_id_ctrl *id,
 
 #define nvme_mi_format_mn(id, m) __nvme_mi_format_mn(id, m, sizeof(m))
 
-void libnvme_mi_ep_probe(struct nvme_mi_ep *ep)
+void libnvme_mi_ep_probe(struct libnvme_mi_ep *ep)
 {
 	struct nvme_id_ctrl id = { 0 };
 	struct libnvme_transport_handle *hdl;
@@ -246,7 +246,7 @@ static const int nsec_per_sec = 1000 * 1000 * 1000;
 		}							\
 	} while (0)
 
-static void nvme_mi_insert_delay(struct nvme_mi_ep *ep)
+static void nvme_mi_insert_delay(struct libnvme_mi_ep *ep)
 {
 	struct timespec now, next, delay;
 	int rc;
@@ -276,9 +276,9 @@ static void nvme_mi_insert_delay(struct nvme_mi_ep *ep)
 	nanosleep(&delay, NULL);
 }
 
-struct nvme_mi_ep *libnvme_mi_init_ep(struct libnvme_global_ctx *ctx)
+struct libnvme_mi_ep *libnvme_mi_init_ep(struct libnvme_global_ctx *ctx)
 {
-	struct nvme_mi_ep *ep;
+	struct libnvme_mi_ep *ep;
 
 	ep = calloc(1, sizeof(*ep));
 	if (!ep)
@@ -329,11 +329,11 @@ __public struct libnvme_transport_handle *nvme_mi_init_transport_handle(nvme_mi_
 {
 	struct libnvme_transport_handle *hdl;
 
-	hdl = __nvme_create_transport_handle(ep->ctx);
+	hdl = __libnvme_create_transport_handle(ep->ctx);
 	if (!hdl)
 		return NULL;
 
-	__nvme_transport_handle_init_mi(hdl);
+	__libnvme_transport_handle_init_mi(hdl);
 
 	hdl->ep = ep;
 	hdl->id = ctrl_id;
@@ -1316,7 +1316,7 @@ __public char *nvme_mi_endpoint_desc(nvme_mi_ep_t ep)
 
 __public nvme_mi_ep_t nvme_mi_first_endpoint(struct libnvme_global_ctx *ctx)
 {
-	return list_top(&ctx->endpoints, struct nvme_mi_ep, root_entry);
+	return list_top(&ctx->endpoints, struct libnvme_mi_ep, root_entry);
 }
 
 __public nvme_mi_ep_t nvme_mi_next_endpoint(struct libnvme_global_ctx *ctx, nvme_mi_ep_t ep)
