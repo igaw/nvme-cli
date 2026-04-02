@@ -65,7 +65,7 @@ int map_log_level(int verbose, bool quiet)
 	return log_level;
 }
 
-static void nvme_show_common(struct nvme_passthru_cmd *cmd)
+static void nvme_show_common(struct libnvme_passthru_cmd *cmd)
 {
 	nvme_show_key_value("opcode       ", "%02x", cmd->opcode);
 	nvme_show_key_value("flags        ", "%02x", cmd->flags);
@@ -86,7 +86,7 @@ static void nvme_show_common(struct nvme_passthru_cmd *cmd)
 	nvme_show_key_value("timeout_ms   ", "%08x", cmd->timeout_ms);
 }
 
-static void nvme_show_command(struct nvme_passthru_cmd *cmd, int err)
+static void nvme_show_command(struct libnvme_passthru_cmd *cmd, int err)
 {
 	nvme_show_common(cmd);
 	nvme_show_key_value("result       ", "%"PRIx64"", (uint64_t)(uintptr_t)cmd->result);
@@ -105,11 +105,11 @@ static void nvme_log_retry(int errnum)
 	if (log_level < LOG_DEBUG)
 		return;
 
-	printf("passthru command returned '%s'\n", nvme_strerror(errnum));
+	printf("passthru command returned '%s'\n", libnvme_strerror(errnum));
 }
 
-void *nvme_submit_entry(struct nvme_transport_handle *hdl,
-		struct nvme_passthru_cmd *cmd)
+void *nvme_submit_entry(struct libnvme_transport_handle *hdl,
+		struct libnvme_passthru_cmd *cmd)
 {
 	memset(&sb, 0, sizeof(sb));
 
@@ -119,8 +119,8 @@ void *nvme_submit_entry(struct nvme_transport_handle *hdl,
 	return &sb;
 }
 
-void nvme_submit_exit(struct nvme_transport_handle *hdl,
-		struct nvme_passthru_cmd *cmd, int err, void *user_data)
+void nvme_submit_exit(struct libnvme_transport_handle *hdl,
+		struct libnvme_passthru_cmd *cmd, int err, void *user_data)
 {
 	struct submit_data *sb = user_data;
 
@@ -131,8 +131,8 @@ void nvme_submit_exit(struct nvme_transport_handle *hdl,
 	}
 }
 
-bool nvme_decide_retry(struct nvme_transport_handle *hdl,
-		struct nvme_passthru_cmd *cmd, int err)
+bool nvme_decide_retry(struct libnvme_transport_handle *hdl,
+		struct libnvme_passthru_cmd *cmd, int err)
 {
 	if (!nvme_args.no_retries)
 		return false;
@@ -145,10 +145,10 @@ bool nvme_decide_retry(struct nvme_transport_handle *hdl,
 	return true;
 }
 
-static void nvme_show_req_admin(const struct nvme_mi_admin_req_hdr *hdr, size_t hdr_len,
+static void nvme_show_req_admin(const struct libnvme_mi_admin_req_hdr *hdr, size_t hdr_len,
 				const void *data, size_t data_len)
 {
-	struct nvme_passthru_cmd cmd = {
+	struct libnvme_passthru_cmd cmd = {
 		.opcode = hdr->opcode,
 		.flags = hdr->flags,
 		.nsid = le32_to_cpu(hdr->cdw1),
@@ -169,7 +169,7 @@ static void nvme_show_req_admin(const struct nvme_mi_admin_req_hdr *hdr, size_t 
 	nvme_show_key_value("dlen         ", "%08x", le32_to_cpu(hdr->dlen));
 }
 
-static void nvme_show_req(__u8 type, const struct nvme_mi_msg_hdr *hdr, size_t hdr_len,
+static void nvme_show_req(__u8 type, const struct libnvme_mi_msg_hdr *hdr, size_t hdr_len,
 			  const void *data, size_t data_len)
 {
 	if (type != NVME_MI_MSGTYPE_NVME)
@@ -181,7 +181,7 @@ static void nvme_show_req(__u8 type, const struct nvme_mi_msg_hdr *hdr, size_t h
 	case NVME_MI_MT_MI:
 		break;
 	case NVME_MI_MT_ADMIN:
-		nvme_show_req_admin((struct nvme_mi_admin_req_hdr *)hdr, hdr_len, data, data_len);
+		nvme_show_req_admin((struct libnvme_mi_admin_req_hdr *)hdr, hdr_len, data, data_len);
 		break;
 	case NVME_MI_MT_PCIE:
 		break;
@@ -192,7 +192,7 @@ static void nvme_show_req(__u8 type, const struct nvme_mi_msg_hdr *hdr, size_t h
 	}
 }
 
-void *nvme_mi_submit_entry(__u8 type, const struct nvme_mi_msg_hdr *hdr, size_t hdr_len,
+void *nvme_mi_submit_entry(__u8 type, const struct libnvme_mi_msg_hdr *hdr, size_t hdr_len,
 			   const void *data, size_t data_len)
 {
 	memset(&sb, 0, sizeof(sb));
@@ -205,14 +205,14 @@ void *nvme_mi_submit_entry(__u8 type, const struct nvme_mi_msg_hdr *hdr, size_t 
 	return &sb;
 }
 
-static void nvme_show_resp_admin(const struct nvme_mi_admin_resp_hdr *hdr, size_t hdr_len,
+static void nvme_show_resp_admin(const struct libnvme_mi_admin_resp_hdr *hdr, size_t hdr_len,
 				 const void *data, size_t data_len)
 {
 	printf("result       : %08x\n", le32_to_cpu(hdr->cdw0));
 	printf("err          : %d\n", hdr->status);
 }
 
-static void nvme_show_resp(__u8 type, const struct nvme_mi_msg_hdr *hdr, size_t hdr_len,
+static void nvme_show_resp(__u8 type, const struct libnvme_mi_msg_hdr *hdr, size_t hdr_len,
 			   const void *data, size_t data_len)
 {
 	if (type != NVME_MI_MSGTYPE_NVME)
@@ -224,7 +224,7 @@ static void nvme_show_resp(__u8 type, const struct nvme_mi_msg_hdr *hdr, size_t 
 	case NVME_MI_MT_MI:
 		break;
 	case NVME_MI_MT_ADMIN:
-		nvme_show_resp_admin((struct nvme_mi_admin_resp_hdr *)hdr, hdr_len, data, data_len);
+		nvme_show_resp_admin((struct libnvme_mi_admin_resp_hdr *)hdr, hdr_len, data, data_len);
 		break;
 	case NVME_MI_MT_PCIE:
 		break;
@@ -235,7 +235,7 @@ static void nvme_show_resp(__u8 type, const struct nvme_mi_msg_hdr *hdr, size_t 
 	}
 }
 
-void nvme_mi_submit_exit(__u8 type, const struct nvme_mi_msg_hdr *hdr, size_t hdr_len,
+void nvme_mi_submit_exit(__u8 type, const struct libnvme_mi_msg_hdr *hdr, size_t hdr_len,
 			 const void *data, size_t data_len, void *user_data)
 {
 	struct submit_data *sb = user_data;

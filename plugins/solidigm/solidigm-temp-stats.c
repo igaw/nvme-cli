@@ -40,10 +40,10 @@ static void show_temp_stats(struct temp_stats *stats)
 
 int sldgm_get_temp_stats_log(int argc, char **argv, struct command *acmd, struct plugin *plugin)
 {
-	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
-	_cleanup_nvme_transport_handle_ struct nvme_transport_handle *hdl = NULL;
+	_cleanup_nvme_global_ctx_ struct libnvme_global_ctx *ctx = NULL;
+	_cleanup_nvme_transport_handle_ struct libnvme_transport_handle *hdl = NULL;
 	unsigned char buffer[4096] = {0};
-	struct nvme_passthru_cmd cmd;
+	struct libnvme_passthru_cmd cmd;
 	__u8 uuid_idx;
 	int err;
 

@@ -16,7 +16,7 @@
 #define TEST_FD 0xFD
 #define PDU_SIZE NVME_LOG_PAGE_PDU_SIZE
 
-static struct nvme_transport_handle *test_hdl;
+static struct libnvme_transport_handle *test_hdl;
 
 static void test_no_retries(void)
 {
@@ -628,11 +628,11 @@ static void run_test(const char *test_name, void (*test_fn)(void))
 
 int main(void)
 {
-	struct nvme_global_ctx *ctx =
-		nvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
+	struct libnvme_global_ctx *ctx =
+		libnvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
 
 	set_mock_fd(TEST_FD);
-	check(!nvme_open(ctx, "NVME_TEST_FD", &test_hdl),
+	check(!libnvme_open(ctx, "NVME_TEST_FD", &test_hdl),
 	      "opening test link failed");
 
 	RUN_TEST(no_retries);
@@ -648,5 +648,5 @@ int main(void)
 	RUN_TEST(chgcnt_max_retries);
 	RUN_TEST(buffer_too_short);
 
-	nvme_free_global_ctx(ctx);
+	libnvme_free_global_ctx(ctx);
 }

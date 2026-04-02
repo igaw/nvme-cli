@@ -81,7 +81,7 @@ static char *trtype_to_string(__u8 transport_type)
 		}							\
 	} while (0)
 
-static int __get_heap_obj(struct nvme_global_ctx *ctx,
+static int __get_heap_obj(struct libnvme_global_ctx *ctx,
 		struct nbft_header *header, const char *filename,
 		const char *descriptorname, const char *fieldname,
 		struct nbft_heap_obj obj, bool is_string,
@@ -161,7 +161,7 @@ static struct nbft_info_security *security_from_index(struct nbft_info *nbft,
 	return NULL;
 }
 
-static int read_ssns_exended_info(struct nvme_global_ctx *ctx,
+static int read_ssns_exended_info(struct libnvme_global_ctx *ctx,
 		struct nbft_info *nbft, struct nbft_info_subsystem_ns *ssns,
 		struct nbft_ssns_ext_info *raw_ssns_ei)
 {
@@ -186,7 +186,7 @@ static int read_ssns_exended_info(struct nvme_global_ctx *ctx,
 	return 0;
 }
 
-static int read_ssns(struct nvme_global_ctx *ctx,
+static int read_ssns(struct libnvme_global_ctx *ctx,
 		struct nbft_info *nbft, struct nbft_ssns *raw_ssns,
 		struct nbft_info_subsystem_ns **s)
 {
@@ -351,7 +351,7 @@ fail:
 	return ret;
 }
 
-static int read_hfi_info_tcp(struct nvme_global_ctx *ctx,
+static int read_hfi_info_tcp(struct libnvme_global_ctx *ctx,
 		struct nbft_info *nbft,
 		struct nbft_hfi_info_tcp *raw_hfi_info_tcp,
 		struct nbft_info_hfi *hfi)
@@ -402,7 +402,7 @@ static int read_hfi_info_tcp(struct nvme_global_ctx *ctx,
 	return 0;
 }
 
-static int read_hfi(struct nvme_global_ctx *ctx, struct nbft_info *nbft,
+static int read_hfi(struct libnvme_global_ctx *ctx, struct nbft_info *nbft,
 		struct nbft_hfi *raw_hfi, struct nbft_info_hfi **h)
 {
 	int ret;
@@ -455,7 +455,7 @@ fail:
 	return ret;
 }
 
-static int read_discovery(struct nvme_global_ctx *ctx,
+static int read_discovery(struct libnvme_global_ctx *ctx,
 		struct nbft_info *nbft,
 		struct nbft_discovery *raw_discovery,
 		struct nbft_info_discovery **d)
@@ -508,14 +508,14 @@ error:
 	return r;
 }
 
-static int read_security(struct nvme_global_ctx *ctx, struct nbft_info *nbft,
+static int read_security(struct libnvme_global_ctx *ctx, struct nbft_info *nbft,
 		struct nbft_security *raw_security,
 		struct nbft_info_security **s)
 {
 	return -EINVAL;
 }
 
-static void read_hfi_descriptors(struct nvme_global_ctx *ctx,
+static void read_hfi_descriptors(struct libnvme_global_ctx *ctx,
 		struct nbft_info *nbft, int num_hfi,
 		struct nbft_hfi *raw_hfi_array, int hfi_len)
 {
@@ -529,7 +529,7 @@ static void read_hfi_descriptors(struct nvme_global_ctx *ctx,
 	}
 }
 
-static void read_security_descriptors(struct nvme_global_ctx *ctx,
+static void read_security_descriptors(struct libnvme_global_ctx *ctx,
 		struct nbft_info *nbft, int num_sec,
 		struct nbft_security *raw_sec_array, int sec_len)
 {
@@ -544,7 +544,7 @@ static void read_security_descriptors(struct nvme_global_ctx *ctx,
 	}
 }
 
-static void read_discovery_descriptors(struct nvme_global_ctx *ctx,
+static void read_discovery_descriptors(struct libnvme_global_ctx *ctx,
 		struct nbft_info *nbft, int num_disc,
 		struct nbft_discovery *raw_disc_array, int disc_len)
 {
@@ -559,7 +559,7 @@ static void read_discovery_descriptors(struct nvme_global_ctx *ctx,
 	}
 }
 
-static void read_ssns_descriptors(struct nvme_global_ctx *ctx,
+static void read_ssns_descriptors(struct libnvme_global_ctx *ctx,
 		struct nbft_info *nbft, int num_ssns,
 		struct nbft_ssns *raw_ssns_array, int ssns_len)
 {
@@ -580,7 +580,7 @@ static void read_ssns_descriptors(struct nvme_global_ctx *ctx,
  *
  * Returns 0 on success, errno otherwise.
  */
-static int parse_raw_nbft(struct nvme_global_ctx *ctx, struct nbft_info *nbft)
+static int parse_raw_nbft(struct libnvme_global_ctx *ctx, struct nbft_info *nbft)
 {
 	__u8 *raw_nbft = nbft->raw_nbft;
 	int raw_nbft_size = nbft->raw_nbft_size;
@@ -712,7 +712,7 @@ static int parse_raw_nbft(struct nvme_global_ctx *ctx, struct nbft_info *nbft)
 	return 0;
 }
 
-__public void nvme_free_nbft(struct nvme_global_ctx *ctx, struct nbft_info *nbft)
+__public void libnvme_free_nbft(struct libnvme_global_ctx *ctx, struct nbft_info *nbft)
 {
 	struct nbft_info_hfi **hfi;
 	struct nbft_info_security **sec;
@@ -738,7 +738,7 @@ __public void nvme_free_nbft(struct nvme_global_ctx *ctx, struct nbft_info *nbft
 	free(nbft);
 }
 
-__public int nvme_read_nbft(struct nvme_global_ctx *ctx, struct nbft_info **nbft,
+__public int libnvme_read_nbft(struct libnvme_global_ctx *ctx, struct nbft_info **nbft,
 		const char *filename)
 {
 	__u8 *raw_nbft = NULL;
@@ -752,14 +752,14 @@ __public int nvme_read_nbft(struct nvme_global_ctx *ctx, struct nbft_info **nbft
 	raw_nbft_fp = fopen(filename, "rb");
 	if (raw_nbft_fp == NULL) {
 		nvme_msg(ctx, LOG_ERR, "Failed to open %s: %s\n",
-			 filename, nvme_strerror(errno));
+			 filename, libnvme_strerror(errno));
 		return -EINVAL;
 	}
 
 	i = fseek(raw_nbft_fp, 0L, SEEK_END);
 	if (i) {
 		nvme_msg(ctx, LOG_ERR, "Failed to read from %s: %s\n",
-			 filename, nvme_strerror(errno));
+			 filename, libnvme_strerror(errno));
 		fclose(raw_nbft_fp);
 		return -EINVAL;
 	}
@@ -778,7 +778,7 @@ __public int nvme_read_nbft(struct nvme_global_ctx *ctx, struct nbft_info **nbft
 	i = fread(raw_nbft, sizeof(*raw_nbft), raw_nbft_size, raw_nbft_fp);
 	if (i != raw_nbft_size) {
 		nvme_msg(ctx, LOG_ERR, "Failed to read from %s: %s\n",
-			 filename, nvme_strerror(errno));
+			 filename, libnvme_strerror(errno));
 		fclose(raw_nbft_fp);
 		free(raw_nbft);
 		return -EINVAL;
@@ -802,7 +802,7 @@ __public int nvme_read_nbft(struct nvme_global_ctx *ctx, struct nbft_info **nbft
 
 	if (parse_raw_nbft(ctx, *nbft)) {
 		nvme_msg(ctx, LOG_ERR, "Failed to parse %s\n", filename);
-		nvme_free_nbft(ctx, *nbft);
+		libnvme_free_nbft(ctx, *nbft);
 		return -EINVAL;
 	}
 	return 0;

@@ -25,7 +25,7 @@
 #include "private.h"
 #include "compiler_attributes.h"
 
-static int nvme_verify_chr(struct nvme_transport_handle *hdl)
+static int nvme_verify_chr(struct libnvme_transport_handle *hdl)
 {
 	static struct stat nvme_stat;
 	int err = fstat(hdl->fd, &nvme_stat);
@@ -38,7 +38,7 @@ static int nvme_verify_chr(struct nvme_transport_handle *hdl)
 	return 0;
 }
 
-__public int nvme_reset_subsystem(struct nvme_transport_handle *hdl)
+__public int libnvme_reset_subsystem(struct libnvme_transport_handle *hdl)
 {
 	int ret;
 
@@ -52,7 +52,7 @@ __public int nvme_reset_subsystem(struct nvme_transport_handle *hdl)
 	return ret;
 }
 
-__public int nvme_reset_ctrl(struct nvme_transport_handle *hdl)
+__public int libnvme_reset_ctrl(struct libnvme_transport_handle *hdl)
 {
 	int ret;
 
@@ -66,7 +66,7 @@ __public int nvme_reset_ctrl(struct nvme_transport_handle *hdl)
 	return ret;
 }
 
-__public int nvme_rescan_ns(struct nvme_transport_handle *hdl)
+__public int libnvme_rescan_ns(struct libnvme_transport_handle *hdl)
 {
 	int ret;
 
@@ -80,7 +80,7 @@ __public int nvme_rescan_ns(struct nvme_transport_handle *hdl)
 	return ret;
 }
 
-__public int nvme_get_nsid(struct nvme_transport_handle *hdl, __u32 *nsid)
+__public int libnvme_get_nsid(struct libnvme_transport_handle *hdl, __u32 *nsid)
 {
 	__u32 tmp;
 
@@ -93,19 +93,19 @@ __public int nvme_get_nsid(struct nvme_transport_handle *hdl, __u32 *nsid)
 	return 0;
 }
 
-void *__nvme_submit_entry(struct nvme_transport_handle *hdl,
-		struct nvme_passthru_cmd *cmd)
+void *__nvme_submit_entry(struct libnvme_transport_handle *hdl,
+		struct libnvme_passthru_cmd *cmd)
 {
 	return NULL;
 }
 
-void __nvme_submit_exit(struct nvme_transport_handle *hdl,
-		struct nvme_passthru_cmd *cmd, int err, void *user_data)
+void __nvme_submit_exit(struct libnvme_transport_handle *hdl,
+		struct libnvme_passthru_cmd *cmd, int err, void *user_data)
 {
 }
 
-bool __nvme_decide_retry(struct nvme_transport_handle *hdl,
-		struct nvme_passthru_cmd *cmd, int err)
+bool __nvme_decide_retry(struct libnvme_transport_handle *hdl,
+		struct libnvme_passthru_cmd *cmd, int err)
 {
 	return false;
 }
@@ -114,8 +114,8 @@ bool __nvme_decide_retry(struct nvme_transport_handle *hdl,
  * The 64 bit version is the preferred version to use, but for backwards
  * compatibility keep a 32 version.
  */
-static int nvme_submit_passthru32(struct nvme_transport_handle *hdl,
-		unsigned long ioctl_cmd, struct nvme_passthru_cmd *cmd)
+static int nvme_submit_passthru32(struct libnvme_transport_handle *hdl,
+		unsigned long ioctl_cmd, struct libnvme_passthru_cmd *cmd)
 {
 	struct linux_passthru_cmd32 cmd32;
 	void *user_data;
@@ -145,8 +145,8 @@ out:
  * supported since kernel 5.4, see
  * 65e68edce0db ("nvme: allow 64-bit results in passthru commands")
  */
-static int nvme_submit_passthru64(struct nvme_transport_handle *hdl,
-		unsigned long ioctl_cmd, struct nvme_passthru_cmd *cmd)
+static int nvme_submit_passthru64(struct libnvme_transport_handle *hdl,
+		unsigned long ioctl_cmd, struct libnvme_passthru_cmd *cmd)
 {
 	void *user_data;
 	int err = 0;
@@ -171,16 +171,16 @@ out:
 	return err;
 }
 
-__public int nvme_submit_io_passthru(struct nvme_transport_handle *hdl,
-		struct nvme_passthru_cmd *cmd)
+__public int libnvme_submit_io_passthru(struct libnvme_transport_handle *hdl,
+		struct libnvme_passthru_cmd *cmd)
 {
 	if (hdl->ioctl_io64)
 		return nvme_submit_passthru64(hdl, NVME_IOCTL_IO64_CMD, cmd);
 	return nvme_submit_passthru32(hdl, NVME_IOCTL_IO_CMD, cmd);
 }
 
-__public int nvme_submit_admin_passthru(struct nvme_transport_handle *hdl,
-		struct nvme_passthru_cmd *cmd)
+__public int libnvme_submit_admin_passthru(struct libnvme_transport_handle *hdl,
+		struct libnvme_passthru_cmd *cmd)
 {
 	switch (hdl->type) {
 	case NVME_TRANSPORT_HANDLE_TYPE_DIRECT:

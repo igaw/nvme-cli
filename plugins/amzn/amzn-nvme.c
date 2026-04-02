@@ -561,11 +561,11 @@ static int get_stats(int argc, char **argv, struct command *acmd,
 		     struct plugin *plugin)
 {
 	const char *desc = "display command latency statistics";
-	_cleanup_nvme_transport_handle_ struct nvme_transport_handle *hdl = NULL;
-	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
+	_cleanup_nvme_transport_handle_ struct libnvme_transport_handle *hdl = NULL;
+	_cleanup_nvme_global_ctx_ struct libnvme_global_ctx *ctx = NULL;
 	struct amzn_latency_log_page log = { 0 };
 	nvme_print_flags_t flags = 0;
-	struct nvme_passthru_cmd cmd;
+	struct libnvme_passthru_cmd cmd;
 	struct nvme_id_ctrl ctrl;
 	bool detail = false;
 	unsigned int interval = 0;
@@ -599,7 +599,7 @@ static int get_stats(int argc, char **argv, struct command *acmd,
 
 	if (!strncmp((char *)ctrl.mn, AMZN_NVME_LOCAL_STORAGE_PREFIX,
 		     strlen(AMZN_NVME_LOCAL_STORAGE_PREFIX))) {
-		if (nvme_get_nsid(hdl, &nsid) < 0) {
+		if (libnvme_get_nsid(hdl, &nsid) < 0) {
 			struct nvme_id_ctrl test_ctrl;
 
 			if (nvme_identify_ctrl(hdl, &test_ctrl) == 0) {

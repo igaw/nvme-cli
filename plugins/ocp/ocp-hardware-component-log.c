@@ -167,10 +167,10 @@ const char *hwcomp_id_to_string(__u32 id)
 	return "Reserved";
 }
 
-static int get_hwcomp_log_data(struct nvme_transport_handle *hdl, struct hwcomp_log *log)
+static int get_hwcomp_log_data(struct libnvme_transport_handle *hdl, struct hwcomp_log *log)
 {
 	size_t desc_offset = offsetof(struct hwcomp_log, desc);
-	struct nvme_passthru_cmd cmd;
+	struct libnvme_passthru_cmd cmd;
 	nvme_uint128_t log_size;
 	long double log_bytes;
 	__u32 len;
@@ -217,7 +217,7 @@ static int get_hwcomp_log_data(struct nvme_transport_handle *hdl, struct hwcomp_
 
 	log->desc = calloc(1, len);
 	if (!log->desc) {
-		fprintf(stderr, "error: ocp: calloc: %s\n", nvme_strerror(errno));
+		fprintf(stderr, "error: ocp: calloc: %s\n", libnvme_strerror(errno));
 		return -errno;
 	}
 
@@ -240,7 +240,7 @@ static int get_hwcomp_log_data(struct nvme_transport_handle *hdl, struct hwcomp_
 	return ret;
 }
 
-static int get_hwcomp_log(struct nvme_transport_handle *hdl, __u32 id, bool list)
+static int get_hwcomp_log(struct libnvme_transport_handle *hdl, __u32 id, bool list)
 {
 	int ret;
 	nvme_print_flags_t fmt;
@@ -270,8 +270,8 @@ static int get_hwcomp_log(struct nvme_transport_handle *hdl, __u32 id, bool list
 
 int ocp_hwcomp_log(int argc, char **argv, struct command *acmd, struct plugin *plugin)
 {
-	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
-	_cleanup_nvme_transport_handle_ struct nvme_transport_handle *hdl = NULL;
+	_cleanup_nvme_global_ctx_ struct libnvme_global_ctx *ctx = NULL;
+	_cleanup_nvme_transport_handle_ struct libnvme_transport_handle *hdl = NULL;
 	int ret = 0;
 	const char *desc = "retrieve hardware component log";
 	struct config {

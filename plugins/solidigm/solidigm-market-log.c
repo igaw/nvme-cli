@@ -29,9 +29,9 @@ int sldgm_get_market_log(int argc, char **argv, struct command *acmd,
 {
 	const char *desc = "Get Solidigm Marketing Name log and show it.";
 	const char *raw = "dump output in binary format";
-	_cleanup_nvme_global_ctx_ struct nvme_global_ctx *ctx = NULL;
-	_cleanup_nvme_transport_handle_ struct nvme_transport_handle *hdl = NULL;
-	struct nvme_passthru_cmd cmd;
+	_cleanup_nvme_global_ctx_ struct libnvme_global_ctx *ctx = NULL;
+	_cleanup_nvme_transport_handle_ struct libnvme_transport_handle *hdl = NULL;
+	struct libnvme_passthru_cmd cmd;
 	char log[MARKET_LOG_MAX_SIZE];
 	int err;
 	__u8 uuid_idx;

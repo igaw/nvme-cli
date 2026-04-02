@@ -148,7 +148,7 @@ void __nvme_mi_mctp_set_ops(const struct __mi_mctp_socket_ops *newops)
 }
 static const struct nvme_mi_transport nvme_mi_transport_mctp;
 
-static __u8 nvme_mi_mctp_tag_alloc(struct nvme_mi_ep *ep)
+static __u8 nvme_mi_mctp_tag_alloc(struct libnvme_mi_ep *ep)
 {
 	struct nvme_mi_transport_mctp *mctp;
 	struct mctp_ioc_tag_ctl ctl = { 0 };
@@ -175,7 +175,7 @@ static __u8 nvme_mi_mctp_tag_alloc(struct nvme_mi_ep *ep)
 	return ctl.tag;
 }
 
-static void nvme_mi_mctp_tag_drop(struct nvme_mi_ep *ep, __u8 tag)
+static void nvme_mi_mctp_tag_drop(struct libnvme_mi_ep *ep, __u8 tag)
 {
 	struct nvme_mi_transport_mctp *mctp;
 	struct mctp_ioc_tag_ctl ctl = { 0 };
@@ -192,7 +192,7 @@ static void nvme_mi_mctp_tag_drop(struct nvme_mi_ep *ep, __u8 tag)
 }
 
 struct nvme_mi_msg_resp_mpr {
-	struct nvme_mi_msg_hdr hdr;
+	struct libnvme_mi_msg_hdr hdr;
 	__u8	status;
 	__u8	rsvd0;
 	__u16	mprt;
@@ -226,7 +226,7 @@ static bool nvme_mi_mctp_resp_is_mpr(void *buf, size_t len,
 	 */
 	if (!(len == sizeof(*msg) ||
 	      ((msg->hdr.nmp >> 3 & 0x0f) == NVME_MI_MT_ADMIN &&
-	       len == sizeof(struct nvme_mi_admin_resp_hdr))))
+	       len == sizeof(struct libnvme_mi_admin_resp_hdr))))
 	    return false;
 
 	/* Verify the MIC from the response. We're dealing with linear
@@ -243,7 +243,7 @@ static bool nvme_mi_mctp_resp_is_mpr(void *buf, size_t len,
 	return true;
 }
 
-static int nvme_mi_mctp_aem_fd(struct nvme_mi_ep *ep)
+static int nvme_mi_mctp_aem_fd(struct libnvme_mi_ep *ep)
 {
 	struct nvme_mi_transport_mctp *mctp;
 
@@ -256,7 +256,7 @@ static int nvme_mi_mctp_aem_fd(struct nvme_mi_ep *ep)
 	return mctp->sd_aem;
 }
 
-static int nvme_mi_mctp_aem_purge(struct nvme_mi_ep *ep)
+static int nvme_mi_mctp_aem_purge(struct libnvme_mi_ep *ep)
 {
 	struct nvme_mi_transport_mctp *mctp = ep->transport_data;
 	struct msghdr msg = {0};
@@ -276,7 +276,7 @@ static int nvme_mi_mctp_aem_purge(struct nvme_mi_ep *ep)
 }
 
 
-static int nvme_mi_mctp_aem_read(struct nvme_mi_ep *ep,
+static int nvme_mi_mctp_aem_read(struct libnvme_mi_ep *ep,
 			       struct nvme_mi_resp *resp)
 {
 	ssize_t len, resp_len, resp_hdr_len, resp_data_len;
@@ -293,7 +293,7 @@ static int nvme_mi_mctp_aem_read(struct nvme_mi_ep *ep,
 	}
 
 	/* we need enough space for at least a generic (/error) response */
-	if (resp->hdr_len < sizeof(struct nvme_mi_msg_hdr)) {
+	if (resp->hdr_len < sizeof(struct libnvme_mi_msg_hdr)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -405,7 +405,7 @@ out:
 	return rc;
 }
 
-static int nvme_mi_mctp_submit(struct nvme_mi_ep *ep,
+static int nvme_mi_mctp_submit(struct libnvme_mi_ep *ep,
 			       struct nvme_mi_req *req,
 			       struct nvme_mi_resp *resp)
 {
@@ -426,7 +426,7 @@ static int nvme_mi_mctp_submit(struct nvme_mi_ep *ep,
 	}
 
 	/* we need enough space for at least a generic (/error) response */
-	if (resp->hdr_len < sizeof(struct nvme_mi_msg_resp)) {
+	if (resp->hdr_len < sizeof(struct libnvme_mi_msg_resp)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -609,7 +609,7 @@ out:
 	return rc;
 }
 
-static void nvme_mi_mctp_close(struct nvme_mi_ep *ep)
+static void nvme_mi_mctp_close(struct libnvme_mi_ep *ep)
 {
 	struct nvme_mi_transport_mctp *mctp;
 
@@ -625,7 +625,7 @@ static void nvme_mi_mctp_close(struct nvme_mi_ep *ep)
 	free(ep->transport_data);
 }
 
-static int nvme_mi_mctp_desc_ep(struct nvme_mi_ep *ep, char *buf, size_t len)
+static int nvme_mi_mctp_desc_ep(struct libnvme_mi_ep *ep, char *buf, size_t len)
 {
 	struct nvme_mi_transport_mctp *mctp;
 
@@ -652,7 +652,7 @@ static const struct nvme_mi_transport nvme_mi_transport_mctp = {
 	.aem_purge = nvme_mi_mctp_aem_purge,
 };
 
-int nvme_mi_aem_open(nvme_mi_ep_t ep)
+int libnvme_mi_aem_open(libnvme_mi_ep_t ep)
 {
 	struct nvme_mi_transport_mctp *mctp;
 
@@ -675,11 +675,11 @@ int nvme_mi_aem_open(nvme_mi_ep_t ep)
 	return 0;
 }
 
-__public nvme_mi_ep_t nvme_mi_open_mctp(struct nvme_global_ctx *ctx,
+__public libnvme_mi_ep_t libnvme_mi_open_mctp(struct libnvme_global_ctx *ctx,
 			       unsigned int netid, __u8 eid)
 {
 	struct nvme_mi_transport_mctp *mctp;
-	struct nvme_mi_ep *ep;
+	struct libnvme_mi_ep *ep;
 	int errno_save;
 
 	ep = nvme_mi_init_ep(ctx);
@@ -740,16 +740,16 @@ err_free_mctp:
 err_close_ep:
 	/* the ep->transport is not set yet, so this will not call back
 	 * into nvme_mi_mctp_close() */
-	nvme_mi_close(ep);
+	libnvme_mi_close(ep);
 	errno = errno_save;
 	return NULL;
 }
 
 #ifdef CONFIG_DBUS
 
-static int nvme_mi_mctp_add(struct nvme_global_ctx *ctx, unsigned int netid, __u8 eid)
+static int nvme_mi_mctp_add(struct libnvme_global_ctx *ctx, unsigned int netid, __u8 eid)
 {
-	nvme_mi_ep_t ep = NULL;
+	libnvme_mi_ep_t ep = NULL;
 
 	/* ensure we don't already have an endpoint with the same net/eid. if
 	 * we do, just skip, no need to re-add. */
@@ -762,7 +762,7 @@ static int nvme_mi_mctp_add(struct nvme_global_ctx *ctx, unsigned int netid, __u
 			return 0;
 	}
 
-	ep = nvme_mi_open_mctp(ctx, netid, eid);
+	ep = libnvme_mi_open_mctp(ctx, netid, eid);
 	if (!ep)
 		return -1;
 
@@ -812,7 +812,7 @@ static bool has_message_type(DBusMessageIter *prop, uint8_t type)
 	return false;
 }
 
-static int handle_mctp_endpoint(struct nvme_global_ctx *ctx, const char* objpath,
+static int handle_mctp_endpoint(struct libnvme_global_ctx *ctx, const char* objpath,
 	DBusMessageIter *props)
 {
 	bool have_eid = false, have_net = false, have_nvmemi = false;
@@ -888,7 +888,7 @@ static int handle_mctp_endpoint(struct nvme_global_ctx *ctx, const char* objpath
 /* obj is an array of (object path, interfaces) dict entries - ie., dbus type
  *   a{oa{sa{sv}}}
  */
-static int handle_mctp_obj(struct nvme_global_ctx *ctx, DBusMessageIter *obj)
+static int handle_mctp_obj(struct libnvme_global_ctx *ctx, DBusMessageIter *obj)
 {
 	const char *objpath = NULL;
 	DBusMessageIter intfs;
@@ -945,17 +945,17 @@ static int handle_mctp_obj(struct nvme_global_ctx *ctx, DBusMessageIter *obj)
 	return 0;
 }
 
-__public struct nvme_global_ctx *nvme_mi_scan_mctp(void)
+__public struct libnvme_global_ctx *libnvme_mi_scan_mctp(void)
 {
 	DBusMessage *msg, *resp = NULL;
 	DBusConnection *bus = NULL;
 	DBusMessageIter args, objs;
 	int errno_save, rc = -1;
-	struct nvme_global_ctx *ctx;
+	struct libnvme_global_ctx *ctx;
 	dbus_bool_t drc;
 	DBusError berr;
 
-	ctx = nvme_create_global_ctx(NULL, DEFAULT_LOGLEVEL);
+	ctx = libnvme_create_global_ctx(NULL, DEFAULT_LOGLEVEL);
 	if (!ctx) {
 		errno = ENOMEM;
 		return NULL;
@@ -1029,7 +1029,7 @@ out:
 
 	if (rc < 0) {
 		if (ctx) {
-			nvme_free_global_ctx(ctx);
+			libnvme_free_global_ctx(ctx);
 		}
 		errno = errno_save;
 		ctx = NULL;
@@ -1039,7 +1039,7 @@ out:
 
 #else /* CONFIG_DBUS */
 
-__public struct nvme_global_ctx *nvme_mi_scan_mctp(void)
+__public struct libnvme_global_ctx *libnvme_mi_scan_mctp(void)
 {
 	return NULL;
 }
