@@ -599,7 +599,7 @@ static int get_ana_log(int argc, char **argv, struct command *acmd,
 		return err;
 	}
 
-	max_ana_log_len = nvme_get_ana_log_len_from_id_ctrl(ctrl, cfg.groups);
+	max_ana_log_len = libnvme_get_ana_log_len_from_id_ctrl(ctrl, cfg.groups);
 	ana_log_len = max_ana_log_len;
 	if (ana_log_len < max_ana_log_len) {
 		nvme_show_error("ANA log length %zu too large", max_ana_log_len);
@@ -610,7 +610,7 @@ static int get_ana_log(int argc, char **argv, struct command *acmd,
 	if (!ana_log)
 		return -ENOMEM;
 
-	err = nvme_get_ana_log_atomic(hdl, true, cfg.groups, ana_log, &ana_log_len, 10);
+	err = libnvme_get_ana_log_atomic(hdl, true, cfg.groups, ana_log, &ana_log_len, 10);
 	if (err) {
 		nvme_show_err(err, "ana-log");
 		return err;
@@ -902,7 +902,7 @@ static int get_telemetry_log(int argc, char **argv, struct command *acmd,
 			return -EINVAL;
 		}
 
-		err = nvme_set_etdas(hdl, &host_behavior_changed);
+		err = libnvme_set_etdas(hdl, &host_behavior_changed);
 		if (err) {
 			fprintf(stderr, "%s: Failed to set ETDAS bit\n", __func__);
 			return err;
@@ -968,7 +968,7 @@ static int get_telemetry_log(int argc, char **argv, struct command *acmd,
 
 	if (host_behavior_changed) {
 		host_behavior_changed = false;
-		err = nvme_clear_etdas(hdl, &host_behavior_changed);
+		err = libnvme_clear_etdas(hdl, &host_behavior_changed);
 		if (err) {
 			fprintf(stderr, "%s: Failed to clear ETDAS bit\n", __func__);
 			return err;
@@ -2452,7 +2452,7 @@ static int get_log(int argc, char **argv, struct command *acmd, struct plugin *p
 			NVME_LOG_CDW14_OT_SHIFT,
 			NVME_LOG_CDW14_OT_MASK);
 
-	err = nvme_get_log(hdl, &cmd, cfg.rae, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(hdl, &cmd, cfg.rae, NVME_LOG_PAGE_PDU_SIZE);
 	if (err) {
 		nvme_show_err(err, "log page");
 		return err;
@@ -4793,7 +4793,7 @@ static int get_feature_id(struct libnvme_transport_handle *hdl, struct feat_cfg 
 			  void **buf, __u64 *result)
 {
 	if (!cfg->data_len)
-		nvme_get_feature_length(cfg->feature_id, cfg->cdw11,
+		libnvme_get_feature_length(cfg->feature_id, cfg->cdw11,
 					NVME_DATA_TFR_CTRL_TO_HOST,	
 					&cfg->data_len);
 
@@ -6929,7 +6929,7 @@ static int set_feature(int argc, char **argv, struct command *acmd, struct plugi
 	}
 
 	if (!cfg.data_len)
-		nvme_get_feature_length(cfg.fid, cfg.value,
+		libnvme_get_feature_length(cfg.fid, cfg.value,
 					 NVME_DATA_TFR_HOST_TO_CTRL,
 					 &cfg.data_len);
 
@@ -10666,7 +10666,7 @@ static int get_dispersed_ns_psub(struct libnvme_transport_handle *hdl, __u32 nsi
 		(void *)log->participating_nss, psub_list_len);
 	cmd.cdw12 = header_len & 0xffffffff;
 	cmd.cdw13 = header_len >> 32;
-	err = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (err)
 		goto err_free;
 
@@ -10830,7 +10830,7 @@ static int get_log_offset(struct libnvme_transport_handle *hdl,
 			NVME_LOG_CDW14_OT_SHIFT,
 			NVME_LOG_CDW14_OT_MASK);
 
-	err = nvme_get_log(hdl, &cmd, args->rae, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(hdl, &cmd, args->rae, NVME_LOG_PAGE_PDU_SIZE);
 	if (*args->result)
 		*args->result = cmd.result;
 	return err;

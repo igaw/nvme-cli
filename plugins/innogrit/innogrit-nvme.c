@@ -51,7 +51,7 @@ static int getlogpage(struct libnvme_transport_handle *hdl, unsigned char ilogid
 			NVME_LOG_CDW10_LSP_SHIFT,
 			NVME_LOG_CDW10_LSP_MASK);
 
-	return nvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
+	return libnvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
 }
 
 static int getvsctype(struct libnvme_transport_handle *hdl)

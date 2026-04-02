@@ -1610,7 +1610,7 @@ static int get_host_tele(int argc, char **argv, struct command *acmd, struct plu
 		nvme_init_get_log(&cmd, cfg.namespace_id, cfg.log_id,
 				  NVME_CSI_NVM, log, bytesToGet);
 		nvme_init_get_log_lpo(&cmd, offset);
-		err = nvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
+		err = libnvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
 		if (!err) {
 			offset += (__le64)bytesToGet;
 
@@ -1714,7 +1714,7 @@ static int get_ctrl_tele(int argc, char **argv, struct command *acmd, struct plu
 		nvme_init_get_log(&cmd, cfg.namespace_id, log_id,
 				  NVME_CSI_NVM, log, bytesToGet);
 		nvme_init_get_log_lpo(&cmd, offset);
-		err = nvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
+		err = libnvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
 		if (!err) {
 			offset += (__le64)bytesToGet;
 
@@ -1831,7 +1831,7 @@ static int vs_internal_log(int argc, char **argv, struct command *acmd, struct p
 		nvme_init_get_log(&cmd, cfg.namespace_id, log_id,
 				  NVME_CSI_NVM, log, bytesToGet);
 		nvme_init_get_log_lpo(&cmd, offset);
-		err = nvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
+		err = libnvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
 		if (!err) {
 			offset += (__le64)bytesToGet;
 

@@ -1912,7 +1912,7 @@ static void test_admin_get_log_split(struct libnvme_mi_ep *ep)
 
 	nvme_init_get_log(&cmd, NVME_NSID_ALL, NVME_LOG_LID_ERROR,
 		NVME_CSI_NVM, buf, sizeof(buf));
-	rc = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	rc = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	assert(!rc);
 
 	/* we should have sent three commands */

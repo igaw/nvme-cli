@@ -167,7 +167,7 @@ int solidigm_get_telemetry_log(int argc, char **argv, struct command *acmd, stru
 		size_t power2;
 		__u8 mdts = 0;
 
-		err = nvme_get_telemetry_max(hdl, NULL, &max_data_tx);
+		err = libnvme_get_telemetry_max(hdl, NULL, &max_data_tx);
 		if (err) {
 			nvme_show_err(err, "identify_ctrl");
 			return err;

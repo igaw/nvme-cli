@@ -5373,7 +5373,7 @@ nvme_init_copy_range_f3(struct nvme_copy_range_f3 *copy, __u32 *snsids,
 }
 
 /**
- * nvme_get_log() - Get log page data
+ * libnvme_get_log() - Get log page data
  * @hdl:	Transport handle
  * @cmd:	Passthru command
  * @rae:	Retain asynchronous events
@@ -5382,12 +5382,12 @@ nvme_init_copy_range_f3(struct nvme_copy_range_f3 *copy, __u32 *snsids,
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_get_log(struct libnvme_transport_handle *hdl,
+int libnvme_get_log(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd, bool rae,
 		 __u32 xfer_len);
 
 /**
- * nvme_set_etdas() - Set the Extended Telemetry Data Area 4 Supported bit
+ * libnvme_set_etdas() - Set the Extended Telemetry Data Area 4 Supported bit
  * @hdl:	Transport handle
  * @changed:	boolean to indicate whether or not the host
  *		behavior support feature had been changed
@@ -5395,10 +5395,10 @@ int nvme_get_log(struct libnvme_transport_handle *hdl,
  * Return: The nvme command status if a response was received (see
  * &enum nvme_status_field) or -1 with errno set otherwise.
  */
-int nvme_set_etdas(struct libnvme_transport_handle *hdl, bool *changed);
+int libnvme_set_etdas(struct libnvme_transport_handle *hdl, bool *changed);
 
 /**
- * nvme_clear_etdas() - Clear the Extended Telemetry Data Area 4 Supported bit
+ * libnvme_clear_etdas() - Clear the Extended Telemetry Data Area 4 Supported bit
  * @hdl:	Transport handle
  * @changed:	boolean to indicate whether or not the host
  *		behavior support feature had been changed
@@ -5406,21 +5406,21 @@ int nvme_set_etdas(struct libnvme_transport_handle *hdl, bool *changed);
  * Return: The nvme command status if a response was received (see
  * &enum nvme_status_field) or -1 with errno set otherwise.
  */
-int nvme_clear_etdas(struct libnvme_transport_handle *hdl, bool *changed);
+int libnvme_clear_etdas(struct libnvme_transport_handle *hdl, bool *changed);
 
 /**
- * nvme_get_uuid_list - Returns the uuid list (if supported)
+ * libnvme_get_uuid_list - Returns the uuid list (if supported)
  * @hdl:	Transport handle
  * @uuid_list:	UUID list returned by identify UUID
  *
  * Return: The nvme command status if a response was received (see
  * &enum nvme_status_field) or -1 with errno set otherwise.
  */
-int nvme_get_uuid_list(struct libnvme_transport_handle *hdl,
+int libnvme_get_uuid_list(struct libnvme_transport_handle *hdl,
 		struct nvme_id_uuid_list *uuid_list);
 
 /**
- * nvme_get_telemetry_max() - Get telemetry limits
+ * libnvme_get_telemetry_max() - Get telemetry limits
  * @hdl:	Transport handle
  * @da:		On success return max supported data area
  * @max_data_tx: On success set to max transfer chunk supported by
@@ -5429,11 +5429,11 @@ int nvme_get_uuid_list(struct libnvme_transport_handle *hdl,
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_get_telemetry_max(struct libnvme_transport_handle *hdl,
+int libnvme_get_telemetry_max(struct libnvme_transport_handle *hdl,
 		enum nvme_telemetry_da *da, size_t *max_data_tx);
 
 /**
- * nvme_get_telemetry_log() - Get specified telemetry log
+ * libnvme_get_telemetry_log() - Get specified telemetry log
  * @hdl:	Transport handle
  * @create:	Generate new host initated telemetry capture
  * @ctrl:	Get controller Initiated log
@@ -5449,13 +5449,13 @@ int nvme_get_telemetry_max(struct libnvme_transport_handle *hdl,
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_get_telemetry_log(struct libnvme_transport_handle *hdl, bool create,
+int libnvme_get_telemetry_log(struct libnvme_transport_handle *hdl, bool create,
 		bool ctrl, bool rae, size_t max_data_tx,
 		enum nvme_telemetry_da da, struct nvme_telemetry_log **log,
 		size_t *size);
 
 /**
- * nvme_get_ctrl_telemetry() - Get controller telemetry log
+ * libnvme_get_ctrl_telemetry() - Get controller telemetry log
  * @hdl:	Transport handle
  * @rae:	Retain asynchronous events
  * @log:	On success, set to the value of the allocated and retrieved log.
@@ -5468,12 +5468,12 @@ int nvme_get_telemetry_log(struct libnvme_transport_handle *hdl, bool create,
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_get_ctrl_telemetry(struct libnvme_transport_handle *hdl, bool rae,
+int libnvme_get_ctrl_telemetry(struct libnvme_transport_handle *hdl, bool rae,
 		struct nvme_telemetry_log **log,
 		enum nvme_telemetry_da da, size_t *size);
 
 /**
- * nvme_get_host_telemetry() - Get host telemetry log
+ * libnvme_get_host_telemetry() - Get host telemetry log
  * @hdl:	Transport handle
  * @log:	On success, set to the value of the allocated and retrieved log.
  * @da:		Log page data area, valid values: &enum nvme_telemetry_da
@@ -5485,12 +5485,12 @@ int nvme_get_ctrl_telemetry(struct libnvme_transport_handle *hdl, bool rae,
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_get_host_telemetry(struct libnvme_transport_handle *hdl,
+int libnvme_get_host_telemetry(struct libnvme_transport_handle *hdl,
 		struct nvme_telemetry_log **log,
 		enum nvme_telemetry_da da, size_t *size);
 
 /**
- * nvme_get_new_host_telemetry() - Get new host telemetry log
+ * libnvme_get_new_host_telemetry() - Get new host telemetry log
  * @hdl:	Transport handle
  * @log:	On success, set to the value of the allocated and retrieved log.
  * @da:		Log page data area, valid values: &enum nvme_telemetry_da
@@ -5502,22 +5502,22 @@ int nvme_get_host_telemetry(struct libnvme_transport_handle *hdl,
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_get_new_host_telemetry(struct libnvme_transport_handle *hdl,
+int libnvme_get_new_host_telemetry(struct libnvme_transport_handle *hdl,
 		struct nvme_telemetry_log **log,
 		enum nvme_telemetry_da da, size_t *size);
 
 /**
- * nvme_get_ana_log_len_from_id_ctrl() - Retrieve maximum possible ANA log size
+ * libnvme_get_ana_log_len_from_id_ctrl() - Retrieve maximum possible ANA log size
  * @id_ctrl:	Controller identify data
  * @rgo:	If true, return maximum log page size without NSIDs
  *
  * Return: A byte limit on the size of the controller's ANA log page
  */
-size_t nvme_get_ana_log_len_from_id_ctrl(const struct nvme_id_ctrl *id_ctrl,
+size_t libnvme_get_ana_log_len_from_id_ctrl(const struct nvme_id_ctrl *id_ctrl,
 		bool rgo);
 
 /**
- * nvme_get_ana_log_atomic() - Retrieve Asymmetric Namespace Access
+ * libnvme_get_ana_log_atomic() - Retrieve Asymmetric Namespace Access
  * log page atomically
  * @hdl:	Transport handle
  * @rae:	Whether to retain asynchronous events
@@ -5538,21 +5538,21 @@ size_t nvme_get_ana_log_len_from_id_ctrl(const struct nvme_id_ctrl *id_ctrl,
  * Sets errno = ENOSPC if the full log page does not fit in the provided buffer.
  */
 int
-nvme_get_ana_log_atomic(struct libnvme_transport_handle *hdl, bool rae, bool rgo,
+libnvme_get_ana_log_atomic(struct libnvme_transport_handle *hdl, bool rae, bool rgo,
 		struct nvme_ana_log *log, __u32 *len, unsigned int retries);
 
 /**
- * nvme_get_ana_log_len() - Retrieve size of the current ANA log
+ * libnvme_get_ana_log_len() - Retrieve size of the current ANA log
  * @hdl:	Transport handle
  * @analen:	Pointer to where the length will be set on success
  *
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_get_ana_log_len(struct libnvme_transport_handle *hdl, size_t *analen);
+int libnvme_get_ana_log_len(struct libnvme_transport_handle *hdl, size_t *analen);
 
 /**
- * nvme_get_logical_block_size() - Retrieve block size
+ * libnvme_get_logical_block_size() - Retrieve block size
  * @hdl:	Transport handle
  * @nsid:	Namespace id
  * @blksize:	Pointer to where the block size will be set on success
@@ -5560,11 +5560,11 @@ int nvme_get_ana_log_len(struct libnvme_transport_handle *hdl, size_t *analen);
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_get_logical_block_size(struct libnvme_transport_handle *hdl, __u32 nsid,
+int libnvme_get_logical_block_size(struct libnvme_transport_handle *hdl, __u32 nsid,
 		int *blksize);
 
 /**
- * nvme_get_lba_status_log() - Retrieve the LBA Status log page
+ * libnvme_get_lba_status_log() - Retrieve the LBA Status log page
  * @hdl:	Transport handle
  * @rae:	Retain asynchronous events
  * @log:	On success, set to the value of the allocated and retrieved log.
@@ -5572,11 +5572,11 @@ int nvme_get_logical_block_size(struct libnvme_transport_handle *hdl, __u32 nsid
  * Return: 0 on success, the nvme command status if a response was
  * received (see &enum nvme_status_field) or a negative error otherwise.
  */
-int nvme_get_lba_status_log(struct libnvme_transport_handle *hdl, bool rae,
+int libnvme_get_lba_status_log(struct libnvme_transport_handle *hdl, bool rae,
 		struct nvme_lba_status_log **log);
 
 /**
- * nvme_get_feature_length() - Retrieve the command payload length for a
+ * libnvme_get_feature_length() - Retrieve the command payload length for a
  *			       specific feature identifier
  * @fid:   Feature identifier, see &enum nvme_features_id.
  * @cdw11: The cdw11 value may affect the transfer (only known fid is
@@ -5589,11 +5589,11 @@ int nvme_get_lba_status_log(struct libnvme_transport_handle *hdl, bool rae,
  * Return: 0 on success, -1 with errno set to EINVAL if the function did not
  * recognize &fid.
  */
-int nvme_get_feature_length(int fid, __u32 cdw11, enum nvme_data_tfr dir,
+int libnvme_get_feature_length(int fid, __u32 cdw11, enum nvme_data_tfr dir,
 			    __u32 *len);
 
 /**
- * nvme_get_directive_receive_length() - Get directive receive length
+ * libnvme_get_directive_receive_length() - Get directive receive length
  * @dtype: Directive type, see &enum nvme_directive_dtype
  * @doper: Directive receive operation, see &enum nvme_directive_receive_doper
  * @len:   On success, set to this directives payload length in bytes.
@@ -5601,5 +5601,5 @@ int nvme_get_feature_length(int fid, __u32 cdw11, enum nvme_data_tfr dir,
  * Return: 0 on success, -1 with errno set to EINVAL if the function did not
  * recognize &dtype or &doper.
  */
-int nvme_get_directive_receive_length(enum nvme_directive_dtype dtype,
+int libnvme_get_directive_receive_length(enum nvme_directive_dtype dtype,
 		enum nvme_directive_receive_doper doper, __u32 *len);

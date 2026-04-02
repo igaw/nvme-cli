@@ -2,7 +2,7 @@
 
 LIBNVME_3 {
 	global:
-		nvme_clear_etdas;
+		libnvme_clear_etdas;
 		libnvme_close;
 		libnvme_create_ctrl;
 		libnvme_create_global_ctx;
@@ -47,29 +47,29 @@ LIBNVME_3 {
 		libnvme_generate_hostnqn_from_hostid;
 		libnvme_generate_tls_key_identity;
 		libnvme_generate_tls_key_identity_compat;
-		nvme_get_ana_log_atomic;
-		nvme_get_ana_log_len;
-		nvme_get_ana_log_len_from_id_ctrl;
+		libnvme_get_ana_log_atomic;
+		libnvme_get_ana_log_len;
+		libnvme_get_ana_log_len_from_id_ctrl;
 		libnvme_get_application;
 		libnvme_get_attr;
 		libnvme_get_ctrl_attr;
-		nvme_get_ctrl_telemetry;
-		nvme_get_directive_receive_length;
-		nvme_get_feature_length;
+		libnvme_get_ctrl_telemetry;
+		libnvme_get_directive_receive_length;
+		libnvme_get_feature_length;
 		libnvme_get_host;
-		nvme_get_host_telemetry;
-		nvme_get_log;
+		libnvme_get_host_telemetry;
+		libnvme_get_log;
 		libnvme_get_logging_level;
-		nvme_get_logical_block_size;
-		nvme_get_new_host_telemetry;
+		libnvme_get_logical_block_size;
+		libnvme_get_new_host_telemetry;
 		libnvme_get_ns_attr;
 		libnvme_get_nsid;
 		libnvme_get_path_attr;
 		libnvme_get_subsys_attr;
 		libnvme_get_subsystem;
-		nvme_get_telemetry_log;
-		nvme_get_telemetry_max;
-		nvme_get_uuid_list;
+		libnvme_get_telemetry_log;
+		libnvme_get_telemetry_max;
+		libnvme_get_uuid_list;
 		libnvme_get_version;
 		libnvme_host_get_global_ctx;
 		libnvme_host_get_ids;
@@ -165,7 +165,7 @@ LIBNVME_3 {
 		libnvme_scan_topology;
 		libnvme_set_application;
 		libnvme_set_dry_run;
-		nvme_set_etdas;
+		libnvme_set_etdas;
 		libnvme_set_ioctl_probing;
 		libnvme_set_keyring;
 		libnvme_set_logging_level;

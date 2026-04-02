@@ -335,7 +335,7 @@ bool sndk_get_dev_mgment_data(struct libnvme_global_ctx *ctx, struct libnvme_tra
 	sndk_get_pci_ids(ctx, hdl, &device_id, &vendor_id);
 
 	memset(&uuid_list, 0, sizeof(struct nvme_id_uuid_list));
-	if (!nvme_get_uuid_list(hdl, &uuid_list)) {
+	if (!libnvme_get_uuid_list(hdl, &uuid_list)) {
 		/* check for the Sandisk UUID first  */
 		uuid_index = libnvme_find_uuid(&uuid_list, SNDK_UUID);
 
@@ -465,7 +465,7 @@ bool sndk_get_dev_mgmt_log_page_data(struct libnvme_transport_handle *hdl,
 	cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_ix,
 				       NVME_LOG_CDW14_UUID_SHIFT,
 				       NVME_LOG_CDW14_UUID_MASK);
-	ret = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	ret = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (ret) {
 		fprintf(stderr,
 			"ERROR: SNDK: Unable to get 0x%x Log Page with uuid %d, ret = 0x%x\n",
@@ -492,7 +492,7 @@ bool sndk_get_dev_mgmt_log_page_data(struct libnvme_transport_handle *hdl,
 		cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_ix,
 				NVME_LOG_CDW14_UUID_SHIFT,
 				NVME_LOG_CDW14_UUID_MASK);
-		ret = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+		ret = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 		if (ret) {
 			fprintf(stderr,
 				"ERROR: SNDK: Unable to read 0x%x Log with uuid %d, ret = 0x%x\n",
@@ -682,7 +682,7 @@ __u64 sndk_get_enc_drive_capabilities(struct libnvme_global_ctx *ctx,
 
 		/* Check for the Sandisk or WDC UUID index  */
 		memset(&uuid_list, 0, sizeof(struct nvme_id_uuid_list));
-		if (!nvme_get_uuid_list(hdl, &uuid_list)) {
+		if (!libnvme_get_uuid_list(hdl, &uuid_list)) {
 			/* check for the Sandisk UUID first  */
 			uuid_index = libnvme_find_uuid(&uuid_list, SNDK_UUID);
 

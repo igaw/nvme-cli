@@ -58,7 +58,7 @@ int ocp_get_log_simple(struct libnvme_transport_handle *hdl,
 				       NVME_LOG_CDW14_UUID_SHIFT,
 				       NVME_LOG_CDW14_UUID_MASK);
 
-	return nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	return libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 }
 
 bool ocp_is_tcg_activity_event(struct nvme_persistent_event_entry *pevent_entry_head,

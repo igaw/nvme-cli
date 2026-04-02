@@ -2571,7 +2571,7 @@ static bool get_dev_mgmt_log_page_data(struct libnvme_transport_handle *hdl, voi
 	cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_ix,
 				       NVME_LOG_CDW14_UUID_SHIFT,
 				       NVME_LOG_CDW14_UUID_MASK);
-	ret = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	ret = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (ret) {
 		fprintf(stderr,
 			"ERROR: WDC: Unable to get 0x%x Log Page with uuid %d, ret = 0x%x\n",
@@ -2598,7 +2598,7 @@ static bool get_dev_mgmt_log_page_data(struct libnvme_transport_handle *hdl, voi
 		cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_ix,
 					       NVME_LOG_CDW14_UUID_SHIFT,
 					       NVME_LOG_CDW14_UUID_MASK);
-		ret = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+		ret = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 		if (ret) {
 			fprintf(stderr,
 				"ERROR: WDC: Unable to read 0x%x Log with uuid %d, ret = 0x%x\n",
@@ -2655,7 +2655,7 @@ static bool get_dev_mgmt_log_page_lid_data(struct libnvme_transport_handle *hdl,
 	cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_ix,
 				       NVME_LOG_CDW14_UUID_SHIFT,
 				       NVME_LOG_CDW14_UUID_MASK);
-	ret = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	ret = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (ret) {
 		fprintf(stderr,
 			"ERROR: WDC: Unable to get 0x%x Log Page length with uuid %d, ret = 0x%x\n",
@@ -2681,7 +2681,7 @@ static bool get_dev_mgmt_log_page_lid_data(struct libnvme_transport_handle *hdl,
 		cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_ix,
 					       NVME_LOG_CDW14_UUID_SHIFT,
 					       NVME_LOG_CDW14_UUID_MASK);
-		ret = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+		ret = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 		if (ret) {
 			fprintf(stderr,
 				"ERROR: WDC: Unable to read 0x%x Log Page data with uuid %d, ret = 0x%x\n",
@@ -2860,7 +2860,7 @@ static int wdc_get_supported_log_pages(struct libnvme_transport_handle *hdl,
 	cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_index,
 				       NVME_LOG_CDW14_UUID_SHIFT,
 				       NVME_LOG_CDW14_UUID_MASK);
-	return nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	return libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 }
 
 static bool wdc_nvme_check_supported_log_page(struct libnvme_global_ctx *ctx,
@@ -3327,13 +3327,13 @@ static int wdc_do_cap_telemetry_log(struct libnvme_global_ctx *ctx,
 	}
 
 	if (ctrl_init)
-		err = nvme_get_ctrl_telemetry(hdl, true, &log,
+		err = libnvme_get_ctrl_telemetry(hdl, true, &log,
 					  data_area, &full_size);
 	else if (host_gen)
-		err = nvme_get_new_host_telemetry(hdl, &log,
+		err = libnvme_get_new_host_telemetry(hdl, &log,
 						  data_area, &full_size);
 	else
-		err = nvme_get_host_telemetry(hdl, &log, data_area,
+		err = libnvme_get_host_telemetry(hdl, &log, data_area,
 					  &full_size);
 
 	if (err < 0) {
@@ -4226,7 +4226,7 @@ static int dump_internal_logs(struct libnvme_transport_handle *hdl, const char *
 	cmd.cdw10 |= NVME_FIELD_ENCODE(NVME_LOG_TELEM_HOST_LSP_CREATE,
 			NVME_LOG_CDW10_LSP_SHIFT,
 			NVME_LOG_CDW10_LSP_MASK);
-	err = nvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
 	if (err < 0)
 		perror("get-telemetry-log");
 	else if (err > 0) {
@@ -4247,7 +4247,7 @@ static int dump_internal_logs(struct libnvme_transport_handle *hdl, const char *
 		nvme_init_get_log(&cmd, NVME_NSID_ALL, NVME_LOG_LID_TELEMETRY_HOST,
 				  NVME_CSI_NVM, telemetry_log, bs);
 		nvme_init_get_log_lpo(&cmd, offset);
-		err = nvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
+		err = libnvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
 		if (err < 0) {
 			perror("get-telemetry-log");
 			break;
@@ -6343,7 +6343,7 @@ static int nvme_get_print_ocp_cloud_smart_log(struct libnvme_transport_handle *h
 	cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_index,
 				       NVME_LOG_CDW14_UUID_SHIFT,
 				       NVME_LOG_CDW14_UUID_MASK);
-	ret = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	ret = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (fmt == JSON)
 		nvme_show_status(ret);
 
@@ -6408,7 +6408,7 @@ static int nvme_get_print_c0_eol_log(struct libnvme_transport_handle *hdl,
 	cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_index,
 				       NVME_LOG_CDW14_UUID_SHIFT,
 				       NVME_LOG_CDW14_UUID_MASK);
-	ret = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	ret = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (fmt == JSON)
 		nvme_show_status(ret);
 
@@ -6444,7 +6444,7 @@ static int nvme_get_ext_smart_cloud_log(struct libnvme_transport_handle *hdl, __
 	cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_index,
 				       NVME_LOG_CDW14_UUID_SHIFT,
 				       NVME_LOG_CDW14_UUID_MASK);
-	ret = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	ret = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (!ret) {
 		/* Verify GUID matches */
 		for (i = 0; i < WDC_C0_GUID_LENGTH; i++) {
@@ -6491,7 +6491,7 @@ static int nvme_get_hw_rev_log(struct libnvme_transport_handle *hdl, __u8 **data
 	cmd.cdw14 |= NVME_FIELD_ENCODE(uuid_index,
 				       NVME_LOG_CDW14_UUID_SHIFT,
 				       NVME_LOG_CDW14_UUID_MASK);
-	ret = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	ret = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (!ret) {
 		/* Verify GUID matches */
 		for (i = 0; i < WDC_NVME_C6_GUID_LENGTH; i++) {
@@ -8511,7 +8511,7 @@ static int wdc_cu_smart_log(int argc, char **argv, struct command *acmd,
 			cmd.cdw14 |= NVME_FIELD_ENCODE(cfg.uuid_index,
 				       NVME_LOG_CDW14_UUID_SHIFT,
 				       NVME_LOG_CDW14_UUID_MASK);
-			ret = nvme_get_log(hdl, &cmd, false,
+			ret = libnvme_get_log(hdl, &cmd, false,
 						NVME_LOG_PAGE_PDU_SIZE);
 
 			if (strcmp(nvme_args.output_format, "json"))
@@ -10280,7 +10280,7 @@ static int wdc_do_drive_essentials(struct libnvme_global_ctx *ctx, struct libnvm
 					  deVULogPagesList[vuLogIdx].logPageId,
 					  dataBuffer, dataBufferSize);
 		if (ret) {
-			fprintf(stderr, "ERROR: WDC: nvme_get_log() for log page 0x%x failed, ret = %d\n",
+			fprintf(stderr, "ERROR: WDC: libnvme_get_log() for log page 0x%x failed, ret = %d\n",
 					deVULogPagesList[vuLogIdx].logPageId, ret);
 		} else {
 			wdc_UtilsDeleteCharFromString((char *)deVULogPagesList[vuLogIdx].logPageIdStr, 4, ' ');

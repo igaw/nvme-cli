@@ -399,7 +399,7 @@ int do_get_log_page(nvme_mi_ep_t ep, int argc, char **argv)
 
 	nvme_init_get_log(&cmd, NVME_NSID_NONE, lid, NVME_CSI_NVM,
 			  buf, sizeof(buf));
-	rc = nvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
+	rc = libnvme_get_log(hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
 	if (rc) {
 		warn("can't perform Get Log page command");
 		return -1;

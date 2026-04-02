@@ -3352,7 +3352,7 @@ int nvme_get_log_lpo(struct libnvme_transport_handle *hdl, __u8 log_id, __u32 lp
 		nvme_init_get_log(&cmd, NVME_NSID_ALL, log_id, NVME_CSI_NVM,
 				  ptr, xfer_len);
 		nvme_init_get_log_lpo(&cmd, lpo);
-		ret = nvme_get_log(hdl, &cmd, false, xfer_len);
+		ret = libnvme_get_log(hdl, &cmd, false, xfer_len);
 		if (ret)
 			return ret;
 		offset += xfer_len;

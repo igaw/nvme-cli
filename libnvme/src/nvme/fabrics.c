@@ -1319,7 +1319,7 @@ static int nvme_discovery_log(const struct libnvme_get_discovery_args *args,
 	libnvme_msg(ctx, LOG_DEBUG, "%s: get header (try %d/%d)\n",
 		 name, retries, args->max_retries);
 	nvme_init_get_log_discovery(&cmd, 0, log, DISCOVERY_HEADER_LEN);
-	err = nvme_get_log(hdl, &cmd, false, DISCOVERY_HEADER_LEN);
+	err = libnvme_get_log(hdl, &cmd, false, DISCOVERY_HEADER_LEN);
 	if (err) {
 		libnvme_msg(ctx, LOG_INFO,
 			 "%s: discover try %d/%d failed, errno %d status 0x%x\n",
@@ -1353,7 +1353,7 @@ static int nvme_discovery_log(const struct libnvme_get_discovery_args *args,
 		cmd.cdw10 |= NVME_FIELD_ENCODE(args->lsp,
 					       NVME_LOG_CDW10_LSP_SHIFT,
 					       NVME_LOG_CDW10_LSP_MASK);
-		err = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+		err = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 		if (err) {
 			libnvme_msg(ctx, LOG_INFO,
 				 "%s: discover try %d/%d failed, errno %d status 0x%x\n",
@@ -1368,7 +1368,7 @@ static int nvme_discovery_log(const struct libnvme_get_discovery_args *args,
 		libnvme_msg(ctx, LOG_DEBUG, "%s: get header again\n", name);
 
 		nvme_init_get_log_discovery(&cmd, 0, log, DISCOVERY_HEADER_LEN);
-		err = nvme_get_log(hdl, &cmd, false, DISCOVERY_HEADER_LEN);
+		err = libnvme_get_log(hdl, &cmd, false, DISCOVERY_HEADER_LEN);
 		if (err) {
 			libnvme_msg(ctx, LOG_INFO,
 				 "%s: discover try %d/%d failed, errno %d status 0x%x\n",

@@ -40,7 +40,7 @@ static void test_get_log_sanitize(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_sanitize(&cmd, &log);
-	err = nvme_get_log(test_hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, true, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d, errno %m", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -63,7 +63,7 @@ static void test_get_log_mgmt_addr_list(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_mgmt_addr_list(&cmd, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -87,7 +87,7 @@ static void test_get_log_supported_log_pages(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_supported_log_pages(&cmd, NVME_CSI_NVM, &log);
-	err = nvme_get_log(test_hdl, &cmd, !TEST_RAE,
+	err = libnvme_get_log(test_hdl, &cmd, !TEST_RAE,
 			   NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
@@ -111,7 +111,7 @@ static void test_get_log_error(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_error(&cmd, 1, &log);
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE,
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE,
 			   NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
@@ -135,7 +135,7 @@ static void test_get_log_smart(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_smart(&cmd, TEST_NSID, &log);
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE,
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE,
 			   NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
@@ -159,7 +159,7 @@ static void test_get_log_fw_slot(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_fw_slot(&cmd, &log);
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE,
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE,
 			   NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
@@ -183,7 +183,7 @@ static void test_get_log_changed_ns_list(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_changed_ns(&cmd, &log);
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -207,7 +207,7 @@ static void test_get_log_cmd_effects(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_cmd_effects(&cmd, TEST_CSI, &log);
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -230,7 +230,7 @@ static void test_get_log_device_self_test(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_device_self_test(&cmd, &log);
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -255,7 +255,7 @@ static void test_get_log_create_telemetry_host_mcda(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_create_telemetry_host_mcda(&cmd, TEST_MCDA, &log);
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -281,7 +281,7 @@ static void test_get_log_create_telemetry_host(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_create_telemetry_host(&cmd, &log);
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -309,7 +309,7 @@ static void test_get_log_telemetry_host(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_telemetry_host(&cmd, TEST_OFFSET, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -338,7 +338,7 @@ static void test_get_log_telemetry_ctrl(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_telemetry_ctrl(&cmd, TEST_OFFSET, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -362,7 +362,7 @@ static void test_get_log_endurance_group(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_endurance_group(&cmd, TEST_ENDGID, &log);
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -386,7 +386,7 @@ static void test_get_log_predictable_lat_nvmset(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_predictable_lat_nvmset(&cmd, TEST_NVMSETID, &log);
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -412,7 +412,7 @@ static void test_get_log_predictable_lat_event(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_predictable_lat_event(&cmd, TEST_OFFSET_32,
 						&log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -438,7 +438,7 @@ static void test_get_log_fdp_configurations(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_fdp_configurations(&cmd, TEST_ENDGID,
 					     TEST_OFFSET_32, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -465,7 +465,7 @@ static void test_get_log_reclaim_unit_handle_usage(void)
 	nvme_init_get_log_reclaim_unit_handle_usage(&cmd, TEST_ENDGID,
 						    TEST_OFFSET_32, &log,
 						    sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -491,7 +491,7 @@ static void test_get_log_fdp_stats(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_fdp_stats(&cmd, TEST_ENDGID, TEST_OFFSET_32,
 				    &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -518,7 +518,7 @@ static void test_get_log_fdp_events(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_fdp_events(&cmd, TEST_EVENTS, TEST_ENDGID,
 				     TEST_OFFSET_32, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -545,7 +545,7 @@ static void test_get_log_ana(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_ana(&cmd, TEST_ANA_LSP, TEST_OFFSET,
 			      &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -570,7 +570,7 @@ static void test_get_log_ana_groups(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_ana_groups(&cmd, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -595,7 +595,7 @@ static void test_get_log_lba_status(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_lba_status(&cmd, TEST_OFFSET, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -621,7 +621,7 @@ static void test_get_log_endurance_grp_evt(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_endurance_grp_evt(&cmd, TEST_OFFSET_32,
 					    &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -645,7 +645,7 @@ static void test_get_log_fid_supported_effects(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_fid_supported_effects(&cmd, NVME_CSI_NVM, &log);
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -669,7 +669,7 @@ static void test_get_log_mi_cmd_supported_effects(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_mi_cmd_supported_effects(&cmd, &log);
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -693,7 +693,7 @@ static void test_get_log_boot_partition(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_boot_partition(&cmd, TEST_LSP, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -718,7 +718,7 @@ static void test_get_log_rotational_media_info(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_rotational_media_info(&cmd, TEST_ENDGID,
 						&log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -742,7 +742,7 @@ static void test_get_log_dispersed_ns_participating_nss(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_dispersed_ns_participating_nss(&cmd, TEST_NSID,
 							 &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -767,7 +767,7 @@ static void test_get_log_phy_rx_eom(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_phy_rx_eom(&cmd, TEST_LSP, TEST_CNTID,
 				     &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -792,7 +792,7 @@ static void test_get_log_reachability_groups(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_reachability_groups(&cmd, TEST_LSP != 0, &log,
 					      sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -817,7 +817,7 @@ static void test_get_log_reachability_associations(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_reachability_associations(&cmd, TEST_LSP != 0, &log,
 						    sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -841,7 +841,7 @@ static void test_get_log_changed_alloc_ns(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_changed_alloc_ns(&cmd, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -865,7 +865,7 @@ static void test_get_log_discovery(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_discovery(&cmd, TEST_OFFSET_32, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -891,7 +891,7 @@ static void test_get_log_host_discover(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_host_discovery(&cmd, TEST_LSP != 0,
 		&log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -915,7 +915,7 @@ static void test_get_log_ave_discover(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_ave_discovery(&cmd, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -939,7 +939,7 @@ static void test_get_log_pull_model_ddc_req(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_pull_model_ddc_req(&cmd, &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -963,7 +963,7 @@ static void test_get_log_media_unit_stat(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_media_unit_stat(&cmd, TEST_DOMID, &log);
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -987,7 +987,7 @@ static void test_get_log_support_cap_config_list(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_support_cap_config_list(&cmd, TEST_DOMID, &log);
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -1010,7 +1010,7 @@ static void test_get_log_reservation(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_reservation(&cmd, &log);
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -1035,7 +1035,7 @@ static void test_get_log_zns_changed_zones(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_zns_changed_zones(&cmd, TEST_NSID, &log);
-	err = nvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, TEST_RAE, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -1060,7 +1060,7 @@ static void test_get_log_persistent_event(void)
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_persistent_event(&cmd, TEST_PEVENT,
 					   &log, sizeof(log));
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");
@@ -1084,7 +1084,7 @@ static void test_get_log_lockdown(void)
 	arbitrary(&expected_log, sizeof(expected_log));
 	set_mock_admin_cmds(&mock_admin_cmd, 1);
 	nvme_init_get_log_lockdown(&cmd, TEST_LSP, &log);
-	err = nvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(test_hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	end_mock_cmds();
 	check(err == 0, "get log returned error %d", err);
 	cmp(&log, &expected_log, sizeof(log), "incorrect log data");

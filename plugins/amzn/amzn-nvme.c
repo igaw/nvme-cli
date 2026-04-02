@@ -616,7 +616,7 @@ static int get_stats(int argc, char **argv, struct command *acmd,
 
 	nvme_init_get_log(&cmd, nsid, AMZN_NVME_STATS_LOGPAGE_ID, NVME_CSI_NVM,
 			  &log, len);
-	rc = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	rc = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (rc != 0) {
 		fprintf(stderr, "[ERROR] %s: Failed to get log page, rc = %d\n",
 			__func__, rc);
@@ -661,7 +661,7 @@ static int get_stats(int argc, char **argv, struct command *acmd,
 			nvme_init_get_log(&cmd, nsid,
 					  AMZN_NVME_STATS_LOGPAGE_ID,
 					  NVME_CSI_NVM, &curr, len);
-			rc = nvme_get_log(hdl, &cmd, false,
+			rc = libnvme_get_log(hdl, &cmd, false,
 					  NVME_LOG_PAGE_PDU_SIZE);
 			if (rc != 0) {
 				nvme_show_error("get log page failed, rc=%d",

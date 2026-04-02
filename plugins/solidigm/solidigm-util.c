@@ -53,7 +53,7 @@ int sldgm_dynamic_telemetry(struct libnvme_transport_handle *hdl, bool create,
 	int err;
 
 	do {
-		err = nvme_get_telemetry_log(hdl, create, ctrl, log_page, max_data_tx, da,
+		err = libnvme_get_telemetry_log(hdl, create, ctrl, log_page, max_data_tx, da,
 					     log_buffer, log_buffer_size);
 		max_data_tx /= 2;
 		create = false;

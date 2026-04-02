@@ -74,7 +74,7 @@ static int sndk_do_cap_telemetry_log(struct libnvme_global_ctx *ctx,
 			return -EINVAL;
 		}
 
-		err = nvme_set_etdas(hdl, &host_behavior_changed);
+		err = libnvme_set_etdas(hdl, &host_behavior_changed);
 		if (err) {
 			fprintf(stderr, "%s: Failed to set ETDAS bit\n", __func__);
 			return err;
@@ -115,13 +115,13 @@ static int sndk_do_cap_telemetry_log(struct libnvme_global_ctx *ctx,
 	}
 
 	if (ctrl_init)
-		err = nvme_get_ctrl_telemetry(hdl, true, &log,
+		err = libnvme_get_ctrl_telemetry(hdl, true, &log,
 					  data_area, &full_size);
 	else if (host_gen)
-		err = nvme_get_new_host_telemetry(hdl, &log,
+		err = libnvme_get_new_host_telemetry(hdl, &log,
 						  data_area, &full_size);
 	else
-		err = nvme_get_host_telemetry(hdl, &log, data_area,
+		err = libnvme_get_host_telemetry(hdl, &log, data_area,
 					  &full_size);
 
 	if (err < 0) {
@@ -166,7 +166,7 @@ static int sndk_do_cap_telemetry_log(struct libnvme_global_ctx *ctx,
 
 	if (host_behavior_changed) {
 		host_behavior_changed = false;
-		err = nvme_clear_etdas(hdl, &host_behavior_changed);
+		err = libnvme_clear_etdas(hdl, &host_behavior_changed);
 		if (err) {
 			fprintf(stderr, "%s: Failed to clear ETDAS bit\n", __func__);
 			return err;

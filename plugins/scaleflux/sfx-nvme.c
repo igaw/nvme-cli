@@ -1239,7 +1239,7 @@ static int nvme_dump_evtlog(struct libnvme_transport_handle *hdl, __u32 namespac
 	cmd.cdw10 |= NVME_FIELD_ENCODE(lsp,
 				       NVME_LOG_CDW10_LSP_SHIFT,
 				       NVME_LOG_CDW10_LSP_MASK);
-	err = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (err) {
 		fprintf(stderr, "Unable to get evtlog lsp=0x%x, ret = 0x%x\n",
 		        lsp, err);
@@ -1252,7 +1252,7 @@ static int nvme_dump_evtlog(struct libnvme_transport_handle *hdl, __u32 namespac
 	cmd.cdw10 |= NVME_FIELD_ENCODE(lsp,
 				       NVME_LOG_CDW10_LSP_SHIFT,
 				       NVME_LOG_CDW10_LSP_MASK);
-	err = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (err) {
 		fprintf(stderr, "Unable to get evtlog lsp=0x%x, ret = 0x%x\n",
 			lsp, err);
@@ -1294,7 +1294,7 @@ static int nvme_dump_evtlog(struct libnvme_transport_handle *hdl, __u32 namespac
 					       NVME_LOG_CDW10_LSP_SHIFT,
 		 			       NVME_LOG_CDW10_LSP_MASK);
 		nvme_init_get_log_lpo(&cmd, lpo);
-		err = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+		err = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 		if (err) {
 			fprintf(stderr,
 				"Unable to get evtlog offset=0x%x len 0x%x ret = 0x%x\n",

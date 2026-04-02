@@ -824,7 +824,7 @@ static int extract_dump_get_log(struct libnvme_transport_handle *hdl, char *feat
 		nvme_init_get_log(&cmd, nsid, log_id, NVME_CSI_NVM,
 				  data, transfersize);
 		nvme_init_get_log_lpo(&cmd, offset);
-		err = nvme_get_log(hdl, &cmd, rae, NVME_LOG_PAGE_PDU_SIZE);
+		err = libnvme_get_log(hdl, &cmd, rae, NVME_LOG_PAGE_PDU_SIZE);
 		if (err) {
 			if (i > 0)
 				goto close_output;
@@ -1204,7 +1204,7 @@ static int get_telemetry_log_page_data(struct libnvme_transport_handle *hdl,
 	cmd.cdw10 |= NVME_FIELD_ENCODE(NVME_LOG_TELEM_HOST_LSP_CREATE,
 			NVME_LOG_CDW10_LSP_SHIFT,
 			NVME_LOG_CDW10_LSP_MASK);
-	err = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+	err = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 	if (err < 0)
 		nvme_show_error("Failed to fetch the log from drive.\n");
 	else if (err > 0) {
@@ -1241,7 +1241,7 @@ static int get_telemetry_log_page_data(struct libnvme_transport_handle *hdl,
 		nvme_init_get_log(&cmd, NVME_NSID_ALL, log_id, NVME_CSI_NVM,
 				  telemetry_log, bs);
 		nvme_init_get_log_lpo(&cmd, offset);
-		err = nvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
+		err = libnvme_get_log(hdl, &cmd, false, NVME_LOG_PAGE_PDU_SIZE);
 		if (err < 0) {
 			nvme_show_error("Failed to fetch the log from drive.\n");
 			break;
@@ -1522,7 +1522,7 @@ static int ocp_telemetry_log(int argc, char **argv, struct command *acmd, struct
 				goto out;
 			}
 
-			err = nvme_set_etdas(hdl, &host_behavior_changed);
+			err = libnvme_set_etdas(hdl, &host_behavior_changed);
 			if (err) {
 				fprintf(stderr, "%s: Failed to set ETDAS bit\n", __func__);
 				return err;
@@ -1544,7 +1544,7 @@ static int ocp_telemetry_log(int argc, char **argv, struct command *acmd, struct
 
 		if (host_behavior_changed) {
 			host_behavior_changed = false;
-			err = nvme_clear_etdas(hdl, &host_behavior_changed);
+			err = libnvme_clear_etdas(hdl, &host_behavior_changed);
 			if (err) {
 				/* Continue on if this fails, it's not a fatal condition */
 				nvme_show_error("Failed to clear ETDAS bit.\n");
