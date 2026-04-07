@@ -112,19 +112,24 @@ def run_tests(test_module_name: str, start_dir: str | None = None) -> bool:
     suite = loader.loadTestsFromModule(module)
 
     real_stdout = sys.stdout
+    real_stderr = sys.stderr
     # TAP version header must be the very first line on stdout.
     real_stdout.write('TAP version 13\n')
     real_stdout.flush()
 
-    # Redirect stdout so any print() calls from setUp/tearDown/tests are
-    # re-emitted as TAP diagnostic lines and do not break the TAP stream.
+    # Redirect stdout and stderr so any print()/sys.stderr.write() calls from
+    # setUp/tearDown/tests are re-emitted as TAP diagnostic lines and do not
+    # break the TAP stream.
     sys.stdout = DiagnosticCapture(real_stdout)  # type: ignore[assignment]
+    sys.stderr = DiagnosticCapture(real_stdout)  # type: ignore[assignment]
     try:
         result = TAPTestResult()
         suite.run(result)
     finally:
         sys.stdout.flush()
         sys.stdout = real_stdout
+        sys.stderr.flush()
+        sys.stderr = real_stderr
 
     result.print_tap(real_stdout)
     return result.wasSuccessful()
