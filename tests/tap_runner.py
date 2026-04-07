@@ -15,7 +15,9 @@ parse individual subtest results when protocol: 'tap' is set in meson.build.
 import argparse
 import importlib
 import io
+import os
 import sys
+import threading
 import traceback
 import unittest
 
@@ -40,6 +42,51 @@ class DiagnosticCapture(io.TextIOBase):
             self._real.write('# {}\n'.format(self._buf))
             self._buf = ''
         self._real.flush()
+
+
+class FDCapture:
+    """Redirect a file descriptor at the OS level and re-emit captured output
+    as TAP diagnostic lines.  This intercepts writes from subprocesses which
+    bypass the Python-level sys.stderr redirect."""
+
+    def __init__(self, fd: int, real_stdout: io.TextIOBase) -> None:
+        self._fd = fd
+        self._real = real_stdout
+        self._saved_fd = os.dup(fd)
+        r_fd, w_fd = os.pipe()
+        os.dup2(w_fd, fd)
+        os.close(w_fd)
+        self._thread = threading.Thread(target=self._reader, args=(r_fd,),
+                                        daemon=True)
+        # daemon=True: if restore() is somehow never called (e.g. os._exit()),
+        # the process can still exit rather than hang on a blocking read.
+        self._thread.start()
+
+    def _reader(self, r_fd: int) -> None:
+        buf = b''
+        # Open unbuffered (bufsize=0) so bytes are delivered to the reader
+        # as soon as they are written, without waiting for a buffer to fill.
+        with open(r_fd, 'rb', 0) as f:
+            while True:
+                chunk = f.read(4096)
+                if not chunk:
+                    break
+                buf += chunk
+                while b'\n' in buf:
+                    line, buf = buf.split(b'\n', 1)
+                    self._real.write(
+                        '# {}\n'.format(line.decode('utf-8', errors='replace')))
+                    self._real.flush()
+        if buf:
+            self._real.write(
+                '# {}\n'.format(buf.decode('utf-8', errors='replace')))
+            self._real.flush()
+
+    def restore(self) -> None:
+        """Restore the original file descriptor and wait for the reader to drain."""
+        os.dup2(self._saved_fd, self._fd)
+        os.close(self._saved_fd)
+        self._thread.join()
 
 
 class TAPTestResult(unittest.TestResult):
@@ -122,6 +169,9 @@ def run_tests(test_module_name: str, start_dir: str | None = None) -> bool:
     # break the TAP stream.
     sys.stdout = DiagnosticCapture(real_stdout)  # type: ignore[assignment]
     sys.stderr = DiagnosticCapture(real_stdout)  # type: ignore[assignment]
+    # Also redirect fd 2 at the OS level so that subprocess stderr (which
+    # inherits the raw file descriptor and bypasses sys.stderr) is captured.
+    stderr_fd_capture = FDCapture(2, real_stdout)
     try:
         result = TAPTestResult()
         suite.run(result)
@@ -130,6 +180,7 @@ def run_tests(test_module_name: str, start_dir: str | None = None) -> bool:
         sys.stdout = real_stdout
         sys.stderr.flush()
         sys.stderr = real_stderr
+        stderr_fd_capture.restore()
 
     result.print_tap(real_stdout)
     return result.wasSuccessful()
