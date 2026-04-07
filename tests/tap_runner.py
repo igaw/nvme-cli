@@ -92,10 +92,10 @@ class FDCapture:
 class TAPTestResult(unittest.TestResult):
     """Collect unittest results and render them as TAP version 13."""
 
-    def __init__(self) -> None:
+    def __init__(self, stream: io.TextIOBase) -> None:
         super().__init__()
+        self._stream = stream
         self._test_count = 0
-        self._lines: list[str] = []
 
     def _description(self, test: unittest.TestCase) -> str:
         return '{} ({})'.format(test._testMethodName, type(test).__name__)
@@ -103,50 +103,50 @@ class TAPTestResult(unittest.TestResult):
     def addSuccess(self, test: unittest.TestCase) -> None:
         super().addSuccess(test)
         self._test_count += 1
-        self._lines.append('ok {} - {}\n'.format(
+        self._stream.write('ok {} - {}\n'.format(
             self._test_count, self._description(test)))
+        self._stream.flush()
 
     def addError(self, test: unittest.TestCase, err: object) -> None:
         super().addError(test, err)
         self._test_count += 1
-        self._lines.append('not ok {} - {}\n'.format(
+        self._stream.write('not ok {} - {}\n'.format(
             self._test_count, self._description(test)))
         for line in traceback.format_exception(*err):  # type: ignore[misc]
             for subline in line.splitlines():
-                self._lines.append('# {}\n'.format(subline))
+                self._stream.write('# {}\n'.format(subline))
+        self._stream.flush()
 
     def addFailure(self, test: unittest.TestCase, err: object) -> None:
         super().addFailure(test, err)
         self._test_count += 1
-        self._lines.append('not ok {} - {}\n'.format(
+        self._stream.write('not ok {} - {}\n'.format(
             self._test_count, self._description(test)))
         for line in traceback.format_exception(*err):  # type: ignore[misc]
             for subline in line.splitlines():
-                self._lines.append('# {}\n'.format(subline))
+                self._stream.write('# {}\n'.format(subline))
+        self._stream.flush()
 
     def addSkip(self, test: unittest.TestCase, reason: str) -> None:
         super().addSkip(test, reason)
         self._test_count += 1
-        self._lines.append('ok {} - {} # SKIP {}\n'.format(
+        self._stream.write('ok {} - {} # SKIP {}\n'.format(
             self._test_count, self._description(test), reason))
+        self._stream.flush()
 
     def addExpectedFailure(self, test: unittest.TestCase, err: object) -> None:
         super().addExpectedFailure(test, err)
         self._test_count += 1
-        self._lines.append('ok {} - {} # TODO expected failure\n'.format(
+        self._stream.write('ok {} - {} # TODO expected failure\n'.format(
             self._test_count, self._description(test)))
+        self._stream.flush()
 
     def addUnexpectedSuccess(self, test: unittest.TestCase) -> None:
         super().addUnexpectedSuccess(test)
         self._test_count += 1
-        self._lines.append('not ok {} - {} # TODO unexpected success\n'.format(
+        self._stream.write('not ok {} - {} # TODO unexpected success\n'.format(
             self._test_count, self._description(test)))
-
-    def print_tap(self, stream: io.TextIOBase) -> None:
-        stream.write('1..{}\n'.format(self._test_count))
-        for line in self._lines:
-            stream.write(line)
-        stream.flush()
+        self._stream.flush()
 
 
 def run_tests(test_module_name: str, start_dir: str | None = None) -> bool:
@@ -160,8 +160,9 @@ def run_tests(test_module_name: str, start_dir: str | None = None) -> bool:
 
     real_stdout = sys.stdout
     real_stderr = sys.stderr
-    # TAP version header must be the very first line on stdout.
+    # TAP version header and plan must appear before any test output.
     real_stdout.write('TAP version 13\n')
+    real_stdout.write('1..{}\n'.format(suite.countTestCases()))
     real_stdout.flush()
 
     # Redirect stdout and stderr so any print()/sys.stderr.write() calls from
@@ -173,7 +174,7 @@ def run_tests(test_module_name: str, start_dir: str | None = None) -> bool:
     # inherits the raw file descriptor and bypasses sys.stderr) is captured.
     stderr_fd_capture = FDCapture(2, real_stdout)
     try:
-        result = TAPTestResult()
+        result = TAPTestResult(real_stdout)
         suite.run(result)
     finally:
         sys.stdout.flush()
@@ -182,7 +183,6 @@ def run_tests(test_module_name: str, start_dir: str | None = None) -> bool:
         sys.stderr = real_stderr
         stderr_fd_capture.restore()
 
-    result.print_tap(real_stdout)
     return result.wasSuccessful()
 
 
