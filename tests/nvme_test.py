@@ -132,7 +132,7 @@ class TestNVMe(unittest.TestCase):
         """
         x1, x2, dev = self.ctrl.split('/')
         cmd = "find /sys/devices -name \\*" + dev + " | grep -i pci"
-        err = subprocess.call(cmd, shell=True, stdout=subprocess.DEVNULL)
+        err = self.exec_cmd(cmd)
         self.assertEqual(err, 0, "ERROR : Only NVMe PCI subsystem is supported")
 
     def load_config(self):
@@ -188,17 +188,10 @@ class TestNVMe(unittest.TestCase):
                 - None
         """
         nvme_reset_cmd = f"{self.nvme_bin} reset {self.ctrl}"
-        err = subprocess.call(nvme_reset_cmd,
-                              shell=True,
-                              stdout=subprocess.DEVNULL)
+        err = self.exec_cmd(nvme_reset_cmd)
         self.assertEqual(err, 0, "ERROR : nvme reset failed")
         rescan_cmd = "echo 1 > /sys/bus/pci/rescan"
-        proc = subprocess.Popen(rescan_cmd,
-                                shell=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                encoding='utf-8')
-        self.assertEqual(proc.wait(), 0, "ERROR : pci rescan failed")
+        self.assertEqual(self.exec_cmd(rescan_cmd), 0, "ERROR : pci rescan failed")
 
     def get_ctrl_id(self):
         """ Wrapper for extracting the first controller id.
@@ -416,9 +409,7 @@ class TestNVMe(unittest.TestCase):
                              "ERROR : create namespace failed")
             id_ns_cmd = f"{self.nvme_bin} id-ns {self.ctrl} " + \
                 f"--namespace-id={str(nsid)}"
-            err = subprocess.call(id_ns_cmd,
-                                  shell=True,
-                                  stdout=subprocess.DEVNULL)
+            err = self.exec_cmd(id_ns_cmd)
         return err
 
     def attach_ns(self, ctrl_id, nsid):
@@ -431,9 +422,7 @@ class TestNVMe(unittest.TestCase):
         """
         attach_ns_cmd = f"{self.nvme_bin} attach-ns {self.ctrl} " + \
             f"--namespace-id={str(nsid)} --controllers={ctrl_id} --verbose"
-        err = subprocess.call(attach_ns_cmd,
-                              shell=True,
-                              stdout=subprocess.DEVNULL)
+        err = self.exec_cmd(attach_ns_cmd)
         if err != 0:
             return err
 
@@ -457,9 +446,7 @@ class TestNVMe(unittest.TestCase):
         """
         detach_ns_cmd = f"{self.nvme_bin} detach-ns {self.ctrl} " + \
             f"--namespace-id={str(nsid)} --controllers={ctrl_id} --verbose"
-        return subprocess.call(detach_ns_cmd,
-                               shell=True,
-                               stdout=subprocess.DEVNULL)
+        return self.exec_cmd(detach_ns_cmd)
 
     def delete_and_validate_ns(self, nsid):
         """ Wrapper for deleting and validating that namespace is deleted.
@@ -471,9 +458,7 @@ class TestNVMe(unittest.TestCase):
         # delete the namespace
         delete_ns_cmd = f"{self.nvme_bin} delete-ns {self.ctrl} " + \
             f"--namespace-id={str(nsid)} --verbose"
-        err = subprocess.call(delete_ns_cmd,
-                              shell=True,
-                              stdout=subprocess.DEVNULL)
+        err = self.exec_cmd(delete_ns_cmd)
         self.assertEqual(err, 0, "ERROR : delete namespace failed")
         return err
 
