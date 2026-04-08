@@ -36,6 +36,31 @@ import time
 from nvme_test_logger import TestNVMeLogger
 
 
+def find_config_file(filename='config.json'):
+    """ Search for a configuration file by walking up the directory tree.
+
+    Starting from the directory containing this module, walk toward the
+    filesystem root until a file with the given name is found.
+        - Args:
+            - filename: name of the config file to search for
+        - Returns:
+            - Absolute path to the config file
+        - Raises:
+            - FileNotFoundError if the file is not found in any ancestor directory
+    """
+    directory = os.path.dirname(os.path.abspath(__file__))
+    while True:
+        candidate = os.path.join(directory, filename)
+        if os.path.isfile(candidate):
+            return candidate
+        parent = os.path.dirname(directory)
+        if parent == directory:
+            raise FileNotFoundError(
+                f"Config file '{filename}' not found in '{os.path.dirname(os.path.abspath(__file__))}' "
+                f"or any of its parent directories")
+        directory = parent
+
+
 def to_decimal(value):
     """ Wrapper for converting numbers to base 10 decimal
         - Args:
@@ -77,7 +102,7 @@ class TestNVMe(unittest.TestCase):
         self.do_validate_pci_device = True
         self.default_nsid = 0x1
         self.flbas = 0
-        self.config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
+        self.config_file = find_config_file()
 
         self.load_config()
         if self.do_validate_pci_device:
