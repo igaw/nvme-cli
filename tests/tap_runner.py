@@ -20,6 +20,34 @@ import traceback
 import unittest
 
 
+class TAPDiagnosticStream(io.TextIOBase):
+    """Wrap a stream and prefix every line with '# ' for TAP diagnostics.
+
+    This lets print()/sys.stdout.write() calls from setUp/tearDown/tests
+    appear on stdout as TAP-compliant diagnostic lines instead of being
+    mixed into stderr.
+    """
+
+    def __init__(self, stream: io.TextIOBase) -> None:
+        super().__init__()
+        self._stream = stream
+        self._pending = ''
+
+    def write(self, s: str) -> int:
+        self._pending += s
+        while '\n' in self._pending:
+            line, self._pending = self._pending.split('\n', 1)
+            self._stream.write('# {}\n'.format(line))
+        self._stream.flush()
+        return len(s)
+
+    def flush(self) -> None:
+        if self._pending:
+            self._stream.write('# {}\n'.format(self._pending))
+            self._pending = ''
+        self._stream.flush()
+
+
 class TAPTestResult(unittest.TestResult):
     """Collect unittest results and render them as TAP version 13."""
 
@@ -97,12 +125,11 @@ def run_tests(test_module_name: str, start_dir: str | None = None) -> bool:
     real_stdout.write('1..{}\n'.format(suite.countTestCases()))
     real_stdout.flush()
 
-    # Redirect sys.stdout to real_stderr so that print()/sys.stdout.write()
-    # calls from setUp/tearDown/tests do not pollute the TAP stream on stdout.
-    # All diagnostic output (print statements, subprocess stderr via fd 2, and
-    # test failure tracebacks) goes to stderr so that 'meson test -v' shows it
-    # live on the terminal.
-    sys.stdout = real_stderr  # type: ignore[assignment]
+    # Redirect sys.stdout to a TAP diagnostic stream so that
+    # print()/sys.stdout.write() calls from setUp/tearDown/tests appear on
+    # stdout as '# ...' diagnostic lines rather than being sent to stderr.
+    # Error tracebacks (genuine failures) still go to stderr via diag_stream.
+    sys.stdout = TAPDiagnosticStream(real_stdout)  # type: ignore[assignment]
     try:
         result = TAPTestResult(real_stdout, real_stderr)
         suite.run(result)
