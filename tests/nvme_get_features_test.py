@@ -67,7 +67,9 @@ class TestNVMeGetMandatoryFeatures(TestNVMe):
                                 shell=True,
                                 stdout=subprocess.PIPE,
                                 encoding='utf-8')
-        self.vector_list_len = len(proc.stdout.read().strip().split(" "))
+        output = proc.stdout.read()
+        logger.debug(output)
+        self.vector_list_len = len(output.strip().split(" "))
 
     def tearDown(self):
         """ Post Section for TestNVMeGetMandatoryFeatures

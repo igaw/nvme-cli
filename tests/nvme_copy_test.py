@@ -52,6 +52,7 @@ class TestNVMeCopy(TestNVMe):
             err = proc.wait()
             self.assertEqual(err, 0, "ERROR : nvme get-feature failed")
             self.host_behavior_data = proc.stdout.read()
+            logger.debug(self.host_behavior_data)
             # enable cross-namespace copy formats
             if self.host_behavior_data[4] & cross_namespace_copy:
                 # skip if already enabled
@@ -78,6 +79,7 @@ class TestNVMeCopy(TestNVMe):
         err = proc.wait()
         self.assertEqual(err, 0, "ERROR : nvme get-ns-id failed")
         output = proc.stdout.read()
+        logger.debug(output)
         self.ns1_nsid = int(output.strip().split(':')[-1])
         self.setup_log_dir(self.__class__.__name__)
 

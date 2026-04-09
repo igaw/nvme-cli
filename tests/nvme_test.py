@@ -226,7 +226,9 @@ class TestNVMe(unittest.TestCase):
                                 encoding='utf-8')
         err = proc.wait()
         self.assertEqual(err, 0, "ERROR : nvme list-ctrl failed")
-        json_output = json.loads(proc.stdout.read())
+        output = proc.stdout.read()
+        logger.debug(output)
+        json_output = json.loads(output)
         self.assertTrue(len(json_output['ctrl_list']) > 0,
                         "ERROR : nvme list-ctrl could not find ctrl")
         return str(json_output['ctrl_list'][0]['ctrl_id'])
@@ -271,7 +273,9 @@ class TestNVMe(unittest.TestCase):
                                 stdout=subprocess.PIPE,
                                 encoding='utf-8')
         self.assertEqual(proc.wait(), 0, "ERROR : nvme list namespace failed")
-        json_output = json.loads(proc.stdout.read())
+        output = proc.stdout.read()
+        logger.debug(output)
+        json_output = json.loads(output)
 
         for ns in json_output['nsid_list']:
             ns_list.append(ns['nsid'])
@@ -294,7 +298,9 @@ class TestNVMe(unittest.TestCase):
                                 encoding='utf-8')
         err = proc.wait()
         self.assertEqual(err, 0, "ERROR : reading maximum namespace count failed")
-        json_output = json.loads(proc.stdout.read())
+        output = proc.stdout.read()
+        logger.debug(output)
+        json_output = json.loads(output)
         return int(json_output['nn'])
 
     def get_lba_status_supported(self):
@@ -322,7 +328,9 @@ class TestNVMe(unittest.TestCase):
                                 encoding='utf-8')
         err = proc.wait()
         self.assertEqual(err, 0, "ERROR : reading id-ns")
-        json_output = json.loads(proc.stdout.read())
+        output = proc.stdout.read()
+        logger.debug(output)
+        json_output = json.loads(output)
         self.assertTrue(len(json_output['lbafs']) > self.flbas,
                         "Error : could not match the given flbas to an existing lbaf")
         lbaf_json = json_output['lbafs'][int(self.flbas)]
@@ -361,7 +369,9 @@ class TestNVMe(unittest.TestCase):
                                 encoding='utf-8')
         err = proc.wait()
         self.assertEqual(err, 0, "ERROR : reading id-ctrl failed")
-        json_output = json.loads(proc.stdout.read())
+        output = proc.stdout.read()
+        logger.debug(output)
+        json_output = json.loads(output)
         self.assertTrue(field in json_output,
                         f"ERROR : reading field '{field}' failed")
         return str(json_output[field])
@@ -393,7 +403,9 @@ class TestNVMe(unittest.TestCase):
                                 stdout=subprocess.PIPE,
                                 encoding='utf-8')
         self.assertEqual(proc.wait(), 0, "ERROR : nvme list-ns failed")
-        json_output = json.loads(proc.stdout.read())
+        output = proc.stdout.read()
+        logger.debug(output)
+        json_output = json.loads(output)
         self.assertEqual(len(json_output['nsid_list']), 0,
                          "ERROR : deleting all namespace failed")
 
@@ -428,7 +440,9 @@ class TestNVMe(unittest.TestCase):
         proc = self.create_ns(nsze, ncap, flbas, dps)
         err = proc.wait()
         if err == 0:
-            json_output = json.loads(proc.stdout.read())
+            output = proc.stdout.read()
+            logger.debug(output)
+            json_output = json.loads(output)
             self.assertEqual(int(json_output['nsid']), nsid,
                              "ERROR : create namespace failed")
             id_ns_cmd = f"{self.nvme_bin} id-ns {self.ctrl} " + \
@@ -543,13 +557,11 @@ class TestNVMe(unittest.TestCase):
                                 encoding='utf-8')
         err = proc.wait()
         self.assertEqual(err, 0, "ERROR : nvme error log failed")
-        # This sanity checkes the 'normal' output
-        line = proc.stdout.readline()
-        err_log_entry_count = int(line.split(" ")[5].strip().split(":")[1])
-        entry_count = 0
-        for line in proc.stdout:
-            if pattern.match(line):
-                entry_count += 1
+        output = proc.stdout.read()
+        logger.debug(output)
+        lines = output.splitlines()
+        err_log_entry_count = int(lines[0].split(" ")[5].strip().split(":")[1])
+        entry_count = sum(1 for line in lines[1:] if pattern.match(line))
 
         return 0 if err_log_entry_count == entry_count else 1
 

@@ -117,7 +117,9 @@ class TestNVMeFormatCmd(TestNVMe):
                                 encoding='utf-8')
         err = proc.wait()
         self.assertEqual(err, 0, "ERROR : nvme id-ns failed")
-        json_output = json.loads(proc.stdout.read())
+        output = proc.stdout.read()
+        logger.debug(output)
+        json_output = json.loads(output)
         self.lba_format_list = json_output['lbafs']
         self.assertTrue(len(self.lba_format_list) > 0,
                         "ERROR : nvme id-ns could not find any lba formats")
