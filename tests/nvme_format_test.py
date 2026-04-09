@@ -38,10 +38,13 @@ Namespace Format testcase :-
 """
 
 import json
+import logging
 import math
 import subprocess
 
 from nvme_test import TestNVMe
+
+logger = logging.getLogger(__name__)
 
 
 class TestNVMeFormatCmd(TestNVMe):
@@ -107,6 +110,7 @@ class TestNVMeFormatCmd(TestNVMe):
         # read lbaf information
         id_ns_cmd = f"{self.nvme_bin} id-ns {self.ctrl} " + \
             f"--namespace-id={self.default_nsid} --output-format=json"
+        logger.debug(id_ns_cmd)
         proc = subprocess.Popen(id_ns_cmd,
                                 shell=True,
                                 stdout=subprocess.PIPE,

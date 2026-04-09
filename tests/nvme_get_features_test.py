@@ -34,9 +34,12 @@ Test the Mandatory features with get features command:-
     9. 0Bh M Asynchronous Event Configuration.
 """
 
+import logging
 import subprocess
 
 from nvme_test import TestNVMe
+
+logger = logging.getLogger(__name__)
 
 
 class TestNVMeGetMandatoryFeatures(TestNVMe):
@@ -59,6 +62,7 @@ class TestNVMeGetMandatoryFeatures(TestNVMe):
         device = self.ctrl.split('/')[-1]
         get_vector_list_cmd = "grep " + device + "q /proc/interrupts |" \
                               " cut -d : -f 1 | tr -d ' ' | tr '\n' ' '"
+        logger.debug(get_vector_list_cmd)
         proc = subprocess.Popen(get_vector_list_cmd,
                                 shell=True,
                                 stdout=subprocess.PIPE,
