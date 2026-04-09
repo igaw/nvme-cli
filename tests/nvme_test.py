@@ -158,7 +158,8 @@ class TestNVMe(unittest.TestCase):
             log_level_str = config.get('log_level',
                                        'DEBUG' if config.get('debug', False) else 'WARNING')
             log_level = getattr(logging, log_level_str.upper(), logging.WARNING)
-            logging.basicConfig(format='# %(message)s')
+            if not logging.getLogger().handlers:
+                logging.basicConfig(format='# %(message)s')
             logging.getLogger().setLevel(log_level)
             logger.debug("Using nvme binary '%s'", self.nvme_bin)
 
@@ -560,6 +561,8 @@ class TestNVMe(unittest.TestCase):
         output = proc.stdout.read()
         logger.debug(output)
         lines = output.splitlines()
+        if not lines:
+            return 1
         err_log_entry_count = int(lines[0].split(" ")[5].strip().split(":")[1])
         entry_count = sum(1 for line in lines[1:] if pattern.match(line))
 
