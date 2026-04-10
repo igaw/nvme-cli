@@ -657,7 +657,7 @@ struct libnvme_ns {
 		const char *dev;
 
 		dev = libnvme_ctrl_get_name($self);
-		if (dev) {
+		if (dev && !libnvme_ctrl_get_config($self)->duplicate_connect) {
 			connect_err = -ENVME_CONNECT_ALREADY;
 			return;
 		}
