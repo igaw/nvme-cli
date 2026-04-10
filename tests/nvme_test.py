@@ -503,6 +503,7 @@ class TestNVMe(unittest.TestCase):
         # This sanity checkes the 'normal' output
         lines = result.stdout.splitlines()
         if not lines:
+            print("ERROR: nvme error-log returned empty output")
             return 1
         err_log_entry_count = int(lines[0].split(" ")[5].strip().split(":")[1])
         entry_count = sum(1 for line in lines[1:] if pattern.match(line))
