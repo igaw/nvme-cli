@@ -176,6 +176,49 @@ struct libnvme_ns { /*!generate-accessors*/
 	enum nvme_csi csi;
 };
 
+/**
+ * struct libnvme_fabrics_config - Linux NVMe fabrics initiator options
+ * @queue_size:		Number of IO queue entries
+ * @nr_io_queues:	Number of controller IO queues to establish
+ * @reconnect_delay:	Time between two consecutive reconnect attempts.
+ * @ctrl_loss_tmo:	Override the default controller reconnect attempt timeout in seconds
+ * @fast_io_fail_tmo:	Set the fast I/O fail timeout in seconds.
+ * @keep_alive_tmo:	Override the default keep-alive-timeout to this value in seconds
+ * @nr_write_queues:	Number of queues to use for exclusively for writing
+ * @nr_poll_queues:	Number of queues to reserve for polling completions
+ * @tos:		Type of service
+ * @keyring:		Keyring to store and lookup keys
+ * @tls_key:		TLS PSK for the connection
+ * @tls_configured_key:	TLS PSK for connect command for the connection
+ * @duplicate_connect:	Allow multiple connections to the same target
+ * @disable_sqflow:	Disable controller sq flow control
+ * @hdr_digest:		Generate/verify header digest (TCP)
+ * @data_digest:	Generate/verify data digest (TCP)
+ * @tls:		Start TLS on the connection (TCP)
+ * @concat:		Enable secure concatenation (TCP)
+ */
+struct libnvme_fabrics_config {
+	int queue_size;
+	int nr_io_queues;
+	int reconnect_delay;
+	int ctrl_loss_tmo;
+	int fast_io_fail_tmo;
+	int keep_alive_tmo;
+	int nr_write_queues;
+	int nr_poll_queues;
+	int tos;
+	long keyring;
+	long tls_key;
+	long tls_configured_key;
+
+	bool duplicate_connect;
+	bool disable_sqflow;
+	bool hdr_digest;
+	bool data_digest;
+	bool tls;
+	bool concat;
+};
+
 struct libnvme_ctrl { /*!generate-accessors*/
 	struct list_node entry;
 	struct list_head paths;
@@ -338,7 +381,26 @@ struct libnvmf_context {
 	/* common fabrics configuration */
 	const char *device;
 	bool persistent;
-	struct libnvme_fabrics_config cfg;
+
+	/* fabrics connection tuning (formerly libnvme_fabrics_config) */
+	int queue_size;
+	int nr_io_queues;
+	int reconnect_delay;
+	int ctrl_loss_tmo;
+	int fast_io_fail_tmo;
+	int keep_alive_tmo;
+	int nr_write_queues;
+	int nr_poll_queues;
+	int tos;
+	long keyring_id;	/* parsed numeric keyring ID */
+	long tls_key_id;	/* parsed numeric TLS key ID */
+	long tls_configured_key;
+	bool duplicate_connect;
+	bool disable_sqflow;
+	bool hdr_digest;
+	bool data_digest;
+	bool tls;
+	bool concat;
 
 	/* connection configuration */
 	const char *subsysnqn;
@@ -385,6 +447,8 @@ int __libnvme_transport_handle_open_mi(struct libnvme_transport_handle *hdl,
 		const char *devname);
 int __libnvme_transport_handle_init_mi(struct libnvme_transport_handle *hdl);
 void __libnvme_transport_handle_close_mi(struct libnvme_transport_handle *hdl);
+
+struct libnvme_fabrics_config *libnvme_ctrl_get_config(libnvme_ctrl_t c);
 
 int _libnvme_create_ctrl(struct libnvme_global_ctx *ctx,
 		struct libnvmf_context *fctx,

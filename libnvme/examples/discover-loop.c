@@ -56,10 +56,7 @@ int main()
 	libnvme_host_t h;
 	libnvme_ctrl_t c;
 	int ret;
-	struct libnvme_fabrics_config cfg;
 	struct libnvmf_discovery_args *args;
-
-	libnvmf_default_config(&cfg);
 
 	ctx = libnvme_create_global_ctx(stdout, DEFAULT_LOGLEVEL);
 	if (!ctx)
@@ -81,7 +78,7 @@ int main()
 		fprintf(stderr, "Failed to allocate memory\n");
 		return 1;
 	}
-	ret = libnvmf_add_ctrl(h, c, &cfg);
+	ret = libnvmf_add_ctrl(h, c);
 	if (ret) {
 		fprintf(stderr, "no controller found\n");
 		return 1;

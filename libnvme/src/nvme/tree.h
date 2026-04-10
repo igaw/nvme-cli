@@ -759,14 +759,6 @@ libnvme_subsystem_t libnvme_ctrl_get_subsystem(libnvme_ctrl_t c);
 const char *libnvme_ns_head_get_sysfs_dir(libnvme_ns_head_t head);
 
 /**
- * libnvme_ctrl_get_config() - Fabrics configuration of a controller
- * @c:	Controller instance
- *
- * Return: Fabrics configuration of @c
- */
-struct libnvme_fabrics_config *libnvme_ctrl_get_config(libnvme_ctrl_t c);
-
-/**
  * libnvme_ctrl_identify() - Issues an 'identify controller' command
  * @c:	Controller instance
  * @id:	Identify controller data structure

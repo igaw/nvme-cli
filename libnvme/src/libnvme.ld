@@ -9,7 +9,6 @@ LIBNVME_3 {
 		libnvme_create_raw_secret;
 		libnvme_ctrl_first_ns;
 		libnvme_ctrl_first_path;
-		libnvme_ctrl_get_config;
 		libnvme_ctrl_get_phy_slot;
 		libnvme_ctrl_get_src_addr;
 		libnvme_ctrl_get_state;

@@ -98,61 +98,6 @@ PyObject *read_hostid();
 	}
 }
 
-%typemap(in) struct libnvme_fabrics_config *($*1_type temp){
-	Py_ssize_t pos = 0;
-	PyObject * key,*value;
-	memset(&temp, 0, sizeof(temp));
-	temp.tos = -1;
-	temp.ctrl_loss_tmo = NVMF_DEF_CTRL_LOSS_TMO;
-	while (PyDict_Next($input, &pos, &key, &value)) {
-		if (!PyUnicode_CompareWithASCIIString(key, "nr_io_queues")) {
-			temp.nr_io_queues = PyLong_AsLong(value);
-			continue;
-		}
-		if (!PyUnicode_CompareWithASCIIString(key, "reconnect_delay")) {
-			temp.reconnect_delay = PyLong_AsLong(value);
-			continue;
-		}
-		if (!PyUnicode_CompareWithASCIIString(key, "ctrl_loss_tmo")) {
-			temp.ctrl_loss_tmo = PyLong_AsLong(value);
-			continue;
-		}
-		if (!PyUnicode_CompareWithASCIIString(key, "keep_alive_tmo")) {
-			temp.keep_alive_tmo = PyLong_AsLong(value);
-			continue;
-		}
-		if (!PyUnicode_CompareWithASCIIString(key, "nr_write_queues")) {
-			temp.nr_write_queues = PyLong_AsLong(value);
-			continue;
-		}
-		if (!PyUnicode_CompareWithASCIIString(key, "nr_poll_queues")) {
-			temp.nr_poll_queues = PyLong_AsLong(value);
-			continue;
-		}
-		if (!PyUnicode_CompareWithASCIIString(key, "tos")) {
-			temp.tos = PyLong_AsLong(value);
-			continue;
-		}
-		if (!PyUnicode_CompareWithASCIIString(key, "duplicate_connect")) {
-			temp.duplicate_connect = PyObject_IsTrue(value) ? true : false;
-			continue;
-		}
-		if (!PyUnicode_CompareWithASCIIString(key, "disable_sqflow")) {
-			temp.disable_sqflow = PyObject_IsTrue(value) ? true : false;
-			continue;
-		}
-		if (!PyUnicode_CompareWithASCIIString(key, "hdr_digest")) {
-			temp.hdr_digest = PyObject_IsTrue(value) ? true : false;
-			continue;
-		}
-		if (!PyUnicode_CompareWithASCIIString(key, "data_digest")) {
-			temp.data_digest = PyObject_IsTrue(value) ? true : false;
-			continue;
-		}
-	}
-	$1 = &temp;
-};
-
 %typemap(out) uint8_t [8] {
 	$result = PyBytes_FromStringAndSize((char *)$1, 8);
 };
@@ -673,8 +618,7 @@ struct libnvme_ns {
 	}
 %};
 
-%pythonappend libnvme_ctrl::connect(struct libnvme_host *h,
-				 struct libnvme_fabrics_config *cfg) {
+%pythonappend libnvme_ctrl::connect(struct libnvme_host *h) {
     self.__host = h  # Keep a reference to parent to ensure ctrl obj gets GCed before host}
 %pythonappend libnvme_ctrl::init(struct libnvme_host *h, int instance) {
     self.__host = h  # Keep a reference to parent to ensure ctrl obj gets GCed before host}
@@ -708,19 +652,18 @@ struct libnvme_ns {
 		return libnvme_init_ctrl(h, $self, instance) == 0;
 	}
 
-	void connect(struct libnvme_host *h,
-		     struct libnvme_fabrics_config *cfg = NULL) {
+	void connect(struct libnvme_host *h) {
 		int ret;
 		const char *dev;
 
 		dev = libnvme_ctrl_get_name($self);
-		if (dev && !cfg->duplicate_connect) {
+		if (dev) {
 			connect_err = -ENVME_CONNECT_ALREADY;
 			return;
 		}
 
 		Py_BEGIN_ALLOW_THREADS  /* Release Python GIL */
-		    ret = libnvmf_add_ctrl(h, $self, cfg);
+		    ret = libnvmf_add_ctrl(h, $self);
 		Py_END_ALLOW_THREADS    /* Reacquire Python GIL */
 
 		if (ret) {

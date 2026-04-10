@@ -146,6 +146,51 @@ struct nvmf_args {
 	)
 
 
+/*
+ * nvmf_fabrics_config - local config populated from CLI argparse.
+ * Mirrors the fields of the (now internal) libnvme_fabrics_config so that
+ * the NVMF_ARGS macro below can fill them via OPT_INT / OPT_FLAG.
+ */
+struct nvmf_fabrics_config {
+	int queue_size;
+	int nr_io_queues;
+	int reconnect_delay;
+	int ctrl_loss_tmo;
+	int fast_io_fail_tmo;
+	int keep_alive_tmo;
+	int nr_write_queues;
+	int nr_poll_queues;
+	int tos;
+	long tls_key;
+
+	bool duplicate_connect;
+	bool disable_sqflow;
+	bool hdr_digest;
+	bool data_digest;
+	bool tls;
+	bool concat;
+};
+
+static int setup_fabrics_config(struct libnvmf_context *fctx,
+		const struct nvmf_fabrics_config *cfg)
+{
+	int err;
+
+	err = libnvmf_context_set_io_options(fctx, cfg->queue_size,
+		cfg->nr_io_queues, cfg->nr_write_queues, cfg->nr_poll_queues);
+	if (err)
+		return err;
+
+	err = libnvmf_context_set_timeout_options(fctx, cfg->keep_alive_tmo,
+		cfg->reconnect_delay, cfg->ctrl_loss_tmo, cfg->fast_io_fail_tmo);
+	if (err)
+		return err;
+
+	return libnvmf_context_set_connect_flags(fctx, cfg->tos, cfg->tls_key,
+		cfg->duplicate_connect, cfg->disable_sqflow,
+		cfg->hdr_digest, cfg->data_digest, cfg->tls, cfg->concat);
+}
+
 static void save_discovery_log(char *raw, struct nvmf_discovery_log *log)
 {
 	uint64_t numrec = le64_to_cpu(log->numrec);
@@ -173,7 +218,7 @@ static int setup_common_context(struct libnvmf_context *fctx,
 		struct nvmf_args *fa);
 
 struct cb_fabrics_data {
-	struct libnvme_fabrics_config *cfg;
+	struct nvmf_fabrics_config *cfg;
 	nvme_print_flags_t flags;
 	bool quiet;
 	char *raw;
@@ -276,7 +321,7 @@ static void cb_parser_cleanup(struct libnvmf_context *fctx, void *user_data)
 static int cb_parser_next_line(struct libnvmf_context *fctx, void *user_data)
 {
 	struct cb_fabrics_data *cfd = user_data;
-	struct libnvme_fabrics_config cfg;
+	struct nvmf_fabrics_config cfg;
 	struct nvmf_args fa = {};
 	char *ptr, *p, line[4096];
 	int argc, ret = 0;
@@ -314,7 +359,7 @@ next:
 	if (ret)
 		return ret;
 
-	ret = libnvmf_context_set_fabrics_config(fctx, &cfg);
+	ret = setup_fabrics_config(fctx, &cfg);
 	if (ret)
 		return ret;
 
@@ -350,7 +395,7 @@ static int setup_common_context(struct libnvmf_context *fctx,
 
 static int create_common_context(struct libnvme_global_ctx *ctx,
 		bool persistent, struct nvmf_args *fa,
-		struct libnvme_fabrics_config *cfg,
+		struct nvmf_fabrics_config *cfg,
 		void *user_data, struct libnvmf_context **fctxp)
 {
 	struct libnvmf_context *fctx;
@@ -371,7 +416,7 @@ static int create_common_context(struct libnvme_global_ctx *ctx,
 	if (err)
 		goto err;
 
-	err = libnvmf_context_set_fabrics_config(fctx, cfg);
+	err = setup_fabrics_config(fctx, cfg);
 	if (err)
 		goto err;
 
@@ -396,7 +441,7 @@ err:
 static int create_discovery_context(struct libnvme_global_ctx *ctx,
 		bool persistent, const char *device,
 		struct nvmf_args *fa,
-		struct libnvme_fabrics_config *cfg,
+		struct nvmf_fabrics_config *cfg,
 		void *user_data, struct libnvmf_context **fctxp)
 {
 	struct libnvmf_context *fctx;
@@ -482,7 +527,7 @@ int fabrics_discovery(const char *desc, int argc, char **argv, bool connect)
 	_cleanup_nvme_global_ctx_ struct libnvme_global_ctx *ctx = NULL;
 	_cleanup_nvmf_context_ struct libnvmf_context *fctx = NULL;
 	int ret;
-	struct libnvme_fabrics_config cfg;
+	struct nvmf_fabrics_config cfg = { .tos = -1, .ctrl_loss_tmo = NVMF_DEF_CTRL_LOSS_TMO };
 	struct nvmf_args fa = { .subsysnqn = NVME_DISC_SUBSYS_NAME };
 	char *device = NULL;
 	bool force = false;
@@ -502,8 +547,6 @@ int fabrics_discovery(const char *desc, int argc, char **argv, bool connect)
 		  OPT_FLAG("no-nbft",        0, &nonbft,              "Do not look at NBFT tables"),
 		  OPT_STRING("nbft-path",    0, "STR", &nbft_path,    "user-defined path for NBFT tables"),
 		  OPT_STRING("context",      0, "STR", &context,       nvmf_context));
-
-	libnvmf_default_config(&cfg);
 
 	ret = argconfig_parse(argc, argv, desc, opts);
 	if (ret)
@@ -596,15 +639,13 @@ int fabrics_connect(const char *desc, int argc, char **argv)
 	_cleanup_nvme_ctrl_ libnvme_ctrl_t c = NULL;
 	int ret;
 	nvme_print_flags_t flags;
-	struct libnvme_fabrics_config cfg = { 0 };
+	struct nvmf_fabrics_config cfg = { .tos = -1, .ctrl_loss_tmo = NVMF_DEF_CTRL_LOSS_TMO };
 	struct nvmf_args fa = { 0 };
 
 	NVMF_ARGS(opts, fa, cfg,
 		  OPT_STRING("config",             'J', "FILE", &config_file, nvmf_config_file),
 		  OPT_FLAG("dump-config",          'O', &dump_config,             "Dump JSON configuration to stdout"),
 		  OPT_STRING("context",              0, "STR", &context,  nvmf_context));
-
-	libnvmf_default_config(&cfg);
 
 	ret = argconfig_parse(argc, argv, desc, opts);
 	if (ret)
@@ -889,7 +930,7 @@ int fabrics_config(const char *desc, int argc, char **argv)
 	bool scan_tree = false, modify_config = false, update_config = false;
 	_cleanup_nvme_global_ctx_ struct libnvme_global_ctx *ctx = NULL;
 	char *config_file = PATH_NVMF_CONFIG;
-	struct libnvme_fabrics_config cfg;
+	struct nvmf_fabrics_config cfg = { .tos = -1, .ctrl_loss_tmo = NVMF_DEF_CTRL_LOSS_TMO };
 	struct nvmf_args fa = { };
 	int ret;
 
@@ -899,8 +940,6 @@ int fabrics_config(const char *desc, int argc, char **argv)
 		  OPT_FLAG("modify",               'M', &modify_config,       "Modify JSON configuration file"),
 		  OPT_FLAG("dump",                 'O', &dump_config,         "Dump JSON configuration to stdout"),
 		  OPT_FLAG("update",               'U', &update_config,       "Update JSON configuration file"));
-
-	libnvmf_default_config(&cfg);
 
 	ret = argconfig_parse(argc, argv, desc, opts);
 	if (ret)

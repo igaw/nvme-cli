@@ -948,7 +948,7 @@ __public const char *libnvme_ctrl_get_state(libnvme_ctrl_t c)
 	return c->state;
 }
 
-__public struct libnvme_fabrics_config *libnvme_ctrl_get_config(
+struct libnvme_fabrics_config *libnvme_ctrl_get_config(
 		libnvme_ctrl_t c)
 {
 	return &c->cfg;
@@ -1081,7 +1081,7 @@ static bool traddr_is_hostname(const char *transport, const char *traddr)
 	return true;
 }
 
-__public void libnvmf_default_config(struct libnvme_fabrics_config *cfg)
+static void libnvmf_default_config(struct libnvme_fabrics_config *cfg)
 {
 	memset(cfg, 0, sizeof(*cfg));
 	cfg->tos = -1;
