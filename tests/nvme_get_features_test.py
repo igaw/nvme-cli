@@ -34,8 +34,6 @@ Test the Mandatory features with get features command:-
     9. 0Bh M Asynchronous Event Configuration.
 """
 
-import subprocess
-
 from nvme_test import TestNVMe
 
 
@@ -59,11 +57,8 @@ class TestNVMeGetMandatoryFeatures(TestNVMe):
         device = self.ctrl.split('/')[-1]
         get_vector_list_cmd = "grep " + device + "q /proc/interrupts |" \
                               " cut -d : -f 1 | tr -d ' ' | tr '\n' ' '"
-        proc = subprocess.Popen(get_vector_list_cmd,
-                                shell=True,
-                                stdout=subprocess.PIPE,
-                                encoding='utf-8')
-        self.vector_list_len = len(proc.stdout.read().strip().split(" "))
+        result = self.run_cmd(get_vector_list_cmd)
+        self.vector_list_len = len(result.stdout.strip().split(" "))
 
     def tearDown(self):
         """ Post Section for TestNVMeGetMandatoryFeatures
@@ -84,21 +79,13 @@ class TestNVMeGetMandatoryFeatures(TestNVMe):
                 get_feat_cmd = f"{self.nvme_bin} get-feature {self.ctrl} " + \
                     f"--feature-id={str(feature_id)} " + \
                     f"--cdw11={str(vector)} --human-readable"
-                proc = subprocess.Popen(get_feat_cmd,
-                                        shell=True,
-                                        stdout=subprocess.PIPE,
-                                        encoding='utf-8')
-                self.assertEqual(proc.wait(), 0)
+                self.assertEqual(self.run_cmd(get_feat_cmd).returncode, 0)
         else:
             get_feat_cmd = f"{self.nvme_bin} get-feature {self.ctrl} " + \
                 f"--feature-id={str(feature_id)} --human-readable"
             if str(feature_id) == "0x05":
                 get_feat_cmd += f" --namespace-id={self.default_nsid}"
-            proc = subprocess.Popen(get_feat_cmd,
-                                    shell=True,
-                                    stdout=subprocess.PIPE,
-                                    encoding='utf-8')
-            self.assertEqual(proc.wait(), 0)
+            self.assertEqual(self.run_cmd(get_feat_cmd).returncode, 0)
 
     def test_get_mandatory_features(self):
         """ Testcase main """
