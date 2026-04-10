@@ -338,7 +338,7 @@ struct libnvmf_context {
 	/* common fabrics configuraiton */
 	const char *device;
 	bool persistent;
-	struct libnvme_fabrics_config *cfg;
+	struct libnvme_fabrics_config cfg;
 
 	/* connection configuration */
 	const char *subsysnqn;
