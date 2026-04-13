@@ -18,7 +18,7 @@ python3 generate-accessors.py [options] <header-files>
 | `-c`  | `--c-out`   | `<file>` | Full path of the `*.c` file to generate. Default: `accessors.c` |
 | `-l`  | `--ld-out`  | `<file>` | Full path of the `*.ld` file to generate. Default: `accessors.ld` |
 | `-p`  | `--prefix`  | `<str>`  | Prefix prepended to every generated function name        |
-| `-g`  | `--group`   | `<name>` | Only process structs annotated with `:group=<name>`; when omitted all annotated structs are processed |
+| `-g`  | `--group`   | `<name>` | Only process structs annotated with `:group=<name>`. When omitted, all annotated structs are processed. |
 | `-v`  | `--verbose` | none     | Verbose output showing which structs are being processed |
 | `-H`  | `--help`    | none     | Show this help message                                   |
 

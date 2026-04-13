@@ -344,8 +344,8 @@ def parse_struct_annotation(raw_body):
     first_token = raw_body.lstrip()
 
     for pattern in (
-        r'/\*!generate-accessors((?::[A-Za-z0-9_=]+)*)?\*/',
-        r'//!generate-accessors((?::[A-Za-z0-9_=]+)*)?',
+        r'/\*!generate-accessors((?::(?:group=[A-Za-z0-9_]+|[A-Za-z0-9_]+))*)?\*/',
+        r'//!generate-accessors((?::(?:group=[A-Za-z0-9_]+|[A-Za-z0-9_]+))*)?',
     ):
         m = re.match(pattern, first_token)
         if m:
@@ -357,7 +357,7 @@ def parse_struct_annotation(raw_body):
 
             for part in parts:
                 if part.startswith('group='):
-                    group = part[len('group='):] or None
+                    group = part[len('group='):]
                 elif part in _VALID_MODES:
                     mode = part
                 else:
