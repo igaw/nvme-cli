@@ -491,8 +491,13 @@ struct libnvmf_context {};
 		Py_ssize_t pos = 0;
 		PyObject *key, *value;
 
-		if (!$self->cfg || !PyDict_Check(dict))
+		if (!$self->cfg)
 			return;
+		if (!PyDict_Check(dict)) {
+			PyErr_SetString(PyExc_TypeError,
+					"set_fabrics_config: argument must be a dict");
+			return;
+		}
 
 		while (PyDict_Next(dict, &pos, &key, &value)) {
 			if (!PyUnicode_CompareWithASCIIString(key, "nr_io_queues")) {
