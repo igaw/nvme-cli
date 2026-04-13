@@ -17,15 +17,28 @@ Limitations:
   - Does not support struct within struct.
 
 Struct inclusion — annotate the opening brace line of the struct.
-The optional mode qualifier sets the default for all members of the struct:
-  struct nvme_ctrl { /*!generate-accessors*/          — default: both getter and setter
-  struct nvme_ctrl { //!generate-accessors            — default: both getter and setter
-  struct nvme_ctrl { /*!generate-accessors:none*/     — default: no accessors
-  struct nvme_ctrl { //!generate-accessors:none       — default: no accessors
-  struct nvme_ctrl { /*!generate-accessors:readonly*/ — default: getter only
-  struct nvme_ctrl { //!generate-accessors:readonly   — default: getter only
-  struct nvme_ctrl { /*!generate-accessors:writeonly*/ — default: setter only
-  struct nvme_ctrl { //!generate-accessors:writeonly   — default: setter only
+The optional qualifiers (each introduced by ':') set the default accessor
+mode for all members and/or assign the struct to a named group:
+
+  struct nvme_ctrl { /*!generate-accessors*/                 — both getter and setter, no group
+  struct nvme_ctrl { //!generate-accessors                   — both getter and setter, no group
+  struct nvme_ctrl { /*!generate-accessors:none*/            — default: no accessors
+  struct nvme_ctrl { //!generate-accessors:none              — default: no accessors
+  struct nvme_ctrl { /*!generate-accessors:readonly*/        — default: getter only
+  struct nvme_ctrl { //!generate-accessors:readonly          — default: getter only
+  struct nvme_ctrl { /*!generate-accessors:writeonly*/       — default: setter only
+  struct nvme_ctrl { //!generate-accessors:writeonly         — default: setter only
+  struct nvme_ctrl { /*!generate-accessors:group=fabrics*/   — both getter and setter, group 'fabrics'
+  struct nvme_ctrl { //!generate-accessors:group=fabrics     — both getter and setter, group 'fabrics'
+  struct nvme_ctrl { /*!generate-accessors:readonly:group=fabrics*/ — getter only, group 'fabrics'
+
+The qualifiers may appear in any order after the annotation keyword.
+
+Group filtering — use the --group option on the command line:
+  When --group NAME is given, only structs annotated with :group=NAME are
+  processed.  Structs without a :group= qualifier are skipped.
+  When --group is omitted, all annotated structs are processed regardless
+  of their group annotation.
 
 Member exclusion — annotate the member declaration line:
   char *model; /*!accessors:none*/
@@ -310,50 +323,67 @@ _VALID_MODES = frozenset(('both', 'none', 'readonly', 'writeonly'))
 
 
 def parse_struct_annotation(raw_body):
-    """Return the default mode for a struct from its generate-accessors annotation.
+    """Return (mode, group) for a struct from its generate-accessors annotation.
 
-    Recognises both comment styles with an optional mode qualifier:
-      /*!generate-accessors*/           → 'both'
-      /*!generate-accessors:none*/      → 'none'
-      /*!generate-accessors:readonly*/  → 'readonly'
-      /*!generate-accessors:writeonly*/ → 'writeonly'
-      //!generate-accessors             → 'both'
-      //!generate-accessors:none        → 'none'
-      //!generate-accessors:readonly    → 'readonly'
-      //!generate-accessors:writeonly   → 'writeonly'
+    Recognises both comment styles with zero or more colon-separated
+    qualifiers.  Valid qualifiers are:
 
-    Returns None when the annotation is absent.
-    Prints a warning and falls back to 'both' for unrecognised qualifiers.
+      A mode word — one of: both (default), none, readonly, writeonly
+      group=NAME  — assigns the struct to a named group
+
+    Examples:
+      /*!generate-accessors*/                    → ('both', None)
+      /*!generate-accessors:none*/               → ('none', None)
+      /*!generate-accessors:readonly*/           → ('readonly', None)
+      //!generate-accessors:group=fabrics        → ('both', 'fabrics')
+      /*!generate-accessors:readonly:group=fab*/ → ('readonly', 'fab')
+
+    Returns (None, None) when the annotation is absent.
+    Prints a warning and falls back to 'both' for unrecognised mode qualifiers.
     """
     first_token = raw_body.lstrip()
 
     for pattern in (
-        r'/\*!generate-accessors(?::([a-z]+))?\*/',
-        r'//!generate-accessors(?::([a-z]+))?',
+        r'/\*!generate-accessors((?::[A-Za-z0-9_=]+)*)?\*/',
+        r'//!generate-accessors((?::[A-Za-z0-9_=]+)*)?',
     ):
         m = re.match(pattern, first_token)
         if m:
-            qualifier = m.group(1) or 'both'
-            if qualifier not in _VALID_MODES:
-                print(
-                    f"warning: unknown generate-accessors qualifier "
-                    f"'{qualifier}'; valid values are: "
-                    f"{', '.join(sorted(_VALID_MODES))}. "
-                    f"Defaulting to 'both'.",
-                    file=sys.stderr,
-                )
-                qualifier = 'both'
-            return qualifier
+            qualifiers_str = m.group(1) or ''
+            parts = [p for p in qualifiers_str.split(':') if p]
 
-    return None
+            mode  = 'both'
+            group = None
+
+            for part in parts:
+                if part.startswith('group='):
+                    group = part[len('group='):] or None
+                elif part in _VALID_MODES:
+                    mode = part
+                else:
+                    print(
+                        f"warning: unknown generate-accessors qualifier "
+                        f"'{part}'; valid mode values are: "
+                        f"{', '.join(sorted(_VALID_MODES))}. "
+                        f"Defaulting to 'both'.",
+                        file=sys.stderr,
+                    )
+
+            return mode, group
+
+    return None, None
 
 
-def parse_file(text, verbose):
+def parse_file(text, group_filter, verbose):
     """Return list of (struct_name, [Member]) tuples found in *text*.
 
     Only structs annotated with ``/*!generate-accessors*/`` or
     ``//!generate-accessors`` as the first token inside the opening brace
     are processed.
+
+    *group_filter* controls which structs are included:
+      None   — include all annotated structs (no filtering)
+      'NAME' — include only structs annotated with :group=NAME
     """
     result = []
 
@@ -361,15 +391,20 @@ def parse_file(text, verbose):
         struct_name = match.group(1)
         raw_body    = match.group(2)
 
-        struct_mode = parse_struct_annotation(raw_body)
+        struct_mode, struct_group = parse_struct_annotation(raw_body)
         if struct_mode is None:
+            continue
+
+        # Apply group filter.
+        if group_filter is not None and struct_group != group_filter:
             continue
 
         members = parse_members(struct_name, raw_body, struct_mode, verbose)
 
         if verbose and members:
+            group_info = f', group: {struct_group}' if struct_group else ''
             print(f"Found struct: {struct_name} ({len(members)} members)"
-                  f" [mode: {struct_mode}]")
+                  f" [mode: {struct_mode}{group_info}]")
 
         if members:
             result.append((struct_name, members))
@@ -621,6 +656,10 @@ def main():
     parser.add_argument('-p', '--prefix',  default='',
                         dest='prefix',    metavar='STR',
                         help='Prefix prepended to every generated function name.')
+    parser.add_argument('-g', '--group',   default=None,
+                        dest='group',     metavar='NAME',
+                        help='Only process structs annotated with :group=NAME. '
+                             'When omitted, all annotated structs are processed.')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Verbose output.')
     parser.add_argument('-H', '--help',    action='help',
@@ -663,7 +702,7 @@ def main():
             print(f"error: cannot read '{in_hdr}': {e}", file=sys.stderr)
             sys.exit(1)
 
-        structs = parse_file(text, args.verbose)
+        structs = parse_file(text, args.group, args.verbose)
 
         if not structs:
             if args.verbose:

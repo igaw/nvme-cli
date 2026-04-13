@@ -12,14 +12,15 @@ python3 generate-accessors.py [options] <header-files>
 
 **Options:**
 
-| Short | Long       | Argument | Description                                              |
-| ----- | ---------- | -------- | -------------------------------------------------------- |
-| `-h`  | `--h-out`  | `<file>` | Full path of the `*.h` file to generate. Default: `accessors.h` |
-| `-c`  | `--c-out`  | `<file>` | Full path of the `*.c` file to generate. Default: `accessors.c` |
-| `-l`  | `--ld-out` | `<file>` | Full path of the `*.ld` file to generate. Default: `accessors.ld` |
-| `-p`  | `--prefix` | `<str>`  | Prefix prepended to every generated function name        |
-| `-v`  | `--verbose`| none     | Verbose output showing which structs are being processed |
-| `-H`  | `--help`   | none     | Show this help message                                   |
+| Short | Long        | Argument | Description                                              |
+| ----- | ----------- | -------- | -------------------------------------------------------- |
+| `-h`  | `--h-out`   | `<file>` | Full path of the `*.h` file to generate. Default: `accessors.h` |
+| `-c`  | `--c-out`   | `<file>` | Full path of the `*.c` file to generate. Default: `accessors.c` |
+| `-l`  | `--ld-out`  | `<file>` | Full path of the `*.ld` file to generate. Default: `accessors.ld` |
+| `-p`  | `--prefix`  | `<str>`  | Prefix prepended to every generated function name        |
+| `-g`  | `--group`   | `<name>` | Only process structs annotated with `:group=<name>`; when omitted all annotated structs are processed |
+| `-v`  | `--verbose` | none     | Verbose output showing which structs are being processed |
+| `-H`  | `--help`    | none     | Show this help message                                   |
 
 ------
 
@@ -29,7 +30,9 @@ Struct inclusion and member behaviour are controlled by **annotations written as
 
 ### Struct inclusion — `generate-accessors`
 
-Place the annotation on the same line as the struct's opening brace to opt that struct in to code generation. An optional mode qualifier sets the **default behaviour for all members** of that struct:
+Place the annotation on the same line as the struct's opening brace to opt that struct in to code generation. Optional qualifiers, each introduced by `:`, set the **default accessor mode** for all members and/or assign the struct to a **named group**. Qualifiers may appear in any order.
+
+**Mode qualifier** — sets the default for all struct members:
 
 | Annotation                              | Default for all members           |
 | --------------------------------------- | --------------------------------- |
@@ -42,12 +45,24 @@ Place the annotation on the same line as the struct's opening brace to opt that 
 | `/*!generate-accessors:writeonly*/`     | setter only                       |
 | `//!generate-accessors:writeonly`       | setter only                       |
 
+**Group qualifier** — assigns the struct to a named group used by the `--group` CLI filter:
+
+| Annotation                                        | Group       |
+| ------------------------------------------------- | ----------- |
+| `/*!generate-accessors:group=fabrics*/`            | `fabrics`   |
+| `//!generate-accessors:group=fabrics`              | `fabrics`   |
+| `/*!generate-accessors:readonly:group=fabrics*/`   | `fabrics`, getter only |
+
 ```c
-struct nvme_ctrl { /*!generate-accessors*/          /* both getter and setter */
+struct nvme_ctrl { /*!generate-accessors*/                    /* both, no group */
     ...
 };
 
-struct nvme_ctrl { //!generate-accessors:readonly   /* getter only by default */
+struct libnvme_fabric_options { //!generate-accessors:group=fabrics   /* both, fabrics group */
+    ...
+};
+
+struct nvme_path { /*!generate-accessors:readonly:group=common*/      /* getter only, common group */
     ...
 };
 ```
@@ -55,6 +70,20 @@ struct nvme_ctrl { //!generate-accessors:readonly   /* getter only by default */
 Only structs carrying this annotation will have accessors generated. All other structs in the header are ignored.
 
 Individual members can always override the struct-level default using a per-member annotation (see below).
+
+### Group filtering
+
+When the same header file contains structs that belong to different accessor sets (e.g. `accessors.h` vs `accessors-fabrics.h`), assign each struct a group with `:group=NAME` and pass `--group NAME` to select only the matching structs:
+
+```bash
+# Generate common accessors (structs annotated with :group=common)
+python3 generate-accessors.py --group common private.h
+
+# Generate fabrics accessors (structs annotated with :group=fabrics)
+python3 generate-accessors.py --group fabrics private.h
+```
+
+When `--group` is **omitted**, all annotated structs are processed regardless of their group annotation (the original behaviour).
 
 ### Member exclusion — `accessors:none`
 
@@ -107,25 +136,28 @@ struct nvme_ctrl { /*!generate-accessors:none*/
 
 ### Annotation summary
 
-| Annotation                              | Where        | Effect                                      |
-| --------------------------------------- | ------------ | ------------------------------------------- |
-| `/*!generate-accessors*/`               | struct brace | Include struct, default: getter + setter    |
-| `//!generate-accessors`                 | struct brace | Include struct, default: getter + setter    |
-| `/*!generate-accessors:none*/`          | struct brace | Include struct, default: no accessors       |
-| `//!generate-accessors:none`            | struct brace | Include struct, default: no accessors       |
-| `/*!generate-accessors:readonly*/`      | struct brace | Include struct, default: getter only        |
-| `//!generate-accessors:readonly`        | struct brace | Include struct, default: getter only        |
-| `/*!generate-accessors:writeonly*/`     | struct brace | Include struct, default: setter only        |
-| `//!generate-accessors:writeonly`       | struct brace | Include struct, default: setter only        |
-| `/*!accessors:none*/`                   | member line  | Skip this member entirely                   |
-| `//!accessors:none`                     | member line  | Skip this member entirely                   |
-| `/*!accessors:readonly*/`               | member line  | Generate getter only                        |
-| `//!accessors:readonly`                 | member line  | Generate getter only                        |
-| `/*!accessors:writeonly*/`              | member line  | Generate setter only                        |
-| `//!accessors:writeonly`                | member line  | Generate setter only                        |
-| `/*!accessors:readwrite*/`              | member line  | Generate getter and setter                  |
-| `//!accessors:readwrite`                | member line  | Generate getter and setter                  |
-| `const` qualifier on member             | member type  | Suppress setter (built-in, always applies)  |
+| Annotation                                      | Where        | Effect                                      |
+| ----------------------------------------------- | ------------ | ------------------------------------------- |
+| `/*!generate-accessors*/`                        | struct brace | Include struct, default: getter + setter    |
+| `//!generate-accessors`                          | struct brace | Include struct, default: getter + setter    |
+| `/*!generate-accessors:none*/`                   | struct brace | Include struct, default: no accessors       |
+| `//!generate-accessors:none`                     | struct brace | Include struct, default: no accessors       |
+| `/*!generate-accessors:readonly*/`               | struct brace | Include struct, default: getter only        |
+| `//!generate-accessors:readonly`                 | struct brace | Include struct, default: getter only        |
+| `/*!generate-accessors:writeonly*/`              | struct brace | Include struct, default: setter only        |
+| `//!generate-accessors:writeonly`                | struct brace | Include struct, default: setter only        |
+| `/*!generate-accessors:group=NAME*/`             | struct brace | Assign struct to group NAME (any mode)      |
+| `//!generate-accessors:group=NAME`               | struct brace | Assign struct to group NAME (any mode)      |
+| `/*!generate-accessors:readonly:group=NAME*/`    | struct brace | getter only, assigned to group NAME         |
+| `/*!accessors:none*/`                            | member line  | Skip this member entirely                   |
+| `//!accessors:none`                              | member line  | Skip this member entirely                   |
+| `/*!accessors:readonly*/`                        | member line  | Generate getter only                        |
+| `//!accessors:readonly`                          | member line  | Generate getter only                        |
+| `/*!accessors:writeonly*/`                       | member line  | Generate setter only                        |
+| `//!accessors:writeonly`                         | member line  | Generate setter only                        |
+| `/*!accessors:readwrite*/`                       | member line  | Generate getter and setter                  |
+| `//!accessors:readwrite`                         | member line  | Generate getter and setter                  |
+| `const` qualifier on member                      | member type  | Suppress setter (built-in, always applies)  |
 
 ------
 
@@ -314,5 +346,6 @@ __public const char *person_get_role(const struct person *p)
 6. **`//!accessors:readwrite`** — both getter and setter; overrides a restrictive struct-level default.
 7. **`//!accessors:none`** — member is completely ignored by the generator.
 8. **Struct-level mode** — the qualifier on `generate-accessors` sets the default for every member in the struct; per-member annotations override the struct default.
-9. **`--prefix`** — prepended to every function name (e.g. `--prefix nvme_` turns `ctrl_set_name` into `nvme_ctrl_set_name`).
-10. **Line length** — generated code is automatically wrapped to stay within the 80-column limit required by `checkpatch.pl`.
+9. **`:group=NAME`** — assigns a struct to a named group. When `--group NAME` is passed to the generator only matching structs are emitted. Without `--group`, all structs are emitted regardless of their group annotation.
+10. **`--prefix`** — prepended to every function name (e.g. `--prefix nvme_` turns `ctrl_set_name` into `nvme_ctrl_set_name`).
+11. **Line length** — generated code is automatically wrapped to stay within the 80-column limit required by `checkpatch.pl`.
