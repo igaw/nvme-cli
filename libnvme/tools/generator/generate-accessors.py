@@ -306,6 +306,9 @@ def parse_members(struct_name, raw_body, struct_mode, verbose):
     return members
 
 
+_VALID_MODES = frozenset(('both', 'none', 'readonly', 'writeonly'))
+
+
 def parse_struct_annotation(raw_body):
     """Return the default mode for a struct from its generate-accessors annotation.
 
@@ -320,6 +323,7 @@ def parse_struct_annotation(raw_body):
       //!generate-accessors:writeonly   → 'writeonly'
 
     Returns None when the annotation is absent.
+    Prints a warning and falls back to 'both' for unrecognised qualifiers.
     """
     first_token = raw_body.lstrip()
 
@@ -330,7 +334,14 @@ def parse_struct_annotation(raw_body):
         m = re.match(pattern, first_token)
         if m:
             qualifier = m.group(1) or 'both'
-            if qualifier not in ('none', 'readonly', 'writeonly'):
+            if qualifier not in _VALID_MODES:
+                print(
+                    f"warning: unknown generate-accessors qualifier "
+                    f"'{qualifier}'; valid values are: "
+                    f"{', '.join(sorted(_VALID_MODES))}. "
+                    f"Defaulting to 'both'.",
+                    file=sys.stderr,
+                )
                 qualifier = 'both'
             return qualifier
 
