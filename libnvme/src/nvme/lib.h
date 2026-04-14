@@ -10,7 +10,43 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-#include <syslog.h>
+/*
+ * Pull in LOG_ priority values. During the library build, HAVE_SYSLOG_H is
+ * defined by the generated config header (force-included by meson). For
+ * library consumers that don't have that header, __has_include is used as
+ * a fallback detector. If syslog.h is unavailable (e.g. on Windows) the
+ * constants are defined directly.
+ */
+#if defined(HAVE_SYSLOG_H) && HAVE_SYSLOG_H
+#  include <syslog.h>
+#elif defined(__has_include) && __has_include(<syslog.h>)
+#  include <syslog.h>
+#else
+#  ifndef LOG_EMERG
+#    define LOG_EMERG   0 /* system is unusable */
+#  endif
+#  ifndef LOG_ALERT
+#    define LOG_ALERT   1 /* action must be taken immediately */
+#  endif
+#  ifndef LOG_CRIT
+#    define LOG_CRIT    2 /* critical conditions */
+#  endif
+#  ifndef LOG_ERR
+#    define LOG_ERR     3 /* error conditions */
+#  endif
+#  ifndef LOG_WARNING
+#    define LOG_WARNING 4 /* warning conditions */
+#  endif
+#  ifndef LOG_NOTICE
+#    define LOG_NOTICE  5 /* normal but significant condition */
+#  endif
+#  ifndef LOG_INFO
+#    define LOG_INFO    6 /* informational */
+#  endif
+#  ifndef LOG_DEBUG
+#    define LOG_DEBUG   7 /* debug-level messages */
+#  endif
+#endif
 
 #include <nvme/lib-types.h>
 

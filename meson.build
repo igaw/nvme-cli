@@ -246,6 +246,14 @@ conf.set10(
     description: 'Is sys/random.h(getrandom) include-able?'
 )
 conf.set10(
+    'HAVE_SYSLOG_H',
+    cc.compiles(
+        '''#include <syslog.h>''',
+        name: 'syslog.h'
+    ),
+    description: 'Is syslog.h include-able?'
+)
+conf.set10(
     'HAVE_ATTRIBUTE_UNUSED',
     cc.get_id() == 'clang',
     description: 'Is compiler warning about unused static line function?'

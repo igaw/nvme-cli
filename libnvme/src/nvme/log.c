@@ -11,7 +11,9 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
+#if HAVE_SYSLOG_H
 #include <syslog.h>
+#endif
 #include <time.h>
 #include <unistd.h>
 
