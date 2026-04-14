@@ -14,11 +14,11 @@
 
 #include <nvme/lib-types.h>
 
-#ifndef MAX_LOGLEVEL
-#  define MAX_LOGLEVEL LOG_DEBUG
+#ifndef LIBNVME_MAX_LOGLEVEL
+#  define LIBNVME_MAX_LOGLEVEL LOG_DEBUG
 #endif
-#ifndef DEFAULT_LOGLEVEL
-#  define DEFAULT_LOGLEVEL LOG_NOTICE
+#ifndef LIBNVME_DEFAULT_LOGLEVEL
+#  define LIBNVME_DEFAULT_LOGLEVEL LOG_NOTICE
 #endif
 
 /**
@@ -60,7 +60,7 @@ void libnvme_set_logging_level(struct libnvme_global_ctx *ctx, int log_level,
  *
  * Retrieves current values of logging variables.
  *
- * Return: current log level value or DEFAULT_LOGLEVEL if not initialized.
+ * Return: current log level value or LIBNVME_DEFAULT_LOGLEVEL if not initialized.
  */
 int libnvme_get_logging_level(struct libnvme_global_ctx *ctx, bool *log_pid,
 		bool *log_tstamp);
