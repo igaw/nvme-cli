@@ -598,7 +598,7 @@ static int derive_tls_key_compat(struct libnvme_global_ctx *ctx,
 
 static DEFINE_CLEANUP_FUNC(
 	cleanup_ossl_lib_ctx, OSSL_LIB_CTX *, OSSL_LIB_CTX_free)
-#define _cleanup_ossl_lib_ctx_ __cleanup(cleanup_ossl_lib_ctx)
+#define __cleanup_ossl_lib_ctx __cleanup(cleanup_ossl_lib_ctx)
 static DEFINE_CLEANUP_FUNC(cleanup_evp_mac_ctx, EVP_MAC_CTX *, EVP_MAC_CTX_free)
 #define ___cleanup_evp_macctx __cleanup(cleanup_evp_mac_ctx)
 static DEFINE_CLEANUP_FUNC(cleanup_evp_mac, EVP_MAC *, EVP_MAC_free)
@@ -610,7 +610,7 @@ __public int libnvme_gen_dhchap_key(struct libnvme_global_ctx *ctx,
 		unsigned char *key)
 {
 	const char hmac_seed[] = "NVMe-over-Fabrics";
-	_cleanup_ossl_lib_ctx_ OSSL_LIB_CTX *lib_ctx = NULL;
+	__cleanup_ossl_lib_ctx OSSL_LIB_CTX *lib_ctx = NULL;
 	___cleanup_evp_macctx EVP_MAC_CTX *mac_ctx = NULL;
 	__cleanup_evp_mac EVP_MAC *mac = NULL;
 	OSSL_PARAM params[2], *p = params;
@@ -678,7 +678,7 @@ static int derive_psk_digest(struct libnvme_global_ctx *ctx,
 		char *digest, size_t digest_len)
 {
 	static const char hmac_seed[] = "NVMe-over-Fabrics";
-	_cleanup_ossl_lib_ctx_ OSSL_LIB_CTX *lib_ctx = NULL;
+	__cleanup_ossl_lib_ctx OSSL_LIB_CTX *lib_ctx = NULL;
 	___cleanup_evp_macctx EVP_MAC_CTX *mac_ctx = NULL;
 	__cleanup_free unsigned char *psk_ctx = NULL;
 	__cleanup_evp_mac EVP_MAC *mac = NULL;
