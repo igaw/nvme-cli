@@ -23,6 +23,6 @@ static inline void freep(void *p)
 {
 	free(*(void **)p);
 }
-#define _cleanup_free_ __cleanup__(freep)
+#define __cleanup_free __cleanup__(freep)
 
 #endif /* #ifndef _LIBNVME_TEST_IOCTL_UTIL_H */
