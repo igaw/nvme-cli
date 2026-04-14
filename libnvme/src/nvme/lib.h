@@ -10,15 +10,21 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-#include <syslog.h>
 
 #include <nvme/lib-types.h>
 
+enum libnvme_log_level {
+	LIBNVME_LOG_ERR	  = 0,
+	LIBNVME_LOG_WARN  = 1,
+	LIBNVME_LOG_INFO  = 2,
+	LIBNVME_LOG_DEBUG = 3,
+};
+
 #ifndef MAX_LOGLEVEL
-#  define MAX_LOGLEVEL LOG_DEBUG
+#  define MAX_LOGLEVEL LIBNVME_LOG_DEBUG
 #endif
 #ifndef DEFAULT_LOGLEVEL
-#  define DEFAULT_LOGLEVEL LOG_NOTICE
+#  define DEFAULT_LOGLEVEL LIBNVME_LOG_WARN
 #endif
 
 /**
