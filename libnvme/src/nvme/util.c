@@ -16,6 +16,11 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef HAVE_NETDB
+#include <sys/types.h>
+#include <ifaddrs.h>
+#endif
+
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/param.h>
@@ -980,6 +985,7 @@ void *__libnvme_realloc(void *p, size_t len)
 	return result;
 }
 
+#ifdef CONFIG_FABRICS
 const struct ifaddrs *libnvme_getifaddrs(struct libnvme_global_ctx *ctx)
 {
 	if (!ctx->ifaddrs_cache) {
@@ -991,6 +997,7 @@ const struct ifaddrs *libnvme_getifaddrs(struct libnvme_global_ctx *ctx)
 
 	return ctx->ifaddrs_cache;
 }
+#endif
 
 /* This used instead of basename() due to behavioral differences between
  * the POSIX and the GNU version. This is the glibc implementation.
