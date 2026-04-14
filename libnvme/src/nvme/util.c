@@ -33,6 +33,7 @@
 #include <libnvme.h>
 
 #include "cleanup.h"
+#include "cleanup-linux.h"
 #include "private.h"
 #include "util.h"
 #include "compiler-attributes.h"

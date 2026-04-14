@@ -22,6 +22,7 @@
 #include <libnvme.h>
 
 #include "cleanup.h"
+#include "cleanup-linux.h"
 #include "private.h"
 #include "private-mi.h"
 #include "compiler-attributes.h"
