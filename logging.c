@@ -46,8 +46,6 @@ int map_log_level(int verbose, bool quiet)
 
 	switch (verbose) {
 	case 0:
-		log_level = LIBNVME_LOG_WARN;
-		break;
 	case 1:
 		log_level = LIBNVME_LOG_WARN;
 		break;
