@@ -39,11 +39,11 @@
 #include <libnvme-mi.h>
 
 #include "private.h"
-#include "compiler_attributes.h"
+#include "compiler-attributes.h"
 
 
 #if !defined(AF_MCTP)
-#define AF_MCTP 45
+ AF_MCTP 45
 #endif
 
 #if !defined(MCTP_TAG_PREALLOC)
