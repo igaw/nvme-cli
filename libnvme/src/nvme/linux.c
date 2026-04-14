@@ -263,7 +263,7 @@ static const EVP_MD *select_hmac(int hmac, size_t *hmac_len)
 
 static DEFINE_CLEANUP_FUNC(
 	cleanup_evp_pkey_ctx, EVP_PKEY_CTX *, EVP_PKEY_CTX_free)
-#define _cleanup_evp_pkey_ctx_ __cleanup(cleanup_evp_pkey_ctx)
+#define __cleanup_evp_pkey_ctx __cleanup(cleanup_evp_pkey_ctx)
 
 /* NVMe is using the TLS 1.3 HkdfLabel structure */
 #define HKDF_INFO_MAX_LEN 514
@@ -303,7 +303,7 @@ static int derive_retained_key(struct libnvme_global_ctx *ctx,
 		unsigned char *configured, unsigned char *retained,
 		size_t key_len)
 {
-	_cleanup_evp_pkey_ctx_ EVP_PKEY_CTX *ectx = NULL;
+	__cleanup_evp_pkey_ctx EVP_PKEY_CTX *ectx = NULL;
 	__cleanup_free uint8_t *hkdf_info = NULL;
 	char *hkdf_label;
 	const EVP_MD *md;
@@ -372,7 +372,7 @@ static int derive_retained_key_compat(struct libnvme_global_ctx *ctx,
 		int hmac, const char *hostnqn, unsigned char *configured,
 		unsigned char *retained, size_t key_len)
 {
-	_cleanup_evp_pkey_ctx_ EVP_PKEY_CTX *ectx = NULL;
+	__cleanup_evp_pkey_ctx EVP_PKEY_CTX *ectx = NULL;
 	__cleanup_free uint8_t *hkdf_info = NULL;
 	const EVP_MD *md;
 	size_t hmac_len;
@@ -453,7 +453,7 @@ static int derive_tls_key(struct libnvme_global_ctx *ctx,
 		int version, unsigned char cipher, const char *context,
 		unsigned char *retained, unsigned char *psk, size_t key_len)
 {
-	_cleanup_evp_pkey_ctx_ EVP_PKEY_CTX *ectx = NULL;
+	__cleanup_evp_pkey_ctx EVP_PKEY_CTX *ectx = NULL;
 	__cleanup_free uint8_t *hkdf_info = NULL;
 	char *hkdf_label;
 	const EVP_MD *md;
@@ -530,7 +530,7 @@ static int derive_tls_key_compat(struct libnvme_global_ctx *ctx,
 		int version, unsigned char cipher, const char *context,
 		unsigned char *retained, unsigned char *psk, size_t key_len)
 {
-	_cleanup_evp_pkey_ctx_ EVP_PKEY_CTX *ectx = NULL;
+	__cleanup_evp_pkey_ctx EVP_PKEY_CTX *ectx = NULL;
 	__cleanup_free uint8_t *hkdf_info = NULL;
 	const EVP_MD *md;
 	size_t hmac_len;
