@@ -213,7 +213,7 @@ class Member:
         self.gen_setter = gen_setter  # True → emit setter
         self.is_char_array = is_char_array
         self.is_char_ptr_array = is_char_ptr_array
-        self.array_size = array_size  # only valid when is_char_array is True
+        self.array_size = array_size  # only for fixed-size char arrays (char[N])
 
 
 # ---------------------------------------------------------------------------
