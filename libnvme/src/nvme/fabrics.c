@@ -1517,6 +1517,9 @@ __public int libnvmf_discovery_args_create(struct libnvmf_discovery_args **argsp
 
 __public void libnvmf_discovery_args_free(struct libnvmf_discovery_args *args)
 {
+	if (!args)
+		return;
+
 	free(args);
 }
 
@@ -2642,6 +2645,9 @@ __public int libnvmf_nbft_read_files(struct libnvme_global_ctx *ctx, char *path,
 
 __public void libnvmf_nbft_free(struct libnvme_global_ctx *ctx, struct nbft_file_entry *head)
 {
+	if (!head)
+		return;
+
 	while (head) {
 		struct nbft_file_entry *next = head->next;
 
