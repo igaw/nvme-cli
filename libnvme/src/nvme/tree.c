@@ -1043,6 +1043,9 @@ static void __libnvme_free_ctrl(libnvme_ctrl_t c)
 
 __public void libnvme_free_ctrl(libnvme_ctrl_t c)
 {
+	if (!c)
+		return;
+
 	__libnvme_free_ctrl(c);
 }
 
