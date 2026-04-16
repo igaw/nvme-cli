@@ -627,21 +627,25 @@ def emit_src_setter_val(f, prefix, sname, mname, mtype):
         )
 
 
-def emit_src_getter(f, prefix, sname, mname, mtype):
-    """Emit a getter (return member value)."""
+def emit_src_getter(f, prefix, sname, mname, mtype, cast=None):
+    """Emit a getter (return member value).
+
+    *cast* is an optional C cast expression (e.g. ``'(const char *const *)'``)
+    inserted before ``p->mname`` in the return statement.  Required when the
+    declared return type differs from the member's raw storage type (e.g. a
+    ``char **`` field exposed as ``const char *const *``).
+    """
     sep = type_sep(mtype)
     sig = (f'{PUB}{mtype}{sep}{_get_name(prefix, sname, mname)}'
            f'(const struct {sname} *p)')
+    ret = f'\treturn {cast}p->{mname};\n' if cast else f'\treturn p->{mname};\n'
     if fits_80(sig):
-        f.write(
-            sig + '\n'
-            f'{{\n\treturn p->{mname};\n}}\n\n'
-        )
+        f.write(sig + '\n' f'{{\n{ret}}}\n\n')
     else:
         f.write(
             f'{PUB}{mtype}{sep}{_get_name(prefix, sname, mname)}(\n'
             f'\t\tconst struct {sname} *p)\n'
-            f'{{\n\treturn p->{mname};\n}}\n\n'
+            f'{{\n{ret}}}\n\n'
         )
 
 
@@ -663,7 +667,9 @@ def generate_src(f, prefix, struct_name, members):
                 emit_src_setter_val(f, prefix, struct_name,
                                     member.name, member.type)
         if member.gen_getter:
-            emit_src_getter(f, prefix, struct_name, member.name, member.type)
+            cast = '(const char *const *)' if member.is_char_ptr_array else None
+            emit_src_getter(f, prefix, struct_name, member.name, member.type,
+                            cast=cast)
 
 
 # ---------------------------------------------------------------------------
