@@ -640,7 +640,7 @@ def emit_src_getter(f, prefix, sname, mname, mtype, cast=None):
            f'(const struct {sname} *p)')
     ret = f'\treturn {cast}p->{mname};\n' if cast else f'\treturn p->{mname};\n'
     if fits_80(sig):
-        f.write(sig + '\n' f'{{\n{ret}}}\n\n')
+        f.write(sig + '\n' + f'{{\n{ret}}}\n\n')
     else:
         f.write(
             f'{PUB}{mtype}{sep}{_get_name(prefix, sname, mname)}(\n'
