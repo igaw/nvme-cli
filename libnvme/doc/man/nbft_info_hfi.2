@@ -1,14 +1,14 @@
-.TH "libnvme" 9 "struct libnbft_hfi" "March 2026" "API Manual" LINUX
+.TH "libnvme" 9 "struct nbft_info_hfi" "March 2026" "API Manual" LINUX
 .SH NAME
-struct libnbft_hfi \- Host Fabric Interface (HFI) Descriptor
+struct nbft_info_hfi \- Host Fabric Interface (HFI) Descriptor
 .SH SYNOPSIS
-struct libnbft_hfi {
+struct nbft_info_hfi {
 .br
 .BI "    int index;"
 .br
 .BI "    char transport[8];"
 .br
-.BI "    struct libnbft_hfi_info_tcp tcp_info;"
+.BI "    struct nbft_info_hfi_info_tcp tcp_info;"
 .br
 .BI "
 };
@@ -21,4 +21,4 @@ in the Host Fabric Interface Descriptor List.
 .IP "transport" 12
 Transport Type string (e.g. 'tcp').
 .IP "tcp_info" 12
-The HFI Transport Info Descriptor, see \fIstruct libnbft_hfi_info_tcp\fP.
+The HFI Transport Info Descriptor, see \fIstruct nbft_info_hfi_info_tcp\fP.

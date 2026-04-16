@@ -1424,37 +1424,37 @@ Note: this API is currently unstable, subject to further additions.
 
 
 
-.. c:enum:: libnbft_primary_admin_host_flag
+.. c:enum:: nbft_info_primary_admin_host_flag
 
    Primary Administrative Host Descriptor Flags
 
 **Constants**
 
-``LIBNBFT_PRIMARY_ADMIN_HOST_FLAG_NOT_INDICATED``
+``NBFT_INFO_PRIMARY_ADMIN_HOST_FLAG_NOT_INDICATED``
   Not Indicated by Driver: The driver
   that created this NBFT provided no
   administrative priority hint for
   this NBFT.
 
-``LIBNBFT_PRIMARY_ADMIN_HOST_FLAG_UNSELECTED``
+``NBFT_INFO_PRIMARY_ADMIN_HOST_FLAG_UNSELECTED``
   Unselected: The driver that created
   this NBFT explicitly indicated that
   this NBFT should not be prioritized
   over any other NBFT.
 
-``LIBNBFT_PRIMARY_ADMIN_HOST_FLAG_SELECTED``
+``NBFT_INFO_PRIMARY_ADMIN_HOST_FLAG_SELECTED``
   Selected: The driver that created
   this NBFT explicitly indicated that
   this NBFT should be prioritized over
   any other NBFT.
 
-``LIBNBFT_PRIMARY_ADMIN_HOST_FLAG_RESERVED``
+``NBFT_INFO_PRIMARY_ADMIN_HOST_FLAG_RESERVED``
   Reserved.
 
 
 
 
-.. c:struct:: libnbft_host
+.. c:struct:: nbft_info_host
 
    Host Descriptor
 
@@ -1462,12 +1462,12 @@ Note: this API is currently unstable, subject to further additions.
 
 ::
 
-  struct libnbft_host {
+  struct nbft_info_host {
     unsigned char *id;
     char *nqn;
     bool host_id_configured;
     bool host_nqn_configured;
-    enum libnbft_primary_admin_host_flag primary;
+    enum nbft_info_primary_admin_host_flag primary;
   };
 
 **Members**
@@ -1490,13 +1490,13 @@ Note: this API is currently unstable, subject to further additions.
 
 ``primary``
   Primary Administrative Host Descriptor, see
-  :c:type:`enum libnbft_primary_admin_host_flag <libnbft_primary_admin_host_flag>`.
+  :c:type:`enum nbft_info_primary_admin_host_flag <nbft_info_primary_admin_host_flag>`.
 
 
 
 
 
-.. c:struct:: libnbft_hfi_info_tcp
+.. c:struct:: nbft_info_hfi_info_tcp
 
    HFI Transport Info Descriptor - NVMe/TCP
 
@@ -1504,7 +1504,7 @@ Note: this API is currently unstable, subject to further additions.
 
 ::
 
-  struct libnbft_hfi_info_tcp {
+  struct nbft_info_hfi_info_tcp {
     __u32 pci_sbdf;
     __u8 mac_addr[6];
     __u16 vlan;
@@ -1585,7 +1585,7 @@ Note: this API is currently unstable, subject to further additions.
 
 
 
-.. c:struct:: libnbft_hfi
+.. c:struct:: nbft_info_hfi
 
    Host Fabric Interface (HFI) Descriptor
 
@@ -1593,10 +1593,10 @@ Note: this API is currently unstable, subject to further additions.
 
 ::
 
-  struct libnbft_hfi {
+  struct nbft_info_hfi {
     int index;
     char transport[8];
-    struct libnbft_hfi_info_tcp tcp_info;
+    struct nbft_info_hfi_info_tcp tcp_info;
   };
 
 **Members**
@@ -1609,13 +1609,13 @@ Note: this API is currently unstable, subject to further additions.
   Transport Type string (e.g. 'tcp').
 
 ``tcp_info``
-  The HFI Transport Info Descriptor, see :c:type:`struct libnbft_hfi_info_tcp <libnbft_hfi_info_tcp>`.
+  The HFI Transport Info Descriptor, see :c:type:`struct nbft_info_hfi_info_tcp <nbft_info_hfi_info_tcp>`.
 
 
 
 
 
-.. c:struct:: libnbft_discovery
+.. c:struct:: nbft_info_discovery
 
    Discovery Descriptor
 
@@ -1623,10 +1623,10 @@ Note: this API is currently unstable, subject to further additions.
 
 ::
 
-  struct libnbft_discovery {
+  struct nbft_info_discovery {
     int index;
-    struct libnbft_security *security;
-    struct libnbft_hfi *hfi;
+    struct nbft_info_security *security;
+    struct nbft_info_hfi *hfi;
     char *uri;
     char *nqn;
   };
@@ -1638,11 +1638,11 @@ Note: this API is currently unstable, subject to further additions.
   Descriptor List.
 
 ``security``
-  The Security Profile Descriptor, see :c:type:`struct libnbft_security <libnbft_security>`.
+  The Security Profile Descriptor, see :c:type:`struct nbft_info_security <nbft_info_security>`.
 
 ``hfi``
   The HFI Descriptor associated with this Discovery Descriptor.
-  See :c:type:`struct libnbft_hfi <libnbft_hfi>`.
+  See :c:type:`struct nbft_info_hfi <nbft_info_hfi>`.
 
 ``uri``
   A URI which indicates an NVMe Discovery controller associated
@@ -1655,7 +1655,7 @@ Note: this API is currently unstable, subject to further additions.
 
 
 
-.. c:struct:: libnbft_security
+.. c:struct:: nbft_info_security
 
    Security Profile Descriptor
 
@@ -1663,7 +1663,7 @@ Note: this API is currently unstable, subject to further additions.
 
 ::
 
-  struct libnbft_security {
+  struct nbft_info_security {
     int index;
   };
 
@@ -1677,28 +1677,28 @@ Note: this API is currently unstable, subject to further additions.
 
 
 
-.. c:enum:: libnbft_nid_type
+.. c:enum:: nbft_info_nid_type
 
    Namespace Identifier Type (NIDT)
 
 **Constants**
 
-``LIBNBFT_NID_TYPE_NONE``
+``NBFT_INFO_NID_TYPE_NONE``
   No identifier available.
 
-``LIBNBFT_NID_TYPE_EUI64``
+``NBFT_INFO_NID_TYPE_EUI64``
   The EUI-64 identifier.
 
-``LIBNBFT_NID_TYPE_NGUID``
+``NBFT_INFO_NID_TYPE_NGUID``
   The NSGUID identifier.
 
-``LIBNBFT_NID_TYPE_NS_UUID``
+``NBFT_INFO_NID_TYPE_NS_UUID``
   The UUID identifier.
 
 
 
 
-.. c:struct:: libnbft_subsystem_ns
+.. c:struct:: nbft_info_subsystem_ns
 
    Subsystem Namespace (SSNS) info
 
@@ -1706,18 +1706,18 @@ Note: this API is currently unstable, subject to further additions.
 
 ::
 
-  struct libnbft_subsystem_ns {
+  struct nbft_info_subsystem_ns {
     int index;
-    struct libnbft_discovery *discovery;
-    struct libnbft_security *security;
+    struct nbft_info_discovery *discovery;
+    struct nbft_info_security *security;
     int num_hfis;
-    struct libnbft_hfi **hfis;
+    struct nbft_info_hfi **hfis;
     char transport[8];
     char traddr[40];
     char *trsvcid;
     __u16 subsys_port_id;
     __u32 nsid;
-    enum libnbft_nid_type nid_type;
+    enum nbft_info_nid_type nid_type;
     __u8 *nid;
     char *subsys_nqn;
     bool pdu_header_digest_required;
@@ -1767,7 +1767,7 @@ Note: this API is currently unstable, subject to further additions.
   should be used instead.
 
 ``nid_type``
-  Namespace Identifier Type, see :c:type:`enum libnbft_nid_type <libnbft_nid_type>`.
+  Namespace Identifier Type, see :c:type:`enum nbft_info_nid_type <nbft_info_nid_type>`.
 
 ``nid``
   The Namespace Identifier value.
@@ -1808,7 +1808,7 @@ Note: this API is currently unstable, subject to further additions.
 
 
 
-.. c:struct:: libnbft_info
+.. c:struct:: nbft_info
 
    The parsed NBFT table data.
 
@@ -1816,15 +1816,15 @@ Note: this API is currently unstable, subject to further additions.
 
 ::
 
-  struct libnbft_info {
+  struct nbft_info {
     char *filename;
     __u8 *raw_nbft;
     ssize_t raw_nbft_size;
-    struct libnbft_host host;
-    struct libnbft_hfi **hfi_list;
-    struct libnbft_security **security_list;
-    struct libnbft_discovery **discovery_list;
-    struct libnbft_subsystem_ns **subsystem_ns_list;
+    struct nbft_info_host host;
+    struct nbft_info_hfi **hfi_list;
+    struct nbft_info_security **security_list;
+    struct nbft_info_discovery **discovery_list;
+    struct nbft_info_subsystem_ns **subsystem_ns_list;
   };
 
 **Members**
@@ -1855,7 +1855,7 @@ Note: this API is currently unstable, subject to further additions.
 
 
 
-.. c:function:: int nvme_nbft_read (struct nvme_global_ctx *ctx, struct libnbft_info **nbft, const char *filename)
+.. c:function:: int nvme_nbft_read (struct nvme_global_ctx *ctx, struct nbft_info **nbft, const char *filename)
 
    Read and parse contents of an ACPI NBFT table
 
@@ -1864,7 +1864,7 @@ Note: this API is currently unstable, subject to further additions.
 ``struct nvme_global_ctx *ctx``
   struct nvme_global_ctx object
 
-``struct libnbft_info **nbft``
+``struct nbft_info **nbft``
   Parsed NBFT table data.
 
 ``const char *filename``
@@ -1872,7 +1872,7 @@ Note: this API is currently unstable, subject to further additions.
 
 **Description**
 
-Read and parse the specified NBFT file into a struct libnbft_info.
+Read and parse the specified NBFT file into a struct nbft_info.
 Free with nvme_nbft_free().
 
 **Return**
@@ -1880,16 +1880,16 @@ Free with nvme_nbft_free().
 0 on success, errno otherwise.
 
 
-.. c:function:: void nvme_nbft_free (struct nvme_global_ctx *ctx, struct libnbft_info *nbft)
+.. c:function:: void nvme_nbft_free (struct nvme_global_ctx *ctx, struct nbft_info *nbft)
 
-   Free the struct libnbft_info and its contents
+   Free the struct nbft_info and its contents
 
 **Parameters**
 
 ``struct nvme_global_ctx *ctx``
   struct nvme_global_ctx object
 
-``struct libnbft_info *nbft``
+``struct nbft_info *nbft``
   Parsed NBFT table data.
 
 

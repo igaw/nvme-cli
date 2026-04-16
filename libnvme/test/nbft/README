@@ -4,7 +4,7 @@ This is a simple testcase to verify the NBFT parser output over a set
 of provided ACPI NBFT tables.
 
 The 'nbft-dump' test utility is a simple tool to print out all elements
-and nested arrays of the libnbft_info structs, bearing only minimal logic.
+and nested arrays of the nbft_info structs, bearing only minimal logic.
 
 The 'tables' directory contains sample binary files taken from
 /sys/firmware/acpi/tables. The 'tables_bad' then contains experiments, older

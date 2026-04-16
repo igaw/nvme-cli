@@ -1,8 +1,8 @@
-.TH "libnvme" 9 "struct libnbft_info" "March 2026" "API Manual" LINUX
+.TH "libnvme" 9 "struct nbft_info" "March 2026" "API Manual" LINUX
 .SH NAME
-struct libnbft_info \- The parsed NBFT table data.
+struct nbft_info \- The parsed NBFT table data.
 .SH SYNOPSIS
-struct libnbft_info {
+struct nbft_info {
 .br
 .BI "    char *filename;"
 .br
@@ -10,15 +10,15 @@ struct libnbft_info {
 .br
 .BI "    ssize_t raw_nbft_size;"
 .br
-.BI "    struct libnbft_host host;"
+.BI "    struct nbft_info_host host;"
 .br
-.BI "    struct libnbft_hfi **hfi_list;"
+.BI "    struct nbft_info_hfi **hfi_list;"
 .br
-.BI "    struct libnbft_security **security_list;"
+.BI "    struct nbft_info_security **security_list;"
 .br
-.BI "    struct libnbft_discovery **discovery_list;"
+.BI "    struct nbft_info_discovery **discovery_list;"
 .br
-.BI "    struct libnbft_subsystem_ns **subsystem_ns_list;"
+.BI "    struct nbft_info_subsystem_ns **subsystem_ns_list;"
 .br
 .BI "
 };
