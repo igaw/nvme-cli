@@ -998,6 +998,5 @@ enum nbft_discovery_flags {
 
 
 /*
- *  Convenient NBFT table parser ('nbft_info' prefix)
+ *  Convenient NBFT table parser ('libnbft_' prefix)
  */
-

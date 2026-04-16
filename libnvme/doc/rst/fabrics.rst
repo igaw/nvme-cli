@@ -1107,7 +1107,7 @@ information.
 
   struct nbft_file_entry {
     struct nbft_file_entry *next;
-    struct nbft_info *nbft;
+    struct libnbft_info *nbft;
   };
 
 **Members**

@@ -1,14 +1,14 @@
-.TH "libnvme" 9 "struct nbft_info_discovery" "March 2026" "API Manual" LINUX
+.TH "libnvme" 9 "struct libnbft_discovery" "March 2026" "API Manual" LINUX
 .SH NAME
-struct nbft_info_discovery \- Discovery Descriptor
+struct libnbft_discovery \- Discovery Descriptor
 .SH SYNOPSIS
-struct nbft_info_discovery {
+struct libnbft_discovery {
 .br
 .BI "    int index;"
 .br
-.BI "    struct nbft_info_security *security;"
+.BI "    struct libnbft_security *security;"
 .br
-.BI "    struct nbft_info_hfi *hfi;"
+.BI "    struct libnbft_hfi *hfi;"
 .br
 .BI "    char *uri;"
 .br
@@ -23,10 +23,10 @@ struct nbft_info_discovery {
 The number of this Discovery Descriptor in the Discovery
 Descriptor List.
 .IP "security" 12
-The Security Profile Descriptor, see \fIstruct nbft_info_security\fP.
+The Security Profile Descriptor, see \fIstruct libnbft_security\fP.
 .IP "hfi" 12
 The HFI Descriptor associated with this Discovery Descriptor.
-See \fIstruct nbft_info_hfi\fP.
+See \fIstruct libnbft_hfi\fP.
 .IP "uri" 12
 A URI which indicates an NVMe Discovery controller associated
 with this Discovery Descriptor.

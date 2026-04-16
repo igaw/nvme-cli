@@ -1,18 +1,18 @@
-.TH "libnvme" 9 "struct nbft_info_subsystem_ns" "March 2026" "API Manual" LINUX
+.TH "libnvme" 9 "struct libnbft_subsystem_ns" "March 2026" "API Manual" LINUX
 .SH NAME
-struct nbft_info_subsystem_ns \- Subsystem Namespace (SSNS) info
+struct libnbft_subsystem_ns \- Subsystem Namespace (SSNS) info
 .SH SYNOPSIS
-struct nbft_info_subsystem_ns {
+struct libnbft_subsystem_ns {
 .br
 .BI "    int index;"
 .br
-.BI "    struct nbft_info_discovery *discovery;"
+.BI "    struct libnbft_discovery *discovery;"
 .br
-.BI "    struct nbft_info_security *security;"
+.BI "    struct libnbft_security *security;"
 .br
 .BI "    int num_hfis;"
 .br
-.BI "    struct nbft_info_hfi **hfis;"
+.BI "    struct libnbft_hfi **hfis;"
 .br
 .BI "    char transport[8];"
 .br
@@ -24,7 +24,7 @@ struct nbft_info_subsystem_ns {
 .br
 .BI "    __u32 nsid;"
 .br
-.BI "    enum nbft_info_nid_type nid_type;"
+.BI "    enum libnbft_nid_type nid_type;"
 .br
 .BI "    __u8 *nid;"
 .br
@@ -75,7 +75,7 @@ The Subsystem Port ID.
 The Namespace ID of this descriptor or when \fInid\fP
 should be used instead.
 .IP "nid_type" 12
-Namespace Identifier Type, see \fIenum nbft_info_nid_type\fP.
+Namespace Identifier Type, see \fIenum libnbft_nid_type\fP.
 .IP "nid" 12
 The Namespace Identifier value.
 .IP "subsys_nqn" 12

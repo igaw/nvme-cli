@@ -1,8 +1,8 @@
-.TH "libnvme" 9 "struct nbft_info_host" "March 2026" "API Manual" LINUX
+.TH "libnvme" 9 "struct libnbft_host" "March 2026" "API Manual" LINUX
 .SH NAME
-struct nbft_info_host \- Host Descriptor
+struct libnbft_host \- Host Descriptor
 .SH SYNOPSIS
-struct nbft_info_host {
+struct libnbft_host {
 .br
 .BI "    unsigned char *id;"
 .br
@@ -12,7 +12,7 @@ struct nbft_info_host {
 .br
 .BI "    bool host_nqn_configured;"
 .br
-.BI "    enum nbft_info_primary_admin_host_flag primary;"
+.BI "    enum libnbft_primary_admin_host_flag primary;"
 .br
 .BI "
 };
@@ -33,4 +33,4 @@ Host NQN Configured Flag: value of True indicates that
 or driver default value if False.
 .IP "primary" 12
 Primary Administrative Host Descriptor, see
-\fIenum nbft_info_primary_admin_host_flag\fP.
+\fIenum libnbft_primary_admin_host_flag\fP.
