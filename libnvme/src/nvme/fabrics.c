@@ -44,8 +44,7 @@ const char *nvmf_dev = "/dev/nvme-fabrics";
 
 static inline void free_uri(struct libnvmf_uri **uri)
 {
-	if (*uri)
-		libnvmf_uri_free(*uri);
+	libnvmf_uri_free(*uri);
 }
 #define __cleanup_uri __cleanup(free_uri)
 
