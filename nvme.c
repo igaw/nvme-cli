@@ -191,6 +191,12 @@ static const char *crkey = "current reservation key";
 static const char *csi = "command set identifier";
 static const char *buf_len = "buffer len (if) data is sent or received";
 static const char *deprecated = "deprecated; does nothing";
+static const char *desc_controllers = "optional comma-sep controller id list";
+static const char *desc_namespace_id_attach = "namespace to attach";
+static const char *desc_namespace_id_delete = "namespace to delete";
+static const char *desc_prinfo = "PI and check field";
+static const char *desc_rae = "Retain an Asynchronous Event";
+static const char *desc_raw_directive = "show directive in binary format";
 static const char *domainid = "Domain Identifier";
 static const char *doper = "directive operation";
 static const char *dspec_w_dtype = "directive specification associated with directive type";
@@ -213,9 +219,6 @@ static const char *namespace_desired = "desired namespace";
 static const char *namespace_id_optional = "optional namespace attached to controller";
 static const char *nssf = "NVMe Security Specific Field";
 static const char *only_ctrl_dev = "Only controller device is allowed";
-static const char *prinfo = "PI and check field";
-static const char *rae = "Retain an Asynchronous Event";
-static const char *raw_directive = "show directive in binary format";
 static const char *raw_dump = "dump output in binary format";
 static const char *raw_identify = "show identify in binary format";
 static const char *raw_log = "show log in binary format";
@@ -852,7 +855,7 @@ static int get_telemetry_log(int argc, char **argv, struct command *acmd,
 		  OPT_UINT("host-generate",   'g', &cfg.host_gen,  hgen),
 		  OPT_FLAG("controller-init", 'c', &cfg.ctrl_init, cgen),
 		  OPT_UINT("data-area",       'd', &cfg.data_area, dgen),
-		  OPT_FLAG("rae",             'r', &cfg.rae,       rae),
+		  OPT_FLAG("rae",             'r', &cfg.rae,       desc_rae),
 		  OPT_BYTE("mcda",            'm', &cfg.mcda,      mcda));
 
 
@@ -1467,7 +1470,7 @@ static int get_pred_lat_event_agg_log(int argc, char **argv,
 
 	NVME_ARGS(opts,
 		  OPT_UINT("log-entries",  'e', &cfg.log_entries,   log_entries),
-		  OPT_FLAG("rae",          'r', &cfg.rae,           rae),
+		  OPT_FLAG("rae",          'r', &cfg.rae,           desc_rae),
 		  OPT_FLAG("raw-binary",   'b', &cfg.raw_binary,    raw_use));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
@@ -1663,7 +1666,7 @@ static int get_endurance_event_agg_log(int argc, char **argv,
 
 	NVME_ARGS(opts,
 		  OPT_UINT("log-entries",  'e', &cfg.log_entries,   log_entries),
-		  OPT_FLAG("rae",          'r', &cfg.rae,           rae),
+		  OPT_FLAG("rae",          'r', &cfg.rae,           desc_rae),
 		  OPT_FLAG("raw-binary",   'b', &cfg.raw_binary,    raw_use));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
@@ -1739,7 +1742,7 @@ static int get_lba_status_log(int argc, char **argv,
 	};
 
 	NVME_ARGS(opts,
-		  OPT_FLAG("rae",          'r', &cfg.rae,           rae));
+		  OPT_FLAG("rae",          'r', &cfg.rae,           desc_rae));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (err)
@@ -2367,7 +2370,7 @@ static int get_log(int argc, char **argv, struct command *acmd, struct plugin *p
 		  OPT_SUFFIX("lpo",        'L', &cfg.lpo,          lpo),
 		  OPT_BYTE("lsp",          's', &cfg.lsp,          lsp),
 		  OPT_SHRT("lsi",          'S', &cfg.lsi,          lsi),
-		  OPT_FLAG("rae",          'r', &cfg.rae,          rae),
+		  OPT_FLAG("rae",          'r', &cfg.rae,          desc_rae),
 		  OPT_BYTE("uuid-index",   'U', &cfg.uuid_index,   uuid_index),
 		  OPT_FLAG("raw-binary",   'b', &cfg.raw_binary,   raw),
 		  OPT_BYTE("csi",          'y', &cfg.csi,          csi),
@@ -2494,7 +2497,7 @@ static int sanitize_log(int argc, char **argv, struct command *acmd, struct plug
 	};
 
 	NVME_ARGS(opts,
-		  OPT_FLAG("rae",            'r', &cfg.rae,            rae),
+		  OPT_FLAG("rae",            'r', &cfg.rae,            desc_rae),
 		  OPT_FLAG("human-readable", 'H', &cfg.human_readable, human_readable_log),
 		  OPT_FLAG("raw-binary",     'b', &cfg.raw_binary,     raw_log));
 
@@ -2919,7 +2922,6 @@ static int delete_ns(int argc, char **argv, struct command *acmd, struct plugin 
 		"the namespace prior to namespace deletion. A namespace ID "
 		"becomes inactive when that namespace is detached or, if "
 		"the namespace is not already inactive, once deleted.";
-	const char *namespace_id = "namespace to delete";
 
 	__cleanup_nvme_transport_handle struct libnvme_transport_handle *hdl = NULL;
 	__cleanup_nvme_global_ctx struct libnvme_global_ctx *ctx = NULL;
@@ -2939,7 +2941,7 @@ static int delete_ns(int argc, char **argv, struct command *acmd, struct plugin 
 
 	NVME_ARGS(opts,
 		  OPT_FLAG("ish",          'I', &cfg.ish,          ish),
-		  OPT_UINT("namespace-id", 'n', &cfg.namespace_id, namespace_id));
+		  OPT_UINT("namespace-id", 'n', &cfg.namespace_id, desc_namespace_id_delete));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (err)
@@ -2983,9 +2985,6 @@ static int nvme_attach_ns(int argc, char **argv, int attach, const char *desc, s
 	nvme_print_flags_t flags;
 	int err, num;
 
-	const char *namespace_id = "namespace to attach";
-	const char *cont = "optional comma-sep controller id list";
-
 	struct config {
 		bool	ish;
 		__u32	nsid;
@@ -3000,8 +2999,8 @@ static int nvme_attach_ns(int argc, char **argv, int attach, const char *desc, s
 
 	NVME_ARGS(opts,
 		  OPT_FLAG("ish",          'I', &cfg.ish,     ish),
-		  OPT_UINT("namespace-id", 'n', &cfg.nsid,    namespace_id),
-		  OPT_LIST("controllers",  'c', &cfg.cntlist, cont));
+		  OPT_UINT("namespace-id", 'n', &cfg.nsid,    desc_namespace_id_attach),
+		  OPT_LIST("controllers",  'c', &cfg.cntlist, desc_controllers));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (err)
@@ -7156,7 +7155,7 @@ static int dir_send(int argc, char **argv, struct command *acmd, struct plugin *
 		  OPT_BYTE("dir-oper",       'O', &cfg.doper,          doper),
 		  OPT_SHRT("endir",          'e', &cfg.endir,          endir),
 		  OPT_FLAG("human-readable", 'H', &cfg.human_readable, deprecated),
-		  OPT_FLAG("raw-binary",     'b', &cfg.raw_binary,     raw_directive),
+		  OPT_FLAG("raw-binary",     'b', &cfg.raw_binary,     desc_raw_directive),
 		  OPT_FILE("input-file",     'i', &cfg.file,           input));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
@@ -7518,7 +7517,7 @@ static int write_zeroes(int argc, char **argv,
 		  OPT_FLAG("deac",              'd', &cfg.deac,              deac),
 		  OPT_FLAG("limited-retry",     'l', &cfg.limited_retry,     limited_retry),
 		  OPT_FLAG("force-unit-access", 'f', &cfg.force_unit_access, force_unit_access),
-		  OPT_BYTE("prinfo",            'p', &cfg.prinfo,            prinfo),
+		  OPT_BYTE("prinfo",            'p', &cfg.prinfo,            desc_prinfo),
 		  OPT_SUFFIX("ref-tag",         'r', &cfg.ilbrt,			 ref_tag),
 		  OPT_SHRT("app-tag-mask",      'm', &cfg.lbatm,			 app_tag_mask),
 		  OPT_SHRT("app-tag",           'a', &cfg.lbat,				 app_tag),
@@ -8406,7 +8405,7 @@ static int submit_io(int opcode, char *command, const char *desc, int argc, char
 		  OPT_SUFFIX("ref-tag",         'r', &cfg.ilbrt,			 ref_tag),
 		  OPT_FILE("data",              'd', &cfg.data,              data),
 		  OPT_FILE("metadata",          'M', &cfg.metadata,          metadata),
-		  OPT_BYTE("prinfo",            'p', &cfg.prinfo,            prinfo),
+		  OPT_BYTE("prinfo",            'p', &cfg.prinfo,            desc_prinfo),
 		  OPT_SHRT("app-tag-mask",      'm', &cfg.lbatm,			 app_tag_mask),
 		  OPT_SHRT("app-tag",           'a', &cfg.lbat,				 app_tag),
 		  OPT_SUFFIX("storage-tag",     'g', &cfg.lbst,				 storage_tag),
@@ -8707,7 +8706,7 @@ static int verify_cmd(int argc, char **argv, struct command *acmd, struct plugin
 		  OPT_SHRT("block-count",       'c', &cfg.block_count,       block_count),
 		  OPT_FLAG("limited-retry",     'l', &cfg.limited_retry,     limited_retry),
 		  OPT_FLAG("force-unit-access", 'f', &cfg.force_unit_access, force_unit_access_verify),
-		  OPT_BYTE("prinfo",            'p', &cfg.prinfo,            prinfo),
+		  OPT_BYTE("prinfo",            'p', &cfg.prinfo,            desc_prinfo),
 		  OPT_SUFFIX("ref-tag",         'r', &cfg.ilbrt,			 ref_tag),
 		  OPT_SHRT("app-tag",           'a', &cfg.lbat,				 app_tag),
 		  OPT_SHRT("app-tag-mask",      'm', &cfg.lbatm,			 app_tag_mask),
@@ -9058,7 +9057,7 @@ static int dir_receive(int argc, char **argv, struct command *acmd, struct plugi
 	NVME_ARGS(opts,
 		  OPT_UINT("namespace-id",   'n', &cfg.namespace_id,   namespace_id_desired),
 		  OPT_UINT("data-len",       'l', &cfg.data_len,       buf_len),
-		  OPT_FLAG("raw-binary",     'b', &cfg.raw_binary,     raw_directive),
+		  OPT_FLAG("raw-binary",     'b', &cfg.raw_binary,     desc_raw_directive),
 		  OPT_BYTE("dir-type",       'D', &cfg.dtype,          dtype),
 		  OPT_SHRT("dir-spec",       'S', &cfg.dspec,          dspec_w_dtype),
 		  OPT_BYTE("dir-oper",       'O', &cfg.doper,          doper),
@@ -10921,7 +10920,7 @@ static int get_reachability_groups_log(int argc, char **argv, struct command *ac
 
 	NVME_ARGS(opts,
 		  OPT_FLAG("groups-only", 'g', &cfg.rgo, rgo),
-		  OPT_FLAG("rae", 'r', &cfg.rae, rae));
+		  OPT_FLAG("rae", 'r', &cfg.rae, desc_rae));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (err)
@@ -11032,7 +11031,7 @@ static int get_reachability_associations_log(int argc, char **argv, struct comma
 
 	NVME_ARGS(opts,
 		  OPT_FLAG("associations-only", 'a', &cfg.rao, rao),
-		  OPT_FLAG("rae", 'r', &cfg.rae, rae));
+		  OPT_FLAG("rae", 'r', &cfg.rae, desc_rae));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (err)
@@ -11112,7 +11111,7 @@ static int get_host_discovery_log(int argc, char **argv, struct command *acmd, s
 
 	NVME_ARGS(opts,
 		  OPT_FLAG("all-host-entries", 'a', &cfg.allhoste, allhoste),
-		  OPT_FLAG("rae", 'r', &cfg.rae, rae));
+		  OPT_FLAG("rae", 'r', &cfg.rae, desc_rae));
 
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
@@ -11187,7 +11186,7 @@ static int get_ave_discovery_log(int argc, char **argv, struct command *acmd, st
 		.rae = false,
 	};
 
-	NVME_ARGS(opts, OPT_FLAG("rae", 'r', &cfg.rae, rae));
+	NVME_ARGS(opts, OPT_FLAG("rae", 'r', &cfg.rae, desc_rae));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (err)
@@ -11263,7 +11262,7 @@ static int get_pull_model_ddc_req_log(int argc, char **argv, struct command *acm
 		.rae = false,
 	};
 
-	NVME_ARGS(opts, OPT_FLAG("rae", 'r', &cfg.rae, rae));
+	NVME_ARGS(opts, OPT_FLAG("rae", 'r', &cfg.rae, desc_rae));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc, opts);
 	if (err)
