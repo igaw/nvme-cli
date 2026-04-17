@@ -594,7 +594,7 @@ static const char *desc_namespace = "(optional) desired namespace";
 static const char *desc_namespace_desired = "desired namespace";
 static const char *desc_namespace_id_attach = "namespace to attach";
 static const char *desc_namespace_id_delete = "namespace to delete";
-static const char *desc_namespace_id_desired = "identifier of desired namespace";
+const char *desc_namespace_id_desired = "identifier of desired namespace";
 static const char *desc_namespace_id_device_self_test = 
 	"Indicate the namespace in which the device self-test has to be carried out";
 static const char *desc_namespace_id_list_ns = "first nsid returned list should start from";
@@ -806,7 +806,7 @@ static const char *desc_uuid_desc = "UUID Index - If this field is set to a non-
 	"value, then the value of this field is the index of a UUID in the UUID\n"
 	"List that is used by the command.If this field is cleared to 0h,\n"
 	"then no UUID index is specified";
-static const char *desc_uuid_index = "UUID index";
+const char *desc_uuid_index = "UUID index";
 static const char *desc_uuid_index_specify = "specify uuid index";
 static const char *desc_value_set_feature = "new value of feature (required)";
 static const char *desc_value_set_property = "the value of the property to be set";
@@ -3220,7 +3220,7 @@ static int list_ns(int argc, char **argv, struct command *acmd, struct plugin *p
 
 	NVME_ARGS(opts,
 		  OPT_UINT("namespace-id", 'n', &cfg.namespace_id,  desc_namespace_id_list_ns),
-		  OPT_INT("csi",           'y', &cfg.csi,           desc_csi_list_ns),
+		  OPT_INT("csi",           'y', &cfg.csi,           desc_csi),
 		  OPT_FLAG("all",          'a', &cfg.all,           desc_all));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc_list_ns, opts);
@@ -3718,7 +3718,7 @@ static int create_ns(int argc, char **argv, struct command *acmd, struct plugin 
 		  OPT_SHRT("nvmset-id",    'i', &cfg.nvmsetid, desc_nvmsetid),
 		  OPT_SHRT("endg-id",      'e', &cfg.endgid,   desc_endgid),
 		  OPT_SUFFIX("block-size", 'b', &cfg.bs,       desc_bs_create_ns),
-		  OPT_BYTE("csi",          'y', &cfg.csi,      desc_csi_create_ns),
+		  OPT_BYTE("csi",          'y', &cfg.csi,      desc_csi),
 		  OPT_SUFFIX("lbstm",      'l', &cfg.lbstm,    desc_lbstm),
 		  OPT_SHRT("nphndls",      'n', &cfg.nphndls,  desc_nphndls),
 		  OPT_STR("nsze-si",       'S', &cfg.nsze_si,  desc_nsze_si),
@@ -4988,7 +4988,7 @@ static void abort_self_test(struct libnvme_transport_handle *hdl, bool ish,
 	nvme_init_dev_self_test(&cmd, nsid, NVME_DST_STC_ABORT);
 	if (ish) {
 		if (libnvme_transport_handle_is_mi(hdl))
-			nvme_init_mi_cmd_flags(&cmd, desc_ish);
+			nvme_init_mi_cmd_flags(&cmd, ish);
 		else
 			printf("ISH is supported only for NVMe-MI\n");
 	}
@@ -5375,7 +5375,7 @@ static int fw_download_single(struct libnvme_transport_handle *hdl, void *fw_buf
 	}
 
 	if (libnvme_transport_handle_is_mi(hdl))
-		nvme_init_mi_cmd_flags(&cmd, desc_ish);
+		nvme_init_mi_cmd_flags(&cmd, ish);
 
 	for (try = 0; try < max_retries; try++) {
 		if (try > 0) {
@@ -5383,7 +5383,7 @@ static int fw_download_single(struct libnvme_transport_handle *hdl, void *fw_buf
 				offset, try, max_retries);
 		}
 
-		err = nvme_init_fw_download(&cmd, fw_buf, len, desc_offset);
+		err = nvme_init_fw_download(&cmd, fw_buf, len, offset);
 		if (err)
 			return err;
 
@@ -5483,7 +5483,7 @@ static int fw_download(int argc, char **argv, struct command *acmd, struct plugi
 		  OPT_FILE("fw",         'f', &cfg.fw,         desc_fw),
 		  OPT_FLAG("ish",        'I', &cfg.ish,        desc_ish),
 		  OPT_UINT("xfer",       'x', &cfg.xfer,       desc_xfer),
-		  OPT_UINT("offset",     'O', &cfg.offset,     desc_offset_fw_download),
+		  OPT_UINT("offset",     'O', &cfg.offset,     desc_offset),
 		  OPT_FLAG("progress",   'p', &cfg.progress,   desc_progress),
 		  OPT_FLAG("ignore-ovr", 'i', &cfg.ignore_ovr, desc_ignore_ovr));
 
@@ -6278,7 +6278,7 @@ static int get_register_properties(struct libnvme_transport_handle *hdl, void **
 		    !nvme_is_fabrics_reg(offset))
 			continue;
 
-		nvme_init_get_property(&cmd, desc_offset);
+		nvme_init_get_property(&cmd, offset);
 		err = libnvme_submit_admin_passthru(hdl, &cmd);
 		if (nvme_status_equals(err, NVME_STATUS_TYPE_NVME, NVME_SC_INVALID_FIELD)) {
 			value = -1;
@@ -6350,9 +6350,9 @@ static bool get_register_offset(void *bar, bool fabrics, struct get_reg_config *
 		nvme_show_ctrl_register(bar, fabrics, cfg->offset, flags);
 
 	for (offset = NVME_REG_CAP; offset <= NVME_REG_PMRMSCU; offset += get_reg_size(offset)) {
-		if (!nvme_is_ctrl_reg(offset) || offset == cfg->offset || !is_reg_selected(cfg, desc_offset))
+		if (!nvme_is_ctrl_reg(offset) || offset == cfg->offset || !is_reg_selected(cfg, offset))
 			continue;
-		nvme_show_ctrl_register(bar, fabrics, desc_offset, flags);
+		nvme_show_ctrl_register(bar, fabrics, offset, flags);
 		if (!offset_matched)
 			offset_matched = true;
 	}
@@ -6404,8 +6404,8 @@ static int get_register(int argc, char **argv, struct command *acmd, struct plug
 		  OPT_FLAG("cmbmsc",           0, &cfg.cmbmsc,         desc_cmbmsc),
 		  OPT_FLAG("nssd",             0, &cfg.nssd,           desc_nssd),
 		  OPT_FLAG("pmrctl",           0, &cfg.pmrctl,         desc_pmrctl),
-		  OPT_FLAG("pmrmscl",          0, &cfg.pmrmscl,        desc_pmrmscl_local),
-		  OPT_FLAG("pmrmscu",          0, &cfg.pmrmscu,        desc_pmrmscu_local));
+		  OPT_FLAG("pmrmscl",          0, &cfg.pmrmscl,        desc_pmrmscl),
+		  OPT_FLAG("pmrmscu",          0, &cfg.pmrmscu,        desc_pmrmscu));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc_get_register, opts);
 	if (err)
@@ -6455,7 +6455,7 @@ static int nvme_set_single_property(struct libnvme_transport_handle *hdl, int of
 	struct libnvme_passthru_cmd cmd;
 	int err;
 
-	nvme_init_set_property(&cmd, desc_offset, value);
+	nvme_init_set_property(&cmd, offset, value);
 	err = libnvme_submit_admin_passthru(hdl, &cmd);
 	if (err) {
 		nvme_show_err(err, "set-property");
@@ -6476,13 +6476,13 @@ static int set_register_property(struct libnvme_transport_handle *hdl, int offse
 		return -EINVAL;
 	}
 
-	return nvme_set_single_property(hdl, desc_offset, value);
+	return nvme_set_single_property(hdl, offset, value);
 }
 
 static int nvme_set_register(struct libnvme_transport_handle *hdl, void *bar, int offset, uint64_t value, bool mmio32)
 {
 	if (!bar)
-		return set_register_property(hdl, desc_offset, value);
+		return set_register_property(hdl, offset, value);
 
 	if (nvme_is_64bit_reg(offset))
 		mmio_write64(bar + offset, value, mmio32);
@@ -6747,7 +6747,7 @@ static int get_property(int argc, char **argv, struct command *acmd, struct plug
 	};
 
 	NVME_ARGS(opts,
-		  OPT_UINT("offset",         'O', &cfg.offset,         desc_offset_get_property),
+		  OPT_UINT("offset",         'O', &cfg.offset,         desc_offset),
 		  OPT_FLAG("human-readable", 'H', &cfg.human_readable, desc_human_readable_get_property));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc_get_property, opts);
@@ -6789,7 +6789,7 @@ static int set_property(int argc, char **argv, struct command *acmd, struct plug
 	};
 
 	NVME_ARGS(opts,
-		  OPT_UINT("offset", 'O', &cfg.offset, desc_offset_set_property),
+		  OPT_UINT("offset", 'O', &cfg.offset, desc_offset),
 		  OPT_UINT("value",  'V', &cfg.value,  desc_value_set_property));
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc_set_property, opts);
@@ -8841,7 +8841,7 @@ static int verify_cmd(int argc, char **argv, struct command *acmd, struct plugin
 		  OPT_SHRT("app-tag",           'a', &cfg.lbat,				 desc_app_tag),
 		  OPT_SHRT("app-tag-mask",      'm', &cfg.lbatm,			 desc_app_tag_mask),
 		  OPT_SUFFIX("storage-tag",     'S', &cfg.lbst,				 desc_storage_tag),
-		  OPT_FLAG("storage-tag-check", 'C', &cfg.stc,				 desc_storage_tag_check_local));
+		  OPT_FLAG("storage-tag-check", 'C', &cfg.stc,				 desc_storage_tag_check));
 
 
 	err = parse_and_open(&ctx, &hdl, argc, argv, desc_verify_cmd, opts);
@@ -9042,7 +9042,7 @@ static int get_lba_status(int argc, char **argv, struct command *acmd,
 		return err;
 	}
 
-	nvme_show_lba_status(buf, desc_buf_len, flags);
+	nvme_show_lba_status(buf, buf_len, flags);
 
 	return err;
 }
