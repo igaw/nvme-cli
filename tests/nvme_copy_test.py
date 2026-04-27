@@ -69,6 +69,36 @@ class TestNVMeCopy(TestNVMe):
         if missing:
             self.skipTest(f"{', '.join(missing)} are 0, copy not supported on this namespace")
 
+    def _check_ns_uses_64b_pi_guard(self):
+        """ Skip test if the namespace's current LBA format does not use 64-bit PI guard.
+            Copy Descriptor Formats 1h and 3h require the source namespace to be formatted
+            with 64-bit guard protection information (pif == 2 in the extended LBA format
+            entry). If the namespace uses a standard 16-bit guard LBA format the controller
+            will return 'Invalid Format'.
+        """
+        # decode the 6-bit LBA format index from the flbas field:
+        # bits [3:0] are the low 4 bits; bits [6:5] are the high 2 bits
+        flbas = to_decimal(self.get_id_ns_field_value("flbas"))
+        lbaf_index = (flbas & 0xF) | (((flbas >> 5) & 0x3) << 4)
+
+        nvm_id_ns_cmd = f"{self.nvme_bin} nvm-id-ns {self.ns1} --output-format=json"
+        result = self.run_cmd(nvm_id_ns_cmd)
+        if result.returncode != 0:
+            self.skipTest("nvm-id-ns not supported; cannot verify 64-bit PI guard compatibility")
+
+        data = json.loads(result.stdout)
+        elbafs = data.get("elbafs", [])
+        if lbaf_index >= len(elbafs):
+            self.skipTest(f"lbaf index {lbaf_index} out of range in nvm-id-ns elbafs")
+
+        pif = elbafs[lbaf_index].get("pif", 0)
+        # NVME_NVM_PIF_64B_GUARD = 2; formats 1h and 3h require 64-bit guard PI
+        if pif != 2:
+            self.skipTest(
+                f"current LBA format {lbaf_index} has pif={pif} (not 64-bit guard); "
+                "copy descriptor formats 1h and 3h require 64-bit guard PI"
+            )
+
     def _enable_cdfe_for_format(self, desc_format):
         """ Enable the host-behavior-support cdfe bit for the given cross-namespace format.
             Only the bit corresponding to desc_format is enabled; other bits are left unchanged.
@@ -135,6 +165,7 @@ class TestNVMeCopy(TestNVMe):
         """ Test copy with descriptor format 1 """
         self._check_format_supported(1)
         self._check_ns_copy_limits()
+        self._check_ns_uses_64b_pi_guard()
         self.copy(0, 1, 2, descriptor_format=1)
 
     def test_copy_format_2(self):
@@ -155,6 +186,7 @@ class TestNVMeCopy(TestNVMe):
         """ Test copy with descriptor format 3 """
         self._check_format_supported(3)
         self._check_ns_copy_limits()
+        self._check_ns_uses_64b_pi_guard()
         self._enable_cdfe_for_format(3)
         self.copy(0, 1, 2, descriptor_format=3, snsids=self.ns1_nsid)
 
@@ -162,5 +194,6 @@ class TestNVMeCopy(TestNVMe):
         """ Test copy with descriptor format 3 and source options """
         self._check_format_supported(3)
         self._check_ns_copy_limits()
+        self._check_ns_uses_64b_pi_guard()
         self._enable_cdfe_for_format(3)
         self.copy(0, 1, 2, descriptor_format=3, snsids=self.ns1_nsid, sopts=0)
