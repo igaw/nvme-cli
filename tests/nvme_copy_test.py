@@ -16,7 +16,7 @@ NVMe Copy Testcase:-
 
 """
 
-import base64
+import subprocess
 
 from nvme_test import TestNVMe, to_decimal
 
@@ -41,23 +41,30 @@ class TestNVMeCopy(TestNVMe):
         self.host_behavior_data = None
         cross_namespace_copy = self.ocfs & 0xc
         if cross_namespace_copy:
-            # get host behavior support data
+            # get host behavior support data (raw binary, use subprocess directly)
             get_features_cmd = f"{self.nvme_bin} get-feature {self.ctrl} " + \
                 "--feature-id=0x16 --data-len=512 --raw-binary"
-            result = self.run_cmd(get_features_cmd)
-            err = result.returncode
-            self.assertEqual(err, 0, "ERROR : nvme get-feature failed")
+            result = subprocess.run(get_features_cmd, shell=True,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.assertEqual(result.returncode, 0, "ERROR : nvme get-feature failed")
             self.host_behavior_data = result.stdout
             # enable cross-namespace copy formats
-            if int.from_bytes(base64.b64decode(self.host_behavior_data[4])) & cross_namespace_copy:
+            # bytes 4-5 of the Host Behavior Support Data Structure hold the flags
+            current_flags = int.from_bytes(self.host_behavior_data[4:6], 'little')
+            if current_flags & cross_namespace_copy:
                 # skip if already enabled
                 print("Cross-namespace copy already enabled, skipping set-features")
                 self.host_behavior_data = None
             else:
-                data = self.host_behavior_data[:4] + str(cross_namespace_copy.to_bytes(2, 'little')) + self.host_behavior_data[6:]
+                new_flags = current_flags | cross_namespace_copy
+                data = (self.host_behavior_data[:4] +
+                        new_flags.to_bytes(2, 'little') +
+                        self.host_behavior_data[6:])
                 set_features_cmd = f"{self.nvme_bin} set-feature " + \
                     f"{self.ctrl} --feature-id=0x16 --data-len=512"
-                result = self.run_cmd(set_features_cmd, stdin_data=data)
+                result = subprocess.run(set_features_cmd, shell=True,
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                        input=data)
                 self.assertEqual(result.returncode, 0, "Failed to enable cross-namespace copy formats")
         get_ns_id_cmd = f"{self.nvme_bin} get-ns-id {self.ns1}"
         result = self.run_cmd(get_ns_id_cmd)
@@ -70,10 +77,12 @@ class TestNVMeCopy(TestNVMe):
     def tearDown(self):
         """ Post Section for TestNVMeCopy """
         if self.host_behavior_data:
-            # restore saved host behavior support data
+            # restore saved host behavior support data (raw binary)
             set_features_cmd = f"{self.nvme_bin} set-feature {self.ctrl} " + \
                 "--feature-id=0x16 --data-len=512"
-            self.run_cmd(set_features_cmd, stdin_data=self.host_behavior_data)
+            subprocess.run(set_features_cmd, shell=True,
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           input=self.host_behavior_data)
         super().tearDown()
 
     def _check_format_supported(self, desc_format):
