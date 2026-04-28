@@ -3051,9 +3051,16 @@ out_free:
 __public int libnvmf_discovery(struct libnvme_global_ctx *ctx, struct libnvmf_context *fctx,
 		bool connect, bool force)
 {
+	__cleanup_free char *hnqn = NULL;
+	__cleanup_free char *hid = NULL;
 	struct libnvme_ctrl *c = NULL;
 	struct libnvme_host *h;
 	int ret;
+
+	if (!fctx->hostnqn)
+		fctx->hostnqn = hnqn = libnvme_read_hostnqn();
+	if (!fctx->hostid && hnqn)
+		fctx->hostid = hid = libnvme_read_hostid();
 
 	ret = lookup_host(ctx, fctx, &h);
 	if (ret)
