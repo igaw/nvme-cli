@@ -43,7 +43,13 @@ class TestNVMeIO(TestNVMe):
         """ Pre Section for TestNVMeIO """
         super().setUp()
         # common code used in various testcases.
-        (self.data_size, _) = self.get_lba_format_size()
+        # Use ds + ms so data_size covers a complete LBA including metadata.
+        # Without this, nvme-cli rounds up the buffer to fit a full LBA,
+        # causing the read file to be larger than the write file (filecmp
+        # fails) and the compare command to span extra blocks with
+        # uninitialized metadata bytes that differ between calls.
+        (ds, ms) = self.get_lba_format_size()
+        self.data_size = ds + ms
         self.start_block = 0
         self.block_count = 0
         self.write_file = "write_file.txt"
