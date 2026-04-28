@@ -53,12 +53,15 @@ class TestNVMeIO(TestNVMe):
             self.prinfo = 8
             self.data_size = ds
         else:
-            # No PI.  Include the full LBA (user data + metadata) in the
-            # buffer so the read file size matches the write file size and
-            # so that uninitialized trailing metadata bytes are consistent
-            # across write and compare operations.
+            # No PI.  For extended LBA format (metadata appended to the data
+            # buffer) include the metadata bytes so that the controller sees
+            # a consistent data+metadata unit.  For separate metadata format
+            # (flbas bit 4 clear) the metadata is transferred via a different
+            # pointer and must NOT be folded into the data buffer; use ds only
+            # so that the data transfer length matches exactly one LBA and the
+            # controller can compare data without a spurious metadata mismatch.
             self.prinfo = 0
-            self.data_size = ds + ms
+            self.data_size = ds + ms if self.ns_meta_ext else ds
         self.start_block = 0
         self.block_count = 0
         self.write_file = "write_file.txt"

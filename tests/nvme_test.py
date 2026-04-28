@@ -81,6 +81,7 @@ class TestNVMe(unittest.TestCase):
         self.default_nsid = 0x1
         self.flbas = 0
         self.ns_dps = 0
+        self.ns_meta_ext = False
         self.config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
 
         self.load_config()
@@ -96,6 +97,7 @@ class TestNVMe(unittest.TestCase):
             # the DPS field so IO tests can enable PRACT when PI is active.
             self.flbas = self._get_active_lbaf_index()
             self.ns_dps = self._get_ns_dps()
+            self.ns_meta_ext = self._is_metadata_ext()
         logger.debug("setup: ctrl: %s, ns1: %s, default_nsid: %s, flbas: %s",
                      self.ctrl, self.ns1, self.default_nsid, self.flbas)
 
@@ -339,6 +341,20 @@ class TestNVMe(unittest.TestCase):
         self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
         json_output = json.loads(result.stdout)
         return int(json_output.get('dps', 0))
+
+    def _is_metadata_ext(self):
+        """ Return True if the active LBA format uses extended LBA (bit 4 of
+            the flbas field is set, meaning metadata is appended at the end of
+            the data buffer). Return False if bit 4 is clear, meaning metadata
+            is transferred as a separate, contiguous buffer.
+        """
+        nvme_id_ns_cmd = f"{self.nvme_bin} id-ns {self.ns1} " + \
+            "--output-format=json"
+        result = self.run_cmd(nvme_id_ns_cmd)
+        self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
+        json_output = json.loads(result.stdout)
+        flbas = int(json_output.get('flbas', 0))
+        return bool(flbas & (1 << 4))
 
     def get_lba_format_size(self):
         """ Wrapper for extracting lba format size of the given flbas
