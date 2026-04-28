@@ -104,7 +104,7 @@ class TestNVMeCopy(TestNVMe):
             return 0
         flbas = int(json.loads(result.stdout).get("flbas", 0))
         # NVMe spec FLBAS encoding: bits[3:0] = lbaf_index[3:0],
-        # bits[6:5] = lbaf_index[5:4] (for extended LBA formats, NVMe 2.0+)
+        # bits[6:5] = lbaf_index[5:4] (NVMe 2.0+ extended formats; bit 4 is reserved)
         lbaf_idx = (flbas & 0xF) | (((flbas >> 5) & 0x3) << 4)
 
         nvm_id_ns_cmd = f"{self.nvme_bin} nvm-id-ns {self.ns1} --output-format=json"
@@ -167,8 +167,8 @@ class TestNVMeCopy(TestNVMe):
         if result.returncode == 0:
             lbafs = json.loads(result.stdout).get("lbafs", [])
             for i, lbaf in enumerate(lbafs):
-                # 64-bit guard PI (8B CRC-64 + 2B AppTag + 6B RefTag) needs
-                # at least 16 bytes of metadata per QEMU docs.
+                # 64-bit guard PI (8B CRC-64 + 2B AppTag + 6B RefTag) requires
+                # at least 16 bytes of metadata per LBA (NVMe spec section 8.3).
                 if int(lbaf.get("ms", 0)) >= 16:
                     return i
         return None

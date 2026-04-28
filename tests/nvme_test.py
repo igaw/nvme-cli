@@ -338,7 +338,7 @@ class TestNVMe(unittest.TestCase):
         self.assertTrue(len(json_output['lbafs']) > self.flbas,
                         "Error : could not match the given flbas to an existing lbaf")
         lbaf_json = json_output['lbafs'][int(self.flbas)]
-        # LBAF.MS: raw metadata size in bytes
+        # LBAF.MS: metadata size in bytes (distinct from LBAF.LBADS which is an exponent)
         ms = int(lbaf_json['ms'])
         # LBAF.LBADS: power-of-2 exponent; actual data size in bytes = 2^ds_expo
         ds_expo = int(lbaf_json['ds'])
