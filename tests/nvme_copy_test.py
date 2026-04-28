@@ -89,19 +89,37 @@ class TestNVMeCopy(TestNVMe):
 
     def _find_64b_guard_lbaf_index(self):
         """
-        Search the nvm-id-ns elbafs for a format with 64-bit guard PI (pif == 2).
+        Find an LBA format index suitable for 64-bit guard PI (pif == 2).
 
-        Returns the lbaf index (0-based position in the lbafs[] array), or None
-        if no such format exists or the nvm-id-ns command is not supported.
+        First consults nvm-id-ns which explicitly carries the Protection
+        Information Format (pif) per elbaf entry.  If nvm-id-ns is not
+        available or no entry reports pif=2 (e.g. QEMU does not populate
+        the pif field), falls back to scanning the id-ns lbafs[] array for
+        the first format with ms >= 16 bytes.  64-bit guard PI occupies
+        exactly 16 bytes (8B CRC-64 + 2B AppTag + 6B RefTag), so any lbaf
+        with at least 16 bytes of metadata can carry it.
+
+        Returns the lbaf index (0-based position in lbafs[]), or None if no
+        suitable format is found.
         """
         nvm_id_ns_cmd = f"{self.nvme_bin} nvm-id-ns {self.ns1} --output-format=json"
         result = self.run_cmd(nvm_id_ns_cmd)
-        if result.returncode != 0:
-            return None
-        elbafs = json.loads(result.stdout).get("elbafs", [])
-        for i, elbaf in enumerate(elbafs):
-            if elbaf.get("pif", 0) == 2:  # NVME_NVM_PIF_64B_GUARD = 2
-                return i
+        if result.returncode == 0:
+            elbafs = json.loads(result.stdout).get("elbafs", [])
+            for i, elbaf in enumerate(elbafs):
+                if elbaf.get("pif", 0) == 2:  # NVME_NVM_PIF_64B_GUARD = 2
+                    return i
+
+        # Fallback: nvm-id-ns either failed or did not populate the pif field
+        # (QEMU, for example, always reports pif=0).  Scan id-ns lbafs[] for
+        # the first format with enough metadata for 64-bit guard PI (ms >= 16).
+        id_ns_cmd = f"{self.nvme_bin} id-ns {self.ns1} --output-format=json"
+        result = self.run_cmd(id_ns_cmd)
+        if result.returncode == 0:
+            lbafs = json.loads(result.stdout).get("lbafs", [])
+            for i, lbaf in enumerate(lbafs):
+                if int(lbaf.get("ms", 0)) >= 16:
+                    return i
         return None
 
     def _create_ns_with_lbaf(self, lbaf_index):
