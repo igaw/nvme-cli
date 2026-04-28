@@ -43,7 +43,22 @@ class TestNVMeIO(TestNVMe):
         """ Pre Section for TestNVMeIO """
         super().setUp()
         # common code used in various testcases.
-        (self.data_size, _) = self.get_lba_format_size()
+        (ds, ms) = self.get_lba_format_size()
+        if self.ns_dps != 0 and ms != 0:
+            # End-to-end protection information (PI) is active.  Use PRACT=1
+            # (--prinfo=8) so the controller inserts and strips PI
+            # automatically.  With PRACT=1 the PI bytes are not transferred
+            # over the host interface, so data_size equals the logical block
+            # data size only (ds), not ds+ms.
+            self.prinfo = 8
+            self.data_size = ds
+        else:
+            # No PI.  Include the full LBA (user data + metadata) in the
+            # buffer so the read file size matches the write file size and
+            # so that uninitialized trailing metadata bytes are consistent
+            # across write and compare operations.
+            self.prinfo = 0
+            self.data_size = ds + ms
         self.start_block = 0
         self.block_count = 0
         self.write_file = "write_file.txt"
@@ -81,6 +96,8 @@ class TestNVMeIO(TestNVMe):
             f"--start-block={str(self.start_block)} " + \
             f"--block-count={str(self.block_count)} " + \
             f"--data-size={str(self.data_size)} --data={self.write_file}"
+        if self.prinfo:
+            write_cmd += f" --prinfo={self.prinfo}"
         return self.exec_cmd(write_cmd)
 
     def nvme_read(self):
@@ -94,4 +111,6 @@ class TestNVMeIO(TestNVMe):
             f"--start-block={str(self.start_block)} " + \
             f"--block-count={str(self.block_count)} " + \
             f"--data-size={str(self.data_size)} --data={self.read_file}"
+        if self.prinfo:
+            read_cmd += f" --prinfo={self.prinfo}"
         return self.exec_cmd(read_cmd)

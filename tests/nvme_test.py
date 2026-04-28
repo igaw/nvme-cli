@@ -80,6 +80,7 @@ class TestNVMe(unittest.TestCase):
         self.do_validate_pci_device = True
         self.default_nsid = 0x1
         self.flbas = 0
+        self.ns_dps = 0
         self.config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
 
         self.load_config()
@@ -88,6 +89,13 @@ class TestNVMe(unittest.TestCase):
         self.ns_mgmt_supported = self.get_ns_mgmt_support()
         if self.ns_mgmt_supported:
             self.create_and_attach_default_ns()
+        else:
+            # Namespace is managed externally (e.g. by QEMU). Discover the
+            # active lbaf so that get_lba_format_size() returns the correct
+            # ds and ms values for the format actually in use.  Also read
+            # the DPS field so IO tests can enable PRACT when PI is active.
+            self.flbas = self._get_active_lbaf_index()
+            self.ns_dps = self._get_ns_dps()
         logger.debug("setup: ctrl: %s, ns1: %s, default_nsid: %s, flbas: %s",
                      self.ctrl, self.ns1, self.default_nsid, self.flbas)
 
@@ -299,6 +307,38 @@ class TestNVMe(unittest.TestCase):
                 - True if 'Get LBA Status' command is supported, otherwise False
         """
         return to_decimal(self.get_id_ctrl_field_value("oacs")) & (1 << 9)
+
+    def _get_active_lbaf_index(self):
+        """ Return the index of the currently active LBA format for ns1.
+            - Args:
+                - None
+            - Returns:
+                - lbaf index (int) of the format whose in_use flag is set,
+                  or 0 if no in_use entry is found.
+        """
+        nvme_id_ns_cmd = f"{self.nvme_bin} id-ns {self.ns1} " + \
+            "--output-format=json"
+        result = self.run_cmd(nvme_id_ns_cmd)
+        self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
+        json_output = json.loads(result.stdout)
+        for lbaf in json_output.get('lbafs', []):
+            if lbaf.get('in_use') == 1:
+                return int(lbaf['lbaf'])
+        return 0
+
+    def _get_ns_dps(self):
+        """ Return the Data Protection Settings (DPS) field for ns1.
+            - Args:
+                - None
+            - Returns:
+                - dps value (int); non-zero means end-to-end PI is enabled.
+        """
+        nvme_id_ns_cmd = f"{self.nvme_bin} id-ns {self.ns1} " + \
+            "--output-format=json"
+        result = self.run_cmd(nvme_id_ns_cmd)
+        self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
+        json_output = json.loads(result.stdout)
+        return int(json_output.get('dps', 0))
 
     def get_lba_format_size(self):
         """ Wrapper for extracting lba format size of the given flbas
