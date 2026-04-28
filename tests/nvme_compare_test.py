@@ -82,6 +82,8 @@ class TestNVMeCompareCmd(TestNVMeIO):
             f"--start-block={str(self.start_block)} " + \
             f"--block-count={str(self.block_count)} " + \
             f"--data-size={str(self.data_size)} --data={cmp_file}"
+        if self.prinfo:
+            compare_cmd += f" --prinfo={self.prinfo}"
         return self.exec_cmd(compare_cmd)
 
     def test_nvme_compare(self):
