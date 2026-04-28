@@ -82,6 +82,12 @@ class TestNVMe(unittest.TestCase):
         self.flbas = 0
         self.ns_dps = 0
         self.ns_meta_ext = False
+        # Protection Information Format (PIF): encoded in bits 5:3 of the DPS
+        # field (NVMe 2.0+).  PIF 0 = 8-byte PI / 16-bit CRC guard,
+        # PIF 1 = 16-byte PI / 64-bit CRC guard,
+        # PIF 2 = 8-byte PI / 32-bit CRC guard.
+        # NVMe 1.x devices always report 0 (bits 5:3 were reserved/zero).
+        self.pif = 0
         self.config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
 
         self.load_config()
@@ -94,10 +100,12 @@ class TestNVMe(unittest.TestCase):
             # Namespace is managed externally (e.g. by QEMU). Discover the
             # active lbaf so that get_lba_format_size() returns the correct
             # ds and ms values for the format actually in use.  Also read
-            # the DPS field so IO tests can enable PRACT when PI is active.
+            # the DPS field (PI type in bits 2:0, PIF in bits 5:3) so IO
+            # tests can choose the right prinfo value.
             self.flbas = self._get_active_lbaf_index()
             self.ns_dps = self._get_ns_dps()
             self.ns_meta_ext = self._is_metadata_ext()
+            self.pif = self._get_pif()
         logger.debug("setup: ctrl: %s, ns1: %s, default_nsid: %s, flbas: %s",
                      self.ctrl, self.ns1, self.default_nsid, self.flbas)
 
@@ -333,7 +341,9 @@ class TestNVMe(unittest.TestCase):
             - Args:
                 - None
             - Returns:
-                - dps value (int); non-zero means end-to-end PI is enabled.
+                - dps value (int); bits 2:0 are the PI type (non-zero means
+                  end-to-end PI is enabled), bits 5:3 are the Protection
+                  Information Format (PIF) on NVMe 2.0+ devices.
         """
         nvme_id_ns_cmd = f"{self.nvme_bin} id-ns {self.ns1} " + \
             "--output-format=json"
@@ -341,6 +351,29 @@ class TestNVMe(unittest.TestCase):
         self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
         json_output = json.loads(result.stdout)
         return int(json_output.get('dps', 0))
+
+    def _get_pif(self):
+        """ Return the Protection Information Format (PIF) for ns1.
+
+            The PIF is stored in bits 5:3 of the DPS field (NVMe 2.0+):
+              PIF 0 - 8-byte PI, 16-bit CRC guard (Type 1/2/3, all NVMe 1.x)
+              PIF 1 - 16-byte PI, 64-bit CRC guard
+              PIF 2 - 8-byte PI, 32-bit CRC guard
+
+            NVMe 1.x devices always return 0 for these bits.
+
+            - Args:
+                - None
+            - Returns:
+                - pif value (int, 0-7).
+        """
+        nvme_id_ns_cmd = f"{self.nvme_bin} id-ns {self.ns1} " + \
+            "--output-format=json"
+        result = self.run_cmd(nvme_id_ns_cmd)
+        self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
+        json_output = json.loads(result.stdout)
+        dps = int(json_output.get('dps', 0))
+        return (dps >> 3) & 0x7
 
     def _is_metadata_ext(self):
         """ Return True if the active LBA format uses extended LBA (bit 4 of

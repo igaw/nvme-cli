@@ -44,13 +44,34 @@ class TestNVMeIO(TestNVMe):
         super().setUp()
         # common code used in various testcases.
         (ds, ms) = self.get_lba_format_size()
-        if self.ns_dps != 0 and ms != 0:
-            # End-to-end protection information (PI) is active.  Use PRACT=1
-            # (--prinfo=8) so the controller inserts and strips PI
+        self.ms = ms
+        # PI type occupies bits 2:0 of the DPS field; bits 5:3 are PIF.
+        pi_type = self.ns_dps & 0x7
+        if pi_type != 0 and ms != 0 and self.ns_meta_ext:
+            # PI active + extended LBA (metadata appended to data buffer).
+            # Use PRACT=1 (--prinfo=8) so the controller inserts and strips PI
             # automatically.  With PRACT=1 the PI bytes are not transferred
             # over the host interface, so data_size equals the logical block
-            # data size only (ds), not ds+ms.
+            # data size only (ds), not ds+ms.  This works for all PI sizes
+            # (8 bytes for PIF 0/2, 16 bytes for PIF 1) and all guard widths
+            # (16-bit, 32-bit, 64-bit CRC) because the controller handles
+            # the PI entirely.
             self.prinfo = 8
+            self.data_size = ds
+        elif pi_type != 0 and ms != 0 and not self.ns_meta_ext:
+            # PI active + separate metadata (flbas bit 4 clear).  PRACT=1
+            # (--prinfo=8) is invalid for the Compare command on this format
+            # (NVMe spec: PRACT=1 for Compare requires PI in the host data
+            # buffer, which only applies to the extended-LBA layout).  Use
+            # prinfo=0 (PRACT=0, PRCHK=0) for all operations and supply an
+            # explicit zero-filled metadata buffer of ms bytes so that the
+            # stored metadata and the compared metadata are both known zeros.
+            # PRCHK=0 skips PI validation, so the zero PI bytes are accepted
+            # by the controller on write and matched exactly on compare.  This
+            # is PI-format and guard-width agnostic: the entire ms-byte
+            # metadata slot (whether holding an 8-byte PI with 16-bit or
+            # 32-bit guard, or a 16-byte PI with 64-bit guard) is zeroed.
+            self.prinfo = 0
             self.data_size = ds
         else:
             # No PI.  For extended LBA format (metadata appended to the data
@@ -58,14 +79,18 @@ class TestNVMeIO(TestNVMe):
             # a consistent data+metadata unit.  For separate metadata format
             # (flbas bit 4 clear) the metadata is transferred via a different
             # pointer and must NOT be folded into the data buffer; use ds only
-            # so that the data transfer length matches exactly one LBA and the
-            # controller can compare data without a spurious metadata mismatch.
+            # so that the data transfer length matches exactly one LBA.
             self.prinfo = 0
             self.data_size = ds + ms if self.ns_meta_ext else ds
         self.start_block = 0
         self.block_count = 0
         self.write_file = "write_file.txt"
         self.read_file = "read_file.txt"
+        # Basename only; subclasses must prepend the test_log_dir path before
+        # use (same convention as write_file and read_file above).
+        if self.ms > 0 and not self.ns_meta_ext:
+            self.write_meta_file = "write_meta_file.bin"
+            self.read_meta_file = "read_meta_file.bin"
 
     def tearDown(self):
         """ Post Section for TestNVMeIO """
@@ -88,6 +113,18 @@ class TestNVMeIO(TestNVMe):
         os.fsync(data_file.fileno())
         data_file.close()
 
+    def create_meta_file(self, pathname, meta_size):
+        """ Creates a binary file of meta_size zero bytes for use as a
+            separate-metadata buffer in nvme write/read/compare commands.
+            - Args:
+                - pathname : metadata file path name.
+                - meta_size : total size of the metadata in bytes.
+            - Returns:
+            None
+        """
+        with open(pathname, "wb") as meta_file:
+            meta_file.write(bytes(meta_size))
+
     def nvme_write(self):
         """ Wrapper for nvme write operation
             - Args:
@@ -101,6 +138,9 @@ class TestNVMeIO(TestNVMe):
             f"--data-size={str(self.data_size)} --data={self.write_file}"
         if self.prinfo:
             write_cmd += f" --prinfo={self.prinfo}"
+        if self.ms > 0 and not self.ns_meta_ext:
+            write_cmd += \
+                f" --metadata-size={self.ms} --metadata={self.write_meta_file}"
         return self.exec_cmd(write_cmd)
 
     def nvme_read(self):
@@ -116,4 +156,7 @@ class TestNVMeIO(TestNVMe):
             f"--data-size={str(self.data_size)} --data={self.read_file}"
         if self.prinfo:
             read_cmd += f" --prinfo={self.prinfo}"
+        if self.ms > 0 and not self.ns_meta_ext:
+            read_cmd += \
+                f" --metadata-size={self.ms} --metadata={self.read_meta_file}"
         return self.exec_cmd(read_cmd)
