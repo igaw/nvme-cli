@@ -70,7 +70,8 @@ static int nvme_get_sct_status(struct libnvme_transport_handle *hdl, __u32 devic
 	unsigned char *status;
 	__u32 supported = 0;
 
-	if (posix_memalign(&data, getpagesize(), data_len))
+	data = libnvme_alloc(data_len);
+	if (!data)
 		return -ENOMEM;
 
 	memset(data, 0, data_len);
@@ -110,7 +111,7 @@ static int nvme_get_sct_status(struct libnvme_transport_handle *hdl, __u32 devic
 		}
 	}
 end:
-	free(data);
+	libnvme_free(data);
 	return err;
 }
 
@@ -126,7 +127,8 @@ static int nvme_sct_command_transfer_log(struct libnvme_transport_handle *hdl, b
 	else
 		function_code = SAVED_LOG_FUNCTION_CODE;
 
-	if (posix_memalign(&data, getpagesize(), data_len))
+	data = libnvme_alloc(data_len);
+	if (!data)
 		return -ENOMEM;
 
 	memset(data, 0, data_len);
@@ -134,7 +136,7 @@ static int nvme_sct_command_transfer_log(struct libnvme_transport_handle *hdl, b
 	memcpy(data + 2, &function_code, sizeof(function_code));
 
 	err = nvme_sct_op(hdl, OP_SCT_COMMAND_TRANSFER, DW10_SCT_COMMAND_TRANSFER, DW11_SCT_COMMAND_TRANSFER, data, data_len);
-	free(data);
+	libnvme_free(data);
 	return err;
 }
 
@@ -226,7 +228,8 @@ static int nvme_get_internal_log(struct libnvme_transport_handle *hdl,
 		goto end;
 	}
 
-	if (posix_memalign(&page_data, getpagesize(), max_pages * page_data_len)) {
+	page_data = libnvme_alloc(max_pages * page_data_len);
+	if (!page_data) {
 		err = ENOMEM;
 		goto end;
 	}
@@ -314,7 +317,7 @@ static int nvme_get_internal_log(struct libnvme_transport_handle *hdl,
 end:
 	if (o_fd >= 0)
 		close(o_fd);
-	free(page_data);
+	libnvme_free(page_data);
 	return err;
 }
 
@@ -369,7 +372,8 @@ static int nvme_get_vendor_log(struct libnvme_transport_handle *hdl,
 	void *log = NULL;
 	size_t log_len = 512;
 
-	if (posix_memalign(&log, getpagesize(), log_len)) {
+	log = libnvme_alloc(log_len);
+	if (!log) {
 		err = ENOMEM;
 		goto end;
 	}
@@ -411,7 +415,7 @@ static int nvme_get_vendor_log(struct libnvme_transport_handle *hdl,
 			d(log, log_len, 16, 1);
 	}
 end:
-	free(log);
+	libnvme_free(log);
 	return err;
 }
 

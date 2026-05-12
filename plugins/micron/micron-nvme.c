@@ -585,6 +585,7 @@ static int micron_selective_download(int argc, char **argv,
 	int xfer = 4096;
 	struct stat sb;
 	void *fw_buf;
+	unsigned char *fw_ptr;
 
 	struct config {
 		char *fw;
@@ -643,11 +644,13 @@ static int micron_selective_download(int argc, char **argv,
 		goto out;
 	}
 
-	if (posix_memalign(&fw_buf, getpagesize(), fw_size)) {
+	fw_buf = libnvme_alloc(fw_size);
+	if (!fw_buf) {
 		fprintf(stderr, "No memory for f/w size:%d\n", fw_size);
 		err = ENOMEM;
 		goto out;
 	}
+	fw_ptr = fw_buf;
 
 	if (read(fw_fd, fw_buf, fw_size) != ((ssize_t) (fw_size))) {
 		err = errno;
@@ -657,7 +660,7 @@ static int micron_selective_download(int argc, char **argv,
 	while (fw_size > 0) {
 		xfer = min(xfer, fw_size);
 
-		err = nvme_init_fw_download(&cmd, fw_buf, xfer, offset);
+		err = nvme_init_fw_download(&cmd, fw_ptr, xfer, offset);
 		if (err) {
 			perror("fw-download");
 			goto out_free;
@@ -670,7 +673,7 @@ static int micron_selective_download(int argc, char **argv,
 			nvme_show_status(err);
 			goto out_free;
 		}
-		fw_buf += xfer;
+		fw_ptr += xfer;
 		fw_size -= xfer;
 		offset += xfer;
 	}
@@ -684,7 +687,7 @@ static int micron_selective_download(int argc, char **argv,
 	}
 
 out_free:
-	free(fw_buf);
+	libnvme_free(fw_buf);
 out:
 	close(fw_fd);
 	return err;

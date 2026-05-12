@@ -10938,7 +10938,8 @@ static int wdc_log_page_directory(int argc, char **argv, struct command *acmd,
 			struct log_page_directory *dir;
 			void *data = NULL;
 
-			if (posix_memalign(&data, getpagesize(), 512)) {
+			data = libnvme_alloc(512);
+			if (!data) {
 				fprintf(stderr,
 					"can not allocate log page directory payload\n");
 				ret = ENOMEM;
@@ -10970,6 +10971,7 @@ static int wdc_log_page_directory(int argc, char **argv, struct command *acmd,
 				fprintf(stderr, "NVMe Status:%s(%x)\n",
 					libnvme_status_to_string(ret, false), ret);
 			}
+			libnvme_free(data);
 		}
 	}
 

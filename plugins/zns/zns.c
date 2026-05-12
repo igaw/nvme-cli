@@ -384,7 +384,8 @@ static int zone_mgmt_send(int argc, char **argv, struct command *acmd, struct pl
 			}
 			cfg.data_len = data_len;
 		}
-		if (posix_memalign(&buf, getpagesize(), cfg.data_len)) {
+		buf = libnvme_alloc(cfg.data_len);
+		if (!buf) {
 			fprintf(stderr, "can not allocate feature payload\n");
 			return -ENOMEM;
 		}
@@ -426,7 +427,7 @@ close_ffd:
 	if (cfg.file)
 		close(ffd);
 free:
-	free(buf);
+	libnvme_free(buf);
 	return err;
 }
 
@@ -1010,7 +1011,8 @@ static int zone_append(int argc, char **argv, struct command *acmd, struct plugi
 		}
 	}
 
-	if (posix_memalign(&buf, getpagesize(), cfg.data_size)) {
+	buf = libnvme_alloc(cfg.data_size);
+	if (!buf) {
 		fprintf(stderr, "No memory for data size:%"PRIx64"\n",
 			(uint64_t)cfg.data_size);
 		goto close_dfd;
@@ -1033,7 +1035,8 @@ static int zone_append(int argc, char **argv, struct command *acmd, struct plugi
 	}
 
 	if (cfg.metadata_size) {
-		if (posix_memalign(&mbuf, getpagesize(), meta_size)) {
+		mbuf = libnvme_alloc(meta_size);
+		if (!mbuf) {
 			fprintf(stderr, "No memory for metadata size:%d\n",
 				meta_size);
 			err = -1;
@@ -1076,12 +1079,12 @@ static int zone_append(int argc, char **argv, struct command *acmd, struct plugi
 		perror("zns zone-append");
 
 free_meta:
-	free(mbuf);
+	libnvme_free(mbuf);
 close_mfd:
 	if (cfg.metadata)
 		close(mfd);
 free_data:
-	free(buf);
+	libnvme_free(buf);
 close_dfd:
 	if (cfg.data)
 		close(dfd);

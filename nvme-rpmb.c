@@ -183,7 +183,8 @@ static int read_file(const char *file, unsigned char **data, unsigned int *len)
 	}
 
 	size = sb.st_size;
-	if (posix_memalign((void **)&buf, getpagesize(), size)) {
+	buf = libnvme_alloc(size);
+	if (!buf) {
 		fprintf(stderr, "No memory for reading file :%s\n", file);
 		err = -ENOMEM;
 		goto out;
@@ -194,7 +195,7 @@ static int read_file(const char *file, unsigned char **data, unsigned int *len)
 		err = -errno;
 		fprintf(stderr, "Failed to read data from file"
 				" %s with %s\n", file, libnvme_strerror(errno));
-		free(buf);
+		libnvme_free(buf);
 		goto out;
 	}
 	*data = buf; 
