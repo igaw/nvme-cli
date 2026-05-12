@@ -39,7 +39,7 @@ __libnvme_public void *libnvme_realloc(void *p, size_t len)
 
 	if (p && result) {
 		memcpy(result, p, min_t(size_t, old_len, len));
-		free(p);
+		libnvme_free(p);
 	}
 
 	return result;

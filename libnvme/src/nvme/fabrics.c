@@ -1426,7 +1426,7 @@ static int nvme_discovery_log(libnvme_ctrl_t ctrl,
 		if (numrec == 0)
 			break;
 
-		free(log);
+		libnvme_free(log);
 		entries_size = sizeof(*log->entries) * numrec;
 		log = libnvme_alloc(sizeof(*log) + entries_size);
 		if (!log) {
@@ -1483,7 +1483,7 @@ static int nvme_discovery_log(libnvme_ctrl_t ctrl,
 	}
 
 out_free_log:
-	free(log);
+	libnvme_free(log);
 	return err;
 }
 
@@ -2827,7 +2827,7 @@ static int nbft_discovery(struct libnvme_global_ctx *ctx,
 		fctx->cfg.keep_alive_tmo = tmo;
 	}
 
-	free(log);
+	libnvme_free(log);
 	return 0;
 }
 

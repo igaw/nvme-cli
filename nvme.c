@@ -698,7 +698,7 @@ static int get_log_telemetry_ctrl(struct libnvme_transport_handle *hdl, bool rae
 
 	err = nvme_get_log_telemetry_ctrl(hdl, rae, 0, log, size);
 	if (err) {
-		free(log);
+		libnvme_free(log);
 		return err;
 	}
 
@@ -718,7 +718,7 @@ static int get_log_telemetry_host(struct libnvme_transport_handle *hdl, size_t s
 
 	err = nvme_get_log_telemetry_host(hdl, 0, log, size);
 	if (err) {
-		free(log);
+		libnvme_free(log);
 		return err;
 	}
 
@@ -794,7 +794,7 @@ static int __get_telemetry_log_ctrl(struct libnvme_transport_handle *hdl,
 	return get_log_telemetry_ctrl(hdl, rae, *size, buf);
 
 free:
-	free(log);
+	libnvme_free(log);
 	return err;
 }
 
@@ -1056,7 +1056,7 @@ static int collect_effects_log(struct libnvme_transport_handle *hdl, enum nvme_c
 
 	err = nvme_get_log_cmd_effects(hdl, csi, &node->effects);
 	if (err) {
-		free(node);
+		libnvme_free(node);
 		return err;
 	}
 	list_add(list, &node->node);
@@ -1153,7 +1153,7 @@ static int get_effects_log(int argc, char **argv, struct command *acmd, struct p
 
 cleanup_list:
 	while ((node = list_pop(&log_pages, nvme_effects_log_node_t, node)))
-		free(node);
+		libnvme_free(node);
 
 	return err;
 }
@@ -10682,7 +10682,7 @@ static int get_dispersed_ns_psub(struct libnvme_transport_handle *hdl, __u32 nsi
 	return 0;
 
 err_free:
-	free(log);
+	libnvme_free(log);
 	return err;
 }
 
@@ -10867,7 +10867,7 @@ static int get_reachability_group_desc(struct libnvme_transport_handle *hdl, str
 	return 0;
 
 err_free:
-	free(log);
+	libnvme_free(log);
 	*logp = NULL;
 	return err;
 }
@@ -10903,7 +10903,7 @@ static int get_reachability_groups(struct libnvme_transport_handle *hdl, bool rg
 	return 0;
 
 err_free:
-	free(log);
+	libnvme_free(log);
 	return err;
 }
 
@@ -10978,7 +10978,7 @@ static int get_reachability_association_desc(struct libnvme_transport_handle *hd
 	return 0;
 
 err_free:
-	free(log);
+	libnvme_free(log);
 	*logp = NULL;
 	return err;
 }
@@ -11014,7 +11014,7 @@ static int get_reachability_associations(struct libnvme_transport_handle *hdl, b
 	return 0;
 
 err_free:
-	free(log);
+	libnvme_free(log);
 	return err;
 }
 
@@ -11096,7 +11096,7 @@ static int get_host_discovery(struct libnvme_transport_handle *hdl, bool allhost
 	return 0;
 
 err_free:
-	free(log);
+	libnvme_free(log);
 	return err;
 }
 
@@ -11175,7 +11175,7 @@ static int get_ave_discovery(struct libnvme_transport_handle *hdl, bool rae, str
 	return 0;
 
 err_free:
-	free(log);
+	libnvme_free(log);
 	return err;
 }
 
@@ -11250,7 +11250,7 @@ static int get_pull_model_ddc_req(struct libnvme_transport_handle *hdl,
 	return 0;
 
 err_free:
-	free(log);
+	libnvme_free(log);
 	return err;
 }
 
