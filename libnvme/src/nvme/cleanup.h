@@ -3,6 +3,7 @@
 #define __CLEANUP_H
 
 #include <stdlib.h>
+#include <libnvme.h>
 
 #define __cleanup(fn) __attribute__((cleanup(fn)))
 
@@ -21,5 +22,11 @@ static inline void freep(void *p)
 	free(*(void **)p);
 }
 #define __cleanup_free __cleanup(freep)
+
+static inline void libnvme_freep(void *p)
+{
+	libnvme_free(*(void **)p);
+}
+#define __cleanup_libnvme_free __cleanup(libnvme_freep)
 
 #endif
