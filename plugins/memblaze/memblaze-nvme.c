@@ -851,7 +851,7 @@ static int mb_selective_download(int argc, char **argv, struct command *acmd, st
 			nvme_show_status(err);
 			goto out_free;
 		}
-		fw_ptr	   += xfer;
+		fw_ptr += xfer;
 		fw_size    -= xfer;
 		offset += xfer;
 	}
