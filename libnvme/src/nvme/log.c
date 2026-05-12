@@ -11,6 +11,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -45,6 +46,7 @@ __libnvme_msg(struct libnvme_global_ctx *ctx, int level,
 	};
 	__cleanup_free char *header = NULL;
 	__cleanup_free char *message = NULL;
+	__cleanup_free char *log = NULL;
 	int idx = 0;
 
 	if (level > l->level)
@@ -78,9 +80,12 @@ __libnvme_msg(struct libnvme_global_ctx *ctx, int level,
 		message = NULL;
 	va_end(ap);
 
-	dprintf(l->fd, "%s%s",
-		header ? header : "<error>",
-		message ? message : "<error>");
+	if (asprintf(&log, "%s%s", header ? header : "<error>",
+			message ? message : "<error>") == -1)
+		return;
+
+	if (write(l->fd, log, strlen(log)) < 0)
+		perror("failed to write log entry");
 }
 
 __libnvme_public void libnvme_set_logging_level(
