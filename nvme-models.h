@@ -3,5 +3,6 @@
 #define NVME_MODEL_H
 
 char *nvme_product_name(int id);
+char *nvme_product_name_from_dev(const char *name);
 
 #endif

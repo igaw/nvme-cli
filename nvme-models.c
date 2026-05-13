@@ -360,3 +360,31 @@ error0:
 error1:
 	return strdup("NULL");
 }
+
+char *nvme_product_name_from_dev(const char *name)
+{
+	char *result;
+	const char *base;
+	int id, nsid;
+
+	if (!name)
+		return NULL;
+
+	base = strrchr(name, '/');
+	if (base)
+		name = base + 1;
+
+	if (sscanf(name, "nvme%dn%d", &id, &nsid) != 2 &&
+	    sscanf(name, "nvme%d", &id) != 1)
+		return NULL;
+
+	result = nvme_product_name(id);
+	if (!result)
+		return NULL;
+	if (!strcmp(result, "NULL")) {
+		free(result);
+		return NULL;
+	}
+
+	return result;
+}

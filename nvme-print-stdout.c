@@ -3348,7 +3348,7 @@ static void stdout_id_ctrl_power(struct nvme_id_ctrl *ctrl)
 	}
 }
 
-static void stdout_id_ctrl(struct nvme_id_ctrl *ctrl,
+static void stdout_id_ctrl(struct nvme_id_ctrl *ctrl, const char *product_name,
 			   void (*vendor_show)(__u8 *vs, struct json_object *root))
 {
 	bool human = stdout_print_ops.flags & VERBOSE, vs = stdout_print_ops.flags & VS;
@@ -3358,6 +3358,8 @@ static void stdout_id_ctrl(struct nvme_id_ctrl *ctrl,
 	printf("ssvid     : %#x\n", le16_to_cpu(ctrl->ssvid));
 	printf("sn        : %-.*s\n", (int)sizeof(ctrl->sn), ctrl->sn);
 	printf("mn        : %-.*s\n", (int)sizeof(ctrl->mn), ctrl->mn);
+	if (product_name)
+		printf("product   : %s\n", product_name);
 	printf("fr        : %-.*s\n", (int)sizeof(ctrl->fr), ctrl->fr);
 	printf("rab       : %d\n", ctrl->rab);
 	printf("ieee      : %02x%02x%02x\n",
