@@ -370,8 +370,11 @@ char *nvme_product_name_from_dev(const char *name)
 		return NULL;
 
 	base = strrchr(name, '/');
-	if (base)
+	if (base) {
+		if (!base[1])
+			return NULL;
 		name = base + 1;
+	}
 
 	if (sscanf(name, "nvme%d", &id) != 1)
 		return NULL;
