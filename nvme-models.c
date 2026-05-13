@@ -350,7 +350,7 @@ char *nvme_product_name(int id)
 	if (!result) {
 		fprintf(stderr, "malloc: %s\n", libnvme_strerror(errno));
 		free_all();
-		return strdup("NULL");
+		return NULL;
 	}
 	format_all(result, vendor, device);
 	free_all();
@@ -358,14 +358,13 @@ char *nvme_product_name(int id)
 error0:
 	fclose(file);
 error1:
-	return strdup("NULL");
+	return NULL;
 }
 
 char *nvme_product_name_from_dev(const char *name)
 {
-	char *result;
 	const char *base;
-	int id, nsid;
+	int id;
 
 	if (!name)
 		return NULL;
@@ -374,17 +373,8 @@ char *nvme_product_name_from_dev(const char *name)
 	if (base)
 		name = base + 1;
 
-	if (sscanf(name, "nvme%dn%d", &id, &nsid) != 2 &&
-	    sscanf(name, "nvme%d", &id) != 1)
+	if (sscanf(name, "nvme%d", &id) != 1)
 		return NULL;
 
-	result = nvme_product_name(id);
-	if (!result)
-		return NULL;
-	if (!strcmp(result, "NULL")) {
-		free(result);
-		return NULL;
-	}
-
-	return result;
+	return nvme_product_name(id);
 }
