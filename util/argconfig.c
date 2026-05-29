@@ -459,6 +459,11 @@ int argconfig_parse_global(int argc, char *argv[],
 		}
 	}
 
+	long_opts[long_opt_index].name = "help";
+	long_opts[long_opt_index].val = 'h';
+
+	short_opts[short_index++] = 'h';
+
 	optind = 0;
 	while ((c = getopt_long(argc, argv, short_opts, long_opts, &long_opt_index)) != -1) {
 		if (c == '?' || c == 'h')

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "../util/argconfig.h"
 #include "../util/cleanup.h"
@@ -233,6 +234,7 @@ struct global_parse_test {
 	int expected_ret;
 	int expected_verbose;
 	bool expected_dry_run;
+	const char *stderr_must_not_contain;
 };
 
 static const struct global_parse_test global_parse_tests[] = {
@@ -287,11 +289,79 @@ static const struct global_parse_test global_parse_tests[] = {
 		{"prog", "--verbose"},
 		2, 2, 0, 1, false,
 	},
+	{
+		"--help does not trigger unrecognized-option error",
+		{"prog", "--help"},
+		2, 2, 0, 0, false,
+		"unrecognized option '--help'",
+	},
 };
+
+static int parse_global_capture_stderr(int argc, char *argv[],
+				       struct argconfig_commandline_options *opts,
+				       char *buf, size_t buf_size)
+{
+	FILE *tmp = NULL;
+	int ret;
+	int saved_stderr;
+	size_t n;
+
+	tmp = tmpfile();
+	if (!tmp) {
+		printf("ERROR: tmpfile failed: %s\n", libnvme_strerror(errno));
+		test_rc = 1;
+		return -errno;
+	}
+
+	saved_stderr = dup(STDERR_FILENO);
+	if (saved_stderr < 0) {
+		printf("ERROR: dup stderr failed: %s\n", libnvme_strerror(errno));
+		test_rc = 1;
+		fclose(tmp);
+		return -errno;
+	}
+
+	fflush(stderr);
+	if (dup2(fileno(tmp), STDERR_FILENO) < 0) {
+		printf("ERROR: redirect stderr failed: %s\n", libnvme_strerror(errno));
+		close(saved_stderr);
+		test_rc = 1;
+		fclose(tmp);
+		return -errno;
+	}
+
+	ret = argconfig_parse_global(argc, argv, opts);
+	fflush(stderr);
+
+	if (fseek(tmp, 0, SEEK_SET) != 0) {
+		printf("ERROR: rewind captured stderr failed: %s\n",
+		       libnvme_strerror(errno));
+		close(saved_stderr);
+		test_rc = 1;
+		fclose(tmp);
+		return -errno;
+	}
+
+	n = fread(buf, 1, buf_size - 1, tmp);
+	buf[n] = '\0';
+
+	if (dup2(saved_stderr, STDERR_FILENO) < 0) {
+		printf("ERROR: restoring stderr failed: %s\n", libnvme_strerror(errno));
+		test_rc = 1;
+		close(saved_stderr);
+		fclose(tmp);
+		return -errno;
+	}
+	close(saved_stderr);
+	fclose(tmp);
+
+	return ret;
+}
 
 static void do_global_parse_test(const struct global_parse_test *test)
 {
 	int ret;
+	char stderr_buf[512] = "";
 
 	OPT_ARGS(opts) = {
 		OPT_INCR("verbose", 'v', &gcfg.verbose, "increase verbosity"),
@@ -302,7 +372,11 @@ static void do_global_parse_test(const struct global_parse_test *test)
 	gcfg.verbose = 0;
 	gcfg.dry_run = false;
 
-	ret = argconfig_parse_global(test->argc, (char **)test->argv, opts);
+	if (test->stderr_must_not_contain)
+		ret = parse_global_capture_stderr(test->argc, (char **)test->argv,
+						  opts, stderr_buf, sizeof(stderr_buf));
+	else
+		ret = argconfig_parse_global(test->argc, (char **)test->argv, opts);
 
 	if (ret != test->expected_ret) {
 		printf("ERROR: global_parse {%s}: ret=%d expected=%d\n",
@@ -314,6 +388,14 @@ static void do_global_parse_test(const struct global_parse_test *test)
 	if (optind != test->expected_optind) {
 		printf("ERROR: global_parse {%s}: optind=%d expected=%d\n",
 		       test->desc, optind, test->expected_optind);
+		test_rc = 1;
+		return;
+	}
+
+	if (test->stderr_must_not_contain &&
+	    strstr(stderr_buf, test->stderr_must_not_contain)) {
+		printf("ERROR: global_parse {%s}: stderr unexpectedly contains '%s'\n",
+		       test->desc, test->stderr_must_not_contain);
 		test_rc = 1;
 		return;
 	}
