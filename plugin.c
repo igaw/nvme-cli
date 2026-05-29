@@ -251,14 +251,28 @@ int handle_plugin(int argc, char **argv, struct plugin *plugin)
 			 * temporary argv with the extension name prepended as
 			 * the program-name placeholder for getopt.
 			 */
-			char *sub_argv[argc + 1];
+			char **sub_argv = malloc((argc + 1) * sizeof(*sub_argv));
+			char *name_copy;
+			int ret;
+
+			if (!sub_argv)
+				return -ENOMEM;
 
 			argv[0] += strlen(extension->name);
 			while (*argv[0] == '-')
 				argv[0]++;
-			sub_argv[0] = (char *)extension->name;
+
+			name_copy = strdup(extension->name);
+			if (!name_copy) {
+				free(sub_argv);
+				return -ENOMEM;
+			}
+			sub_argv[0] = name_copy;
 			memcpy(&sub_argv[1], argv, argc * sizeof(*argv));
-			return handle_plugin(argc + 1, sub_argv, extension);
+			ret = handle_plugin(argc + 1, sub_argv, extension);
+			free(name_copy);
+			free(sub_argv);
+			return ret;
 		}
 		extension = extension->next;
 	}
