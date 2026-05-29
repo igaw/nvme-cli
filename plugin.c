@@ -227,7 +227,14 @@ int handle_plugin(int argc, char **argv, struct plugin *plugin)
 	extension = plugin->next;
 	while (extension) {
 		if (!strcmp(str, extension->name))
-			return handle_plugin(argc - 1, &argv[1], extension);
+			/*
+			 * argv[0] is the extension name (e.g. "intel").
+			 * Pass it as-is so that argconfig_parse_global()
+			 * inside the recursive call treats it as the
+			 * program-name placeholder that getopt skips, and
+			 * argv[1] becomes the subcommand.
+			 */
+			return handle_plugin(argc, argv, extension);
 		extension = extension->next;
 	}
 
@@ -238,10 +245,20 @@ int handle_plugin(int argc, char **argv, struct plugin *plugin)
 	extension = plugin->next;
 	while (extension) {
 		if (!strncmp(str, extension->name, strlen(extension->name))) {
+			/*
+			 * Advance argv[0] past the "pluginname[-]" prefix so
+			 * it points at the subcommand string.  Then build a
+			 * temporary argv with the extension name prepended as
+			 * the program-name placeholder for getopt.
+			 */
+			char *sub_argv[argc + 1];
+
 			argv[0] += strlen(extension->name);
 			while (*argv[0] == '-')
 				argv[0]++;
-			return handle_plugin(argc, &argv[0], extension);
+			sub_argv[0] = (char *)extension->name;
+			memcpy(&sub_argv[1], argv, argc * sizeof(*argv));
+			return handle_plugin(argc + 1, sub_argv, extension);
 		}
 		extension = extension->next;
 	}

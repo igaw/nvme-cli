@@ -212,6 +212,126 @@ void comma_sep_array_test(const struct comma_sep_array_test *test)
 	}
 }
 
+struct global_cfg {
+	int verbose;
+	bool dry_run;
+};
+
+static struct global_cfg gcfg;
+
+struct global_parse_test {
+	const char *desc;
+	char *argv[8];
+	int argc;
+	/*
+	 * Expected optind value after argconfig_parse_global() returns.
+	 * This is the index of the first non-option argument (the subcommand)
+	 * in argv, as seen by getopt – i.e. 1-based because getopt always
+	 * skips argv[0] as the program name.
+	 */
+	int expected_optind;
+	int expected_ret;
+	int expected_verbose;
+	bool expected_dry_run;
+};
+
+static const struct global_parse_test global_parse_tests[] = {
+	{
+		"no global opts: subcommand only",
+		{"prog", "list"},
+		2, 1, 0, 0, false,
+	},
+	{
+		"short -v before subcommand",
+		{"prog", "-v", "list"},
+		3, 2, 0, 1, false,
+	},
+	{
+		"long --verbose before subcommand",
+		{"prog", "--verbose", "list"},
+		3, 2, 0, 1, false,
+	},
+	{
+		"two -v flags before subcommand",
+		{"prog", "-v", "-v", "list"},
+		4, 3, 0, 2, false,
+	},
+	{
+		"--dry-run before subcommand",
+		{"prog", "--dry-run", "list"},
+		3, 2, 0, 0, true,
+	},
+	{
+		"multiple global opts before subcommand",
+		{"prog", "-v", "--dry-run", "list"},
+		4, 3, 0, 1, true,
+	},
+	{
+		/*
+		 * The '+' prefix in the short-opts string causes getopt to stop
+		 * at the first non-option argument.  Global opts that appear
+		 * *after* the subcommand must be left for the subcommand's own
+		 * argconfig_parse() call to handle.
+		 */
+		"subcommand before option: stop at first non-option",
+		{"prog", "list", "-v"},
+		3, 1, 0, 0, false,
+	},
+	{
+		"only program name",
+		{"prog"},
+		1, 1, 0, 0, false,
+	},
+	{
+		"option with no following subcommand",
+		{"prog", "--verbose"},
+		2, 2, 0, 1, false,
+	},
+};
+
+static void do_global_parse_test(const struct global_parse_test *test)
+{
+	int ret;
+
+	OPT_ARGS(opts) = {
+		OPT_INCR("verbose", 'v', &gcfg.verbose, "increase verbosity"),
+		OPT_FLAG("dry-run", 0, &gcfg.dry_run, "dry run mode"),
+		OPT_END()
+	};
+
+	gcfg.verbose = 0;
+	gcfg.dry_run = false;
+
+	ret = argconfig_parse_global(test->argc, (char **)test->argv, opts);
+
+	if (ret != test->expected_ret) {
+		printf("ERROR: global_parse {%s}: ret=%d expected=%d\n",
+		       test->desc, ret, test->expected_ret);
+		test_rc = 1;
+		return;
+	}
+
+	if (optind != test->expected_optind) {
+		printf("ERROR: global_parse {%s}: optind=%d expected=%d\n",
+		       test->desc, optind, test->expected_optind);
+		test_rc = 1;
+		return;
+	}
+
+	if (gcfg.verbose != test->expected_verbose) {
+		printf("ERROR: global_parse {%s}: verbose=%d expected=%d\n",
+		       test->desc, gcfg.verbose, test->expected_verbose);
+		test_rc = 1;
+		return;
+	}
+
+	if (gcfg.dry_run != test->expected_dry_run) {
+		printf("ERROR: global_parse {%s}: dry_run=%d expected=%d\n",
+		       test->desc, gcfg.dry_run, test->expected_dry_run);
+		test_rc = 1;
+	}
+}
+
 int main(void)
 {
 	unsigned int i;
@@ -228,6 +348,9 @@ int main(void)
 
 	for (i = 0; i < ARRAY_SIZE(comma_sep_array_tests); i++)
 		comma_sep_array_test(&comma_sep_array_tests[i]);
+
+	for (i = 0; i < ARRAY_SIZE(global_parse_tests); i++)
+		do_global_parse_test(&global_parse_tests[i]);
 
 	if (f)
 		fclose(f);
