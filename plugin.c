@@ -6,8 +6,10 @@
 
 #include <libnvme.h>
 
+#include "nvme.h"
 #include "plugin.h"
 #include "util/argconfig.h"
+#include "util/cleanup.h"
 
 static int version_cmd(struct plugin *plugin)
 {
@@ -152,7 +154,6 @@ void general_help(struct plugin *plugin, char *str)
 
 int handle_plugin(int argc, char **argv, struct plugin *plugin)
 {
-	char *str = argv[0];
 	char use[0x100];
 	struct plugin *extension;
 	struct program *prog = plugin->parent;
@@ -160,11 +161,24 @@ int handle_plugin(int argc, char **argv, struct plugin *plugin)
 	struct command *cr = NULL;
 	bool cr_valid = false;
 	int dash_count = 0;
+	char *str;
 
 	if (!argc) {
 		general_help(plugin, NULL);
 		return 0;
 	}
+
+	NVME_ARGS(global_opts);
+	argconfig_parse_global(argc, argv, global_opts);
+	argc -= optind;
+	argv += optind;
+
+	if (!argc) {
+		general_help(plugin, NULL);
+		return 0;
+	}
+
+	str = argv[0];
 
 	if (!plugin->name)
 		snprintf(use, sizeof(use), "%s %s <device> [OPTIONS]", prog->name, str);
@@ -214,7 +228,14 @@ int handle_plugin(int argc, char **argv, struct plugin *plugin)
 	extension = plugin->next;
 	while (extension) {
 		if (!strcmp(str, extension->name))
-			return handle_plugin(argc - 1, &argv[1], extension);
+			/*
+			 * argv[0] is the extension name (e.g. "intel").
+			 * Pass it as-is so that argconfig_parse_global()
+			 * inside the recursive call treats it as the
+			 * program-name placeholder that getopt skips, and
+			 * argv[1] becomes the subcommand.
+			 */
+			return handle_plugin(argc, argv, extension);
 		extension = extension->next;
 	}
 
@@ -225,10 +246,28 @@ int handle_plugin(int argc, char **argv, struct plugin *plugin)
 	extension = plugin->next;
 	while (extension) {
 		if (!strncmp(str, extension->name, strlen(extension->name))) {
+			/*
+			 * Advance argv[0] past the "pluginname[-]" prefix so
+			 * it points at the subcommand string.  Then build a
+			 * temporary argv with the extension name prepended as
+			 * the program-name placeholder for getopt.
+			 */
+			__cleanup_free char **sub_argv = malloc((argc + 1) * sizeof(*sub_argv));
+			__cleanup_free char *name_copy = NULL;
+
+			if (!sub_argv)
+				return -ENOMEM;
+
 			argv[0] += strlen(extension->name);
 			while (*argv[0] == '-')
 				argv[0]++;
-			return handle_plugin(argc, &argv[0], extension);
+
+			name_copy = strdup(extension->name);
+			if (!name_copy)
+				return -ENOMEM;
+			sub_argv[0] = name_copy;
+			memcpy(&sub_argv[1], argv, argc * sizeof(*argv));
+			return handle_plugin(argc + 1, sub_argv, extension);
 		}
 		extension = extension->next;
 	}
