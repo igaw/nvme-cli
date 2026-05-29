@@ -6,6 +6,7 @@
 
 #include <libnvme.h>
 
+#include "nvme.h"
 #include "plugin.h"
 #include "util/argconfig.h"
 
@@ -152,7 +153,6 @@ void general_help(struct plugin *plugin, char *str)
 
 int handle_plugin(int argc, char **argv, struct plugin *plugin)
 {
-	char *str = argv[0];
 	char use[0x100];
 	struct plugin *extension;
 	struct program *prog = plugin->parent;
@@ -160,11 +160,24 @@ int handle_plugin(int argc, char **argv, struct plugin *plugin)
 	struct command *cr = NULL;
 	bool cr_valid = false;
 	int dash_count = 0;
+	char *str;
 
 	if (!argc) {
 		general_help(plugin, NULL);
 		return 0;
 	}
+
+	NVME_ARGS(global_opts);
+	argconfig_parse_global(argc, argv, global_opts);
+	argc -= optind;
+	argv += optind;
+
+	if (!argc) {
+		general_help(plugin, NULL);
+		return 0;
+	}
+
+	str = argv[0];
 
 	if (!plugin->name)
 		snprintf(use, sizeof(use), "%s %s <device> [OPTIONS]", prog->name, str);
