@@ -461,6 +461,10 @@ int argconfig_parse_global(int argc, char *argv[],
 
 	long_opts[long_opt_index].name = "help";
 	long_opts[long_opt_index].val = 'h';
+	long_opt_index++;
+
+	long_opts[long_opt_index].name = "version";
+	long_opts[long_opt_index].val = 'V';
 
 	short_opts[short_index++] = 'h';
 
@@ -468,6 +472,10 @@ int argconfig_parse_global(int argc, char *argv[],
 	while ((c = getopt_long(argc, argv, short_opts, long_opts, &long_opt_index)) != -1) {
 		if (c == '?' || c == 'h')
 			break;
+		if (c == 'V') {
+			optind--;
+			break;
+		}
 
 		if (c) {
 			for (opt_index = 0; opt_index < options_count; opt_index++) {

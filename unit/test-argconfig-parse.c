@@ -295,6 +295,12 @@ static const struct global_parse_test global_parse_tests[] = {
 		2, 2, 0, 0, false,
 		"unrecognized option '--help'",
 	},
+	{
+		"--version does not trigger unrecognized-option error",
+		{"prog", "--version"},
+		2, 1, 0, 0, false,
+		"unrecognized option '--version'",
+	},
 };
 
 static int parse_global_capture_stderr(int argc, char *argv[],
