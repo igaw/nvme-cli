@@ -9,6 +9,7 @@
 #include "nvme.h"
 #include "plugin.h"
 #include "util/argconfig.h"
+#include "util/cleanup.h"
 
 static int version_cmd(struct plugin *plugin)
 {
@@ -251,9 +252,8 @@ int handle_plugin(int argc, char **argv, struct plugin *plugin)
 			 * temporary argv with the extension name prepended as
 			 * the program-name placeholder for getopt.
 			 */
-			char **sub_argv = malloc((argc + 1) * sizeof(*sub_argv));
-			char *name_copy;
-			int ret;
+			__cleanup_free char **sub_argv = malloc((argc + 1) * sizeof(*sub_argv));
+			__cleanup_free char *name_copy = NULL;
 
 			if (!sub_argv)
 				return -ENOMEM;
@@ -263,16 +263,11 @@ int handle_plugin(int argc, char **argv, struct plugin *plugin)
 				argv[0]++;
 
 			name_copy = strdup(extension->name);
-			if (!name_copy) {
-				free(sub_argv);
+			if (!name_copy)
 				return -ENOMEM;
-			}
 			sub_argv[0] = name_copy;
 			memcpy(&sub_argv[1], argv, argc * sizeof(*argv));
-			ret = handle_plugin(argc + 1, sub_argv, extension);
-			free(name_copy);
-			free(sub_argv);
-			return ret;
+			return handle_plugin(argc + 1, sub_argv, extension);
 		}
 		extension = extension->next;
 	}
