@@ -69,13 +69,15 @@ struct nvme_args {
 #endif /* CONFIG_JSONC */
 
 /*
- * Global options are placed after a OPT_GROUP separator so they appear in a
+ * Global options are placed after an OPT_GROUP separator so they appear in a
  * dedicated "Global options" section in help output.  Command-specific options
  * (##__VA_ARGS__) are placed first so that their short-option bindings take
  * precedence over the global ones when both share the same letter (e.g. some
- * plugins use -v for "value").  The leading OPT_GROUP("Options") entry exists
- * solely to allow GCC's ##__VA_ARGS__ comma deletion to work correctly when no
- * command-specific options are present.
+ * plugins use -v for "value").  The leading OPT_GROUP("Options") entry serves
+ * two purposes: it creates the "Options" section header for command-specific
+ * options in help output, and it allows GCC's ##__VA_ARGS__ comma deletion to
+ * work correctly when no command-specific options are present (the section
+ * header is then suppressed automatically because it has no following options).
  */
 #define NVME_ARGS(n, ...)                                                              \
 	struct argconfig_commandline_options n[] = {                                   \

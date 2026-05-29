@@ -129,6 +129,11 @@ static void show_option(const struct argconfig_commandline_options *option)
 void argconfig_print_help(const char *program_desc,
 			  struct argconfig_commandline_options *s)
 {
+	/*
+	 * Default section name used when options appear before the first
+	 * OPT_GROUP separator.  This fallback is not reached for NVME_ARGS()
+	 * option arrays which always begin with an OPT_GROUP entry.
+	 */
 	const char *pending_header = "Options";
 	bool header_printed = false;
 
@@ -323,7 +328,7 @@ int argconfig_parse(int argc, char *argv[], const char *program_desc,
 	__cleanup_free struct option *long_opts = NULL;
 	__cleanup_free int *long_opt_map = NULL;
 	struct argconfig_commandline_options *s;
-	int c, lo_index = 0, opt_index = 0, short_index = 0, options_count = 0;
+	int c, long_opt_index = 0, opt_index = 0, short_index = 0, options_count = 0;
 	int ret = 0;
 
 	errno = 0;
@@ -352,21 +357,21 @@ int argconfig_parse(int argc, char *argv[], const char *program_desc,
 				short_opts[short_index++] = ':';
 		}
 		if (!is_null_or_empty(s->option)) {
-			long_opts[lo_index].name = s->option;
-			long_opts[lo_index].has_arg = s->argument_type;
-			long_opt_map[lo_index] = opt_index;
-			lo_index++;
+			long_opts[long_opt_index].name = s->option;
+			long_opts[long_opt_index].has_arg = s->argument_type;
+			long_opt_map[long_opt_index] = opt_index;
+			long_opt_index++;
 		}
 	}
 
-	long_opts[lo_index].name = "help";
-	long_opts[lo_index].val = 'h';
+	long_opts[long_opt_index].name = "help";
+	long_opts[long_opt_index].val = 'h';
 
 	short_opts[short_index++] = '?';
 	short_opts[short_index] = 'h';
 
 	optind = 0;
-	while ((c = getopt_long_only(argc, argv, short_opts, long_opts, &lo_index)) != -1) {
+	while ((c = getopt_long_only(argc, argv, short_opts, long_opts, &long_opt_index)) != -1) {
 		if (c) {
 			if (c == '?' || c == 'h') {
 				argconfig_print_help(program_desc, options);
@@ -380,7 +385,7 @@ int argconfig_parse(int argc, char *argv[], const char *program_desc,
 			if (opt_index == options_count)
 				continue;
 		} else {
-			opt_index = long_opt_map[lo_index];
+			opt_index = long_opt_map[long_opt_index];
 		}
 
 		s = &options[opt_index];
@@ -415,7 +420,7 @@ int argconfig_parse_global(int argc, char *argv[],
 	__cleanup_free struct option *long_opts = NULL;
 	__cleanup_free int *long_opt_map = NULL;
 	struct argconfig_commandline_options *s;
-	int c, lo_index = 0, opt_index = 0, short_index = 0, options_count = 0;
+	int c, long_opt_index = 0, opt_index = 0, short_index = 0, options_count = 0;
 	int ret = 0;
 
 	errno = 0;
@@ -447,15 +452,15 @@ int argconfig_parse_global(int argc, char *argv[],
 				short_opts[short_index++] = ':';
 		}
 		if (!is_null_or_empty(s->option)) {
-			long_opts[lo_index].name = s->option;
-			long_opts[lo_index].has_arg = s->argument_type;
-			long_opt_map[lo_index] = opt_index;
-			lo_index++;
+			long_opts[long_opt_index].name = s->option;
+			long_opts[long_opt_index].has_arg = s->argument_type;
+			long_opt_map[long_opt_index] = opt_index;
+			long_opt_index++;
 		}
 	}
 
 	optind = 0;
-	while ((c = getopt_long(argc, argv, short_opts, long_opts, &lo_index)) != -1) {
+	while ((c = getopt_long(argc, argv, short_opts, long_opts, &long_opt_index)) != -1) {
 		if (c == '?' || c == 'h')
 			break;
 
@@ -467,7 +472,7 @@ int argconfig_parse_global(int argc, char *argv[],
 			if (opt_index == options_count)
 				continue;
 		} else {
-			opt_index = long_opt_map[lo_index];
+			opt_index = long_opt_map[long_opt_index];
 		}
 
 		s = &options[opt_index];
