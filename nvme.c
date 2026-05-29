@@ -11383,7 +11383,18 @@ int main(int argc, char **argv)
 	if (err)
 		return err;
 
-	err = handle_plugin(argc - 1, &argv[1], nvme.extensions);
+	/*
+	 * Parse any global options that appear before the subcommand so that
+	 * e.g. `alias nvme="nvme -v"; nvme list` works correctly instead of
+	 * treating "-v" as an unknown subcommand.  After this call optind
+	 * points to the first non-option argument (the subcommand name).
+	 */
+	NVME_ARGS(global_opts);
+	err = argconfig_parse_global(argc, argv, global_opts);
+	if (err)
+		return 1;
+
+	err = handle_plugin(argc - optind, &argv[optind], nvme.extensions);
 	if (err == -ENOTTY)
 		general_help(&builtin, NULL);
 
