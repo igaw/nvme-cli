@@ -10,7 +10,7 @@ SYNOPSIS
 --------
 [verse]
 'nvme' [<global-options>] 'sndk get-error-recovery-log' <device>
-			[--output-format=<normal|json> -o <normal|json>]
+			[--output-format=<normal|json> | -o <normal|json>]
 
 DESCRIPTION
 -----------

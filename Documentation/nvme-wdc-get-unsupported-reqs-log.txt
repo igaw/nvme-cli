@@ -10,7 +10,7 @@ SYNOPSIS
 --------
 [verse]
 'nvme' [<global-options>] 'wdc get-unsupported-reqs-log' <device>
-			[--output-format=<normal|json> -o <normal|json>]
+			[--output-format=<normal|json> | -o <normal|json>]
 
 DESCRIPTION
 -----------
