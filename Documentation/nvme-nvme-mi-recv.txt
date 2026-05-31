@@ -8,7 +8,8 @@ nvme-nvme-mi-recv - Send a NVMe-MI Receive command to the specified device
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] 'nvme-mi-recv' <device> [--opcode=<opcode> | -O <opcode>]
+'nvme'
+			[<global-options>] [--opcode=<opcode> | -O <opcode>]
 			[--namespace-id=<nsid> | -n <nsid>]
 			[--data-len=<data-len> | -l <data-len>]
 			[--nmimt=<nmimt> | -m <nmimt>]

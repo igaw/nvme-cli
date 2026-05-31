@@ -8,7 +8,8 @@ nvme-zns-zone-mgmt-recv - Zone Management Receive command
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] 'zns zone-mgmt-recv' <device> [--namespace-id=<NUM> | -n <NUM>]
+'nvme'
+			[<global-options>] [--namespace-id=<NUM> | -n <NUM>]
 			[--start-lba=<LBA> | -s <LBA>]
 			[--data-len=<IONUM>, -l <IONUM>]
 			[--zra=<NUM>, -z <NUM>] [--zrasf=<NUM>, -a <NUM>]

@@ -9,7 +9,8 @@ command, return parsed log output.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] 'sndk get-error-recovery-log' <device> [--output-format=<normal|json>
+'nvme'
+			[<global-options>]
 -o <normal|json>]
 
 DESCRIPTION
