@@ -10,8 +10,7 @@ requires power cycle the update completes.
 SYNOPSIS
 --------
 [verse]
-'nvme'
-			[<global-options>] [--fw=<FILE>, -f <FILE>]
+'nvme' [<global-options>] 'micron selective-download' <device> [--fw=<FILE>, -f <FILE>]
 			[--select=<flag>, -s <flag>]
 
 DESCRIPTION

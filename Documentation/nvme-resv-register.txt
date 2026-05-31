@@ -8,8 +8,7 @@ nvme-resv-register - Register an nvme reservation
 SYNOPSIS
 --------
 [verse]
-'nvme'
-			[<global-options>] [--namespace-id=<nsid> | -n <nsid>]
+'nvme' [<global-options>] 'resv-register' <device> [--namespace-id=<nsid> | -n <nsid>]
 			[--crkey=<crkey> | -c <crkey>]
 			[--nrkey=<nrkey> | -k <nrkey>]
 			[--rrega=<rrega> | -r <rrega>]

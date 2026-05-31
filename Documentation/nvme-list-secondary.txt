@@ -9,8 +9,7 @@ controller of the given device
 SYNOPSIS
 --------
 [verse]
-'nvme'
-			[<global-options>] [--cntid=<cntid> | -c <cntid>]
+'nvme' [<global-options>] 'list-secondary' <device> [--cntid=<cntid> | -c <cntid>]
 			[--num-entries=<entries> | -e <entries>]
 
 DESCRIPTION

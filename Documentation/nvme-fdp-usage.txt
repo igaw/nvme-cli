@@ -8,9 +8,7 @@ nvme-fdp-usage - Get Reclaim Unit Handle Usage
 SYNOPSIS
 --------
 [verse]
-'nvme'
-			[<global-options>] [--endgrp-id=<NUM> | -e <NUM>]
-			[--raw-binary | -b]
+'nvme' [<global-options>] 'fdp usage' <device> [--endgrp-id=<NUM> | -e <NUM>] [--raw-binary | -b]
 
 DESCRIPTION
 -----------

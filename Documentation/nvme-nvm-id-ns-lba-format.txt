@@ -9,11 +9,8 @@ Namespace data structure for specified LBA format, display structure
 SYNOPSIS
 --------
 [verse]
-'nvme'
-			[<global-options>]
-			[--uuid-index=<uuid-index> | -U <uuid_index>]
-			[--lba-format-index=<lba_format_index> | -i
-			<lba_format_index>]
+'nvme' [<global-options>] 'nvm-id-ns-lba-format' <device> [--uuid-index=<uuid-index> | -U <uuid_index>]
+			[--lba-format-index=<lba_format_index> | -i <lba_format_index>]
 
 DESCRIPTION
 -----------

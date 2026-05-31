@@ -106,7 +106,7 @@ the RDMA network. Port 4420 is used by default:
 * Issue a 'nvme' [<global-options>] connect-all command with a user-defined path for the NBFT table:
 +
 -----------
-# nvme connect-all --nbft-path=/sys/firmware/acpi/tables/NBFT1
+# nvme connet-all --nbft-path=/sys/firmware/acpi/tables/NBFT1
 ------------
 +
 * Issue a 'nvme' [<global-options>] connect-all command using a @SYSCONFDIR@/nvme/discovery.conf file:

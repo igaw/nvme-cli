@@ -8,8 +8,7 @@ nvme-nvme-mi-send - Send a NVMe-MI Send command to the specified device
 SYNOPSIS
 --------
 [verse]
-'nvme'
-			[<global-options>] [--opcode=<opcode> | -O <opcode>]
+'nvme' [<global-options>] 'nvme-mi-send' <device> [--opcode=<opcode> | -O <opcode>]
 			[--namespace-id=<nsid> | -n <nsid>]
 			[--data-len=<data-len> | -l <data-len>]
 			[--nmimt=<nmimt> | -m <nmimt>]

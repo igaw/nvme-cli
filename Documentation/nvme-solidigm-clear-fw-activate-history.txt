@@ -8,8 +8,7 @@ nvme-solidigm-clear-fw-activate-history - Clear firmware update history log
 SYNOPSIS
 --------
 [verse]
-'nvme'
-			[<global-options>] [--no-uuid | -n]
+'nvme' [<global-options>] 'solidigm clear-fw-activate-history' <device> [--no-uuid | -n]
 
 DESCRIPTION
 -----------

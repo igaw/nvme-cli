@@ -8,8 +8,7 @@ nvme-sed-revert - Revert a SED Opal Device from locking
 SYNOPSIS
 --------
 [verse]
-'nvme'
-			[<global-options>] [ --destructive, -e ] [ --psid, -p ]
+'nvme' [<global-options>] 'sed revert' [ --destructive, -e ] [ --psid, -p ] <device>
 
 DESCRIPTION
 -----------

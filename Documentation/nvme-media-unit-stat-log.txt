@@ -9,8 +9,7 @@ request, returns result and log.
 SYNOPSIS
 --------
 [verse]
-'nvme'
-			[<global-options>] [--dom-id | -d] [--raw-binary | -b]
+'nvme' [<global-options>] 'media-unit-stat-log' <device> [--dom-id | -d] [--raw-binary | -b]
 
 DESCRIPTION
 -----------

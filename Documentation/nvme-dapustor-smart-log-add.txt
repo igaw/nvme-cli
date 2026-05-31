@@ -9,8 +9,7 @@ returns result and log
 SYNOPSIS
 --------
 [verse]
-'nvme'
-			[<global-options>] [--namespace-id=<nsid> | -n <nsid>]
+'nvme' [<global-options>] 'dapustor smart-log-add' <device> [--namespace-id=<nsid> | -n <nsid>]
 			[--raw-binary | -b] [--json | -j]
 
 DESCRIPTION
