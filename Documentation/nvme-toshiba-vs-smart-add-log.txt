@@ -10,7 +10,7 @@ SYNOPSIS
 --------
 [verse]
 'nvme' [<global-options>] 'toshiba vs-smart-add-log' <device>
-	  		[--log=<NUM>, -l <NUM>]
+			[--log=<NUM>, -l <NUM>]
 	  		[--namespace-id=<NUM>, -n <NUM>]
 	  		[--output-file=<FILE>, -O <FILE>]
 
