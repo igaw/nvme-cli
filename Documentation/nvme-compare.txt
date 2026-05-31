@@ -30,7 +30,6 @@ SYNOPSIS
 			[--storage-tag<storage-tag> | -g <storage-tag>]
 			[--storage-tag-check | -C]
 			[--force]
-			[<global-options>]
 
 DESCRIPTION
 -----------

@@ -8,7 +8,7 @@ nvme-connect-all - Discover and Connect to Fabrics controllers.
 SYNOPSIS
 --------
 [verse]
-'nvme connect-all'
+'nvme' [<global-options>] connect-all
 			[--raw=<filename> | -r <filename>]
 			[--device=<device> | -d <device>]
 			[--config=<filename> | -J <cfg>]
@@ -16,14 +16,13 @@ SYNOPSIS
 			[--dump-config | -O] [--nbft] [--no-nbft]
 			[--nbft-path=<STR>] [--context=<STR>]
 			[<fabrics-options>]
-			[<global-options>]
 
 DESCRIPTION
 -----------
 Send one or more Discovery requests to a NVMe over Fabrics Discovery
 Controller, and create controllers for the returned discovery records.
 
-If no parameters are given, then 'nvme connect-all' will attempt to
+If no parameters are given, then 'nvme' [<global-options>] connect-all will attempt to
 find a @SYSCONFDIR@/nvme/discovery.conf file to use to supply a list of
 connect-all commands to run. If no @SYSCONFDIR@/nvme/discovery.conf file
 exists, the command will quit with an error.
@@ -39,8 +38,8 @@ OPTIONS
 -------
 -r <filename>::
 --raw=<filename>::
-	This field will take the output of the 'nvme connect-all' command
-	and dump it to a raw binary file. By default 'nvme connect-all' will
+	This field will take the output of the 'nvme' [<global-options>] connect-all command
+	and dump it to a raw binary file. By default 'nvme' [<global-options>] connect-all will
 	dump the output to stdout.
 
 -d <device>::
@@ -98,22 +97,22 @@ the RDMA network. Port 4420 is used by default:
 --hostnqn=host1-rogue-nqn
 ------------
 +
-* Issue a 'nvme connect-all' command using the default system defined NBFT tables:
+* Issue a 'nvme' [<global-options>] connect-all command using the default system defined NBFT tables:
 +
 -----------
 # nvme connect-all --nbft
 ------------
 +
-* Issue a 'nvme connect-all' command with a user-defined path for the NBFT table:
+* Issue a 'nvme' [<global-options>] connect-all command with a user-defined path for the NBFT table:
 +
 -----------
 # nvme connet-all --nbft-path=/sys/firmware/acpi/tables/NBFT1
 ------------
 +
-* Issue a 'nvme connect-all' command using a @SYSCONFDIR@/nvme/discovery.conf file:
+* Issue a 'nvme' [<global-options>] connect-all command using a @SYSCONFDIR@/nvme/discovery.conf file:
 +
 -----------
-# Machine default 'nvme discover' commands. Query the
+# Machine default 'nvme' [<global-options>] discover commands. Query the
 # Discovery Controller's two ports (some resources may only
 # be accessible on a single port). Note an official
 # nqn (Host) name defined in the NVMe specification is being used

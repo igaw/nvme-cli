@@ -20,7 +20,6 @@ SYNOPSIS
 				[--app-tag-mask=<NUM> | -m <NUM>]
 				[--app-tag=<NUM> | -a <NUM>]
 				[--prinfo=<NUM> | -p <NUM>]
-				[<global-options>]
 
 DESCRIPTION
 -----------

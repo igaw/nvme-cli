@@ -8,7 +8,7 @@ nvme-create-ns - Send NVMe Namespace management command to create namespace, ret
 SYNOPSIS
 --------
 [verse]
-'nvme create-ns' <device> [--nsze=<nsze> | -s <nsze>]
+'nvme' [<global-options>] create-ns <device> [--nsze=<nsze> | -s <nsze>]
 			[--ncap=<ncap> | -c <ncap>]
 			[--flbas=<flbas> | -f <flbas>]
 			[--dps=<dps> | -d <dps>]
@@ -27,7 +27,6 @@ SYNOPSIS
 			[--ror=<ror> | -O <ror>]
 			[--rnumzrwa=<rnumzrwa> | -u <rnumzrwa>]
 			[--phndls=<placement-handle-list,> | -p <placement-handle-list,>]
-			[<global-options>]
 
 DESCRIPTION
 -----------

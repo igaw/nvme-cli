@@ -13,7 +13,6 @@ SYNOPSIS
 			[--prhbt=<prhbt> | -p <prhbt>]
 			[--scp=<scp> | -s <scp>]
 			[--uuid=<UUID_Index> | -U <UUID_Index>]
-			[<global-options>]
 
 DESCRIPTION
 -----------

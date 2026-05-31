@@ -18,7 +18,6 @@ SYNOPSIS
 			[--app-tag=<apptag> | -a <apptag>]
 			[--storage-tag<storage-tag> | -S <storage-tag>]
 			[--storage-tag-check | -C]
-			[<global-options>]
 
 DESCRIPTION
 -----------

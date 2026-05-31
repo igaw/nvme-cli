@@ -20,7 +20,6 @@ SYNOPSIS
 			[--storage-tag-check<storage-tag-check> | -C <storage-tag-check>]
 			[--dir-type=<dtype> | -T <dtype>]
 			[--dir-spec=<dspec> | -D <dspec>] [--namespace-zeroes | -Z]
-			[<global-options>]
 
 DESCRIPTION
 -----------

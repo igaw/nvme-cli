@@ -10,7 +10,6 @@ SYNOPSIS
 --------
 [verse]
 'nvme-mi-cmd-support-effects-log' <device>
-			[<global-options>]
 
 DESCRIPTION
 -----------

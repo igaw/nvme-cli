@@ -26,7 +26,6 @@ SYNOPSIS
 			[--dir-type=<type> | -T <type>]
 			[--dir-spec=<spec> | -S <spec>]
 			[--format=<entry-format> | -F <entry-format>]
-			[<global-options>]
 
 DESCRIPTION
 -----------

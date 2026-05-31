@@ -24,7 +24,6 @@ SYNOPSIS
 			[--raw-binary | -b]
 			[--prefill=<prefill> | -p <prefill>]
 			[--latency | -T]
-			[<global-options>]
 
 DESCRIPTION
 -----------

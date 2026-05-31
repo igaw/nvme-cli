@@ -13,7 +13,6 @@ SYNOPSIS
 			[--namespace-id=<nsid> | -n <nsid>]
 			[--dir-type=<dtype> | -T <dtype>]
 			[--dir-spec=<dspec> | -S <dspec>]
-			[<global-options>]
 
 DESCRIPTION
 -----------
