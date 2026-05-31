@@ -8,8 +8,11 @@ nvme-solidigm-latency-tracking-log - Enable/Retrieve Latency tracking Log
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] 'solidigm latency-tracking-log' <device> [--enable | -e] [--disable | -d]
- [--read | -r] [--write | -w]
+'nvme' [<global-options>] 'solidigm latency-tracking-log' <device>
+ [--enable | -e]
+ [--disable | -d]
+ [--read | -r]
+ [--write | -w]
  [--type <value> | -t <value>]
 
 DESCRIPTION
