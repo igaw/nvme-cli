@@ -12,7 +12,8 @@ SYNOPSIS
 'nvme'
 			[<global-options>]
 			[--uuid-index=<uuid-index> | -U <uuid_index>]
-			[--lba-format-index=<lba_format_index> | -i <lba_format_index>]
+			[--lba-format-index=<lba_format_index> | -i
+			<lba_format_index>]
 
 DESCRIPTION
 -----------

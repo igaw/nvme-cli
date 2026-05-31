@@ -9,7 +9,8 @@ SYNOPSIS
 --------
 [verse]
 'nvme' [<global-options>] 'list-ns' <device> [--namespace-id=<nsid> | -n <nsid>]
-			[--csi=<command_set_identifier> | -y <command_set_identifier>]
+			[--csi=<command_set_identifier> | -y
+			<command_set_identifier>]
 			[--all | -a]
 
 DESCRIPTION
