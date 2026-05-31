@@ -9,7 +9,7 @@ compliant device
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] ocp smart-add-log <device>
+'nvme' [<global-options>] 'ocp smart-add-log' <device>
 
 DESCRIPTION
 -----------

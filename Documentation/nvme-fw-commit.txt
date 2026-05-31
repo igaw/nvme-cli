@@ -8,7 +8,7 @@ nvme-fw-commit - Used to verify and commit a firmware image.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] fw-commit <device> [--slot=<slot> | -s <slot>]
+'nvme' [<global-options>] 'fw-commit' <device> [--slot=<slot> | -s <slot>]
 			[--action=<action> | -a <action>]
 			[--bpid=<boot-partid> | -b <boot-partid>]
 

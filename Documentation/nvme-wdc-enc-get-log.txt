@@ -9,7 +9,7 @@ result.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc enc-get-log <device> [--log-id=<NUM>, -l <NUM>]
+'nvme' [<global-options>] 'wdc enc-get-log' <device> [--log-id=<NUM>, -l <NUM>]
 			[--output-file=<FILE>, -O <FILE>]
 			[--transfer-size=<SIZE>, -s <SIZE>]
 

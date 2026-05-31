@@ -8,7 +8,7 @@ nvme-supported-log-pages - Send NVMe Supported Log pages request, returns result
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] supported-log-pages <device>
+'nvme' [<global-options>] 'supported-log-pages' <device>
 
 DESCRIPTION
 -----------

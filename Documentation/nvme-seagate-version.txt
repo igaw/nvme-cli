@@ -8,7 +8,7 @@ nvme-seagate-version - Shows the Seagate version information for nvme-cli
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] seagate version
+'nvme' [<global-options>] 'seagate version'
 
 DESCRIPTION
 -----------

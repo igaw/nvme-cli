@@ -8,7 +8,7 @@ nvme-wdc-purge - Send NVMe WDC Purge Vendor Unique Command, return result
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc purge <device>
+'nvme' [<global-options>] 'wdc purge' <device>
 
 DESCRIPTION
 -----------

@@ -8,7 +8,7 @@ nvme-get-log - Retrieves a log page from an NVMe device
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] get-log <device> [--log-id=<log-id> | -i <log-id>]
+'nvme' [<global-options>] 'get-log' <device> [--log-id=<log-id> | -i <log-id>]
 			[--log-len=<log-len> | -l <log-len>]
 			[--aen=<aen> | -a <aen>]
 			[--namespace-id=<nsid> | -n <nsid>]

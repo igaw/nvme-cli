@@ -8,7 +8,7 @@ nvme-ana-log - Send NVMe ANA log page request, returns result and log
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] ana-log <device> [--groups | -g]
+'nvme' [<global-options>] 'ana-log' <device> [--groups | -g]
 
 DESCRIPTION
 -----------

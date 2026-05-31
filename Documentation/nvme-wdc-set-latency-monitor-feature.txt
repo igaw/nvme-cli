@@ -8,7 +8,7 @@ nvme-wdc-set-latency-monitor-feature - Set NVMe WDC latency monitor feature opti
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc set-latency-monitor-feature <device>
+'nvme' [<global-options>] 'wdc set-latency-monitor-feature' <device>
 			[--active_bucket_timer_threshold=<NUM> | -t <NUM>]
 			[--active_threshold_a=<NUM> | -a <NUM>]
 			[--active_threshold_b=<NUM> | -b <NUM>]

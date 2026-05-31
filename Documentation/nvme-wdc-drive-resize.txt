@@ -9,7 +9,7 @@ return result.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc drive-resize <device> [--size=<sz> | -s <sz>]
+'nvme' [<global-options>] 'wdc drive-resize' <device> [--size=<sz> | -s <sz>]
 
 DESCRIPTION
 -----------

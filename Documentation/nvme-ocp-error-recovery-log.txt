@@ -8,7 +8,7 @@ nvme-ocp-error-recovery-log - Retrieves OCP Error Recovery Log Page
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] ocp error-recovery-log <device>
+'nvme' [<global-options>] 'ocp error-recovery-log' <device>
 
 DESCRIPTION
 -----------

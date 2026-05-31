@@ -9,7 +9,7 @@ and structure
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] zns id-ns <device> [--namespace-id=<NUM> | -n <NUM>]
+'nvme' [<global-options>] 'zns id-ns' <device> [--namespace-id=<NUM> | -n <NUM>]
 
 DESCRIPTION
 -----------

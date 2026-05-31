@@ -8,7 +8,7 @@ nvme-list-subsys - List all NVMe subsystems
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] list-subsys <device>
+'nvme' [<global-options>] 'list-subsys' <device>
 
 DESCRIPTION
 -----------

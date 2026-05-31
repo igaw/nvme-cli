@@ -9,7 +9,7 @@ temperature statistics
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] seagate vs-temperature-stats <device> [OPTIONS]
+'nvme' [<global-options>] 'seagate vs-temperature-stats' <device> [OPTIONS]
 
 DESCRIPTION
 -----------

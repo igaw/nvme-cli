@@ -8,7 +8,7 @@ nvme-virtium-show-identify - Show a complete detail of identify device informati
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] virtium show-identify <device>
+'nvme' [<global-options>] 'virtium show-identify' <device>
 
 DESCRIPTION
 -----------

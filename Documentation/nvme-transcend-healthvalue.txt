@@ -9,7 +9,7 @@ Transcend device.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] transcend healthvalue <device>
+'nvme' [<global-options>] 'transcend healthvalue' <device>
 
 DESCRIPTION
 -----------

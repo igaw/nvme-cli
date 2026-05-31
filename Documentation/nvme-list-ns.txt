@@ -8,7 +8,7 @@ nvme-list-ns - Send NVMe Identify List Namespaces, return result and structure
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] list-ns <device> [--namespace-id=<nsid> | -n <nsid>]
+'nvme' [<global-options>] 'list-ns' <device> [--namespace-id=<nsid> | -n <nsid>]
 			[--csi=<command_set_identifier> | -y <command_set_identifier>]
 			[--all | -a]
 

@@ -9,7 +9,7 @@ result
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc get-drive-status <device>
+'nvme' [<global-options>] 'wdc get-drive-status' <device>
 
 DESCRIPTION
 -----------

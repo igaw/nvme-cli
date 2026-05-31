@@ -8,7 +8,7 @@ nvme-transcend-badblock - Retrieve Transcend NVMe device's bad blocks.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] transcend badblock <device>
+'nvme' [<global-options>] 'transcend badblock' <device>
 
 DESCRIPTION
 -----------

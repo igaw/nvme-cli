@@ -8,7 +8,7 @@ nvme-seagate-plugin-version - Shows Seagate plugin's version information
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] seagate plugin-version
+'nvme' [<global-options>] 'seagate plugin-version'
 
 DESCRIPTION
 -----------

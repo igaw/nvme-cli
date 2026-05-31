@@ -8,7 +8,7 @@ nvme-wdc-cloud-SSD-plugin-version - Display WDC plugin Cloud SSD Plugin Version
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc cloud-SSD-plugin-version <device>
+'nvme' [<global-options>] 'wdc cloud-SSD-plugin-version' <device>
 
 DESCRIPTION
 -----------

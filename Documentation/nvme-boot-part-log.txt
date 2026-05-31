@@ -8,7 +8,7 @@ nvme-boot-part-log - Retrieves a Boot Partition log page from an NVMe device
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] boot-part-log <device> [--lsp=<field> | -s <field>]
+'nvme' [<global-options>] 'boot-part-log' <device> [--lsp=<field> | -s <field>]
 			[--output-file=<file> | -f <file>]
 
 DESCRIPTION

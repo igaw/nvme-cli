@@ -8,7 +8,7 @@ nvme-sndk-set-latency-monitor-feature - Set NVMe sndk latency monitor feature op
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] sndk set-latency-monitor-feature <device>
+'nvme' [<global-options>] 'sndk set-latency-monitor-feature' <device>
 			[--active_bucket_timer_threshold=<NUM> | -t <NUM>]
 			[--active_threshold_a=<NUM> | -a <NUM>]
 			[--active_threshold_b=<NUM> | -b <NUM>]

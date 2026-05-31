@@ -8,7 +8,7 @@ nvme-intel-temp-stats - Send NVMe SMART log page request, returns result and log
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] intel temp-stats <device> [--raw-binary | -b]
+'nvme' [<global-options>] 'intel temp-stats' <device> [--raw-binary | -b]
 
 DESCRIPTION
 -----------

@@ -8,7 +8,7 @@ nvme-security-recv - Security Recv command
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] security-recv <device> [--size=<size> | -x <size>]
+'nvme' [<global-options>] 'security-recv' <device> [--size=<size> | -x <size>]
 			[--secp=<security-protocol> | -p <security-protocol>]
 			[--spsp=<protocol-specific> | -s <protocol-specific>]
 			[--nssf=<nvme-specific> | -N <nvme-specific>]

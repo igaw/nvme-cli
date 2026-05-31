@@ -8,7 +8,7 @@ nvme-wdc-log-page-directory - Retrieves the list of Log IDs supported by the dri
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc log-page-directory <device>
+'nvme' [<global-options>] 'wdc log-page-directory' <device>
 
 DESCRIPTION
 -----------

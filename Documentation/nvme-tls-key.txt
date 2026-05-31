@@ -8,7 +8,7 @@ nvme-tls-key - Manage NVMe TLS PSKs
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] tls-key [--keyring=<name> | -k <name>]
+'nvme' [<global-options>] 'tls-key' [--keyring=<name> | -k <name>]
 			[--keytype=<type> | -t <type>]
 			[--keyfile=<file> | -f <file>]
 			[--import | -i] [--export | -e]

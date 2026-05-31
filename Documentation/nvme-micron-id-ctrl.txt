@@ -8,7 +8,7 @@ nvme-micron-id-ctrl - Send NVMe Identify Controller with Micron vendor-specific 
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] micron id-ctrl <device>
+'nvme' [<global-options>] 'micron id-ctrl' <device>
 
 DESCRIPTION
 -----------

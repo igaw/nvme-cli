@@ -8,7 +8,7 @@ nvme-netapp-ontapdevices - Display information about ONTAP devices
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] netapp ontapdevices
+'nvme' [<global-options>] 'netapp ontapdevices'
 
 DESCRIPTION
 -----------

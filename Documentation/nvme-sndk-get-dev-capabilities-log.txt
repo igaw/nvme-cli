@@ -9,7 +9,7 @@ plugin command, return parsed log output
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] sndk get-dev-capabilities-log <device>
+'nvme' [<global-options>] 'sndk get-dev-capabilities-log' <device>
 
 DESCRIPTION
 -----------

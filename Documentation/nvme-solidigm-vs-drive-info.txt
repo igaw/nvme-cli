@@ -8,7 +8,7 @@ nvme-solidigm-vs-drive-info - Retrieve drive information
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] solidigm vs-drive-info <device>
+'nvme' [<global-options>] 'solidigm vs-drive-info' <device>
 
 DESCRIPTION
 -----------

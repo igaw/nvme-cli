@@ -8,7 +8,7 @@ nvme-discover - Send Get Log Page request to Discovery Controller.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] discover
+'nvme' [<global-options>] 'discover'
 			[--raw=<filename> | -r <filename>]
 			[--device=<device> | -d <device>]
 			[--config=<filename> | -J <filename>]

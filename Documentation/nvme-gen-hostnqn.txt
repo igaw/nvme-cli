@@ -8,7 +8,7 @@ nvme-gen-hostnqn - Generate a host NVMe Qualified Name
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] gen-hostnqn
+'nvme' [<global-options>] 'gen-hostnqn'
 
 DESCRIPTION
 -----------

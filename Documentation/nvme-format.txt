@@ -8,7 +8,7 @@ nvme-format - Format an NVMe device
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] format <device> [--namespace-id=<nsid> | -n <nsid>]
+'nvme' [<global-options>] 'format' <device> [--namespace-id=<nsid> | -n <nsid>]
 			[--lbaf=<lbaf> | -l <lbaf>]
 			[--block-size=<block size | -b <block size>]
 			[--ses=<ses> | -s <ses>] [--pil=<pil> | -p <pil>]

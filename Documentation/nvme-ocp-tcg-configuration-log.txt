@@ -9,7 +9,7 @@ compliant device
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] ocp tcg-configuration-log <device>
+'nvme' [<global-options>] 'ocp tcg-configuration-log' <device>
 
 DESCRIPTION
 -----------

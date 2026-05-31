@@ -9,7 +9,7 @@ plugin command, return parsed log output
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] sndk get-unsupported-reqs-log <device> [--output-format=<normal|json>
+'nvme' [<global-options>] 'sndk get-unsupported-reqs-log' <device> [--output-format=<normal|json>
 -o <normal|json>]
 
 DESCRIPTION

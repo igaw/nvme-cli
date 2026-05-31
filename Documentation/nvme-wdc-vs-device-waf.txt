@@ -9,7 +9,7 @@ prints both TLC and SLC results
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc vs-device-waf <device>
+'nvme' [<global-options>] 'wdc vs-device-waf' <device>
 			[--namespace-id=<nsid> | -n <nsid>]
 
 DESCRIPTION

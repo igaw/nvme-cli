@@ -8,7 +8,7 @@ nvme-id-nvmset - Send NVMe Identify NVM Set List, return result and structure
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] id-nvmset <device> [--nvmset_id=<id> | -i <id>]
+'nvme' [<global-options>] 'id-nvmset' <device> [--nvmset_id=<id> | -i <id>]
 
 DESCRIPTION
 -----------

@@ -8,7 +8,7 @@ nvme-set-reg - Writes and shows the defined NVMe controller register
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] set-reg <device> [--offset=<offset>, -O <offset>]
+'nvme' [<global-options>] 'set-reg' <device> [--offset=<offset>, -O <offset>]
 			[--value=<val> | -V <val>] [--mmio32 | -m]
 			[--intms=<val>] [--intmc=<val>] [--cc=<val>]
 			[--csts=<val>] [--nssr=<val>] [--aqa=<val>]

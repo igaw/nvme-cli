@@ -8,7 +8,7 @@ nvme-wdc-vs-fw-activate-history - Execute NVMe WDC vs-fw-activate-history Vendor
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc vs-fw-activate-history <device>
+'nvme' [<global-options>] 'wdc vs-fw-activate-history' <device>
 
 DESCRIPTION
 -----------

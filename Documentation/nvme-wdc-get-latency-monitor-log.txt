@@ -8,7 +8,7 @@ nvme-wdc-get-latency-monitor-log - Display latency monitor log page data in huma
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc get-latency-monitor-log <device>
+'nvme' [<global-options>] 'wdc get-latency-monitor-log' <device>
 
 DESCRIPTION
 -----------

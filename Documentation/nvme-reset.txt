@@ -8,7 +8,7 @@ nvme-reset - Reset the nvme controller.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] reset <device>
+'nvme' [<global-options>] 'reset' <device>
 
 DESCRIPTION
 -----------

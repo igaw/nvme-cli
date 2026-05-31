@@ -8,7 +8,7 @@ nvme-wdc-vs-temperature-stats - Display temperature-related statistics
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc vs-temperature-stats <device>
+'nvme' [<global-options>] 'wdc vs-temperature-stats' <device>
 
 DESCRIPTION
 -----------

@@ -8,7 +8,7 @@ nvme-dsm - Send NVMe Data Set Management, return results
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] dsm <device> [--namespace-id=<nsid> | -n <nsid>]
+'nvme' [<global-options>] 'dsm' <device> [--namespace-id=<nsid> | -n <nsid>]
 			[--ctx-attrs=<attribute-list,> | -a <attribute-list,>]
 			[--blocks=<nlb-list,> | -b <nlb-list,>]
 			[--slbs=<slba-list,> | -s <slba-list,>]

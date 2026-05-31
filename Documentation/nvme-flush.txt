@@ -8,7 +8,7 @@ nvme-flush - Flush command.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] flush <device> [--namespace-id=<nsid> | -n <nsid>]
+'nvme' [<global-options>] 'flush' <device> [--namespace-id=<nsid> | -n <nsid>]
 
 DESCRIPTION
 -----------

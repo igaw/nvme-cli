@@ -8,7 +8,7 @@ nvme-sndk-vs-cloud-log - Send NVMe sndk vs-cloud-log Vendor Unique Command, retu
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] sndk vs-cloud-log <device>
+'nvme' [<global-options>] 'sndk vs-cloud-log' <device>
 			[--namespace-id=<nsid> | -n <nsid>]
 
 DESCRIPTION

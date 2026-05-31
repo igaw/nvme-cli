@@ -9,7 +9,7 @@ statistics
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] seagate vs-pcie-stats <device> [OPTIONS]
+'nvme' [<global-options>] 'seagate vs-pcie-stats' <device> [OPTIONS]
 
 DESCRIPTION
 -----------

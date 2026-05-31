@@ -8,7 +8,7 @@ nvme-primary-ctrl-caps - Send identify Primary Controller Caps, return result an
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] primary-ctrl-caps <device>
+'nvme' [<global-options>] 'primary-ctrl-caps' <device>
 			[--human-readable | -H]
 
 DESCRIPTION

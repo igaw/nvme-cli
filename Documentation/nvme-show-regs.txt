@@ -9,7 +9,7 @@ NVMe over PCIe or the controller properties for NVMe over Fabrics.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] show-regs <device>
+'nvme' [<global-options>] 'show-regs' <device>
 			[--human-readable | -H]
 
 DESCRIPTION

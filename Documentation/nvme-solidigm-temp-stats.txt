@@ -8,7 +8,7 @@ nvme-solidigm-temp-stats - Retrieve Temperature Statistics log
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] solidigm temp-stats <device> [--raw-binary | -b]
+'nvme' [<global-options>] 'solidigm temp-stats' <device> [--raw-binary | -b]
 
 DESCRIPTION
 -----------

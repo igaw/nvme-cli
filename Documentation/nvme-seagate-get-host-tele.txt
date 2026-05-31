@@ -9,7 +9,7 @@ either hex-dump (default) or binary format
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] seagate get-host-tele <device> [OPTIONS]
+'nvme' [<global-options>] 'seagate get-host-tele' <device> [OPTIONS]
 
 DESCRIPTION
 -----------

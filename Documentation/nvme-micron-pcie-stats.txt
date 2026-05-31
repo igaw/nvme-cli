@@ -8,7 +8,7 @@ nvme-micron-pcie-stats - Retrieves pcie error statistics for given micron device
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] micron vs-pcie-stats <device>
+'nvme' [<global-options>] 'micron vs-pcie-stats' <device>
 
 DESCRIPTION
 -----------

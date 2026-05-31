@@ -8,7 +8,7 @@ nvme-ns-rescan - Rescans the nvme namespaces.
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] ns-rescan <device>
+'nvme' [<global-options>] 'ns-rescan' <device>
 
 DESCRIPTION
 -----------

@@ -8,7 +8,7 @@ nvme-ocp-get-dssd-power-state-feature - Get DSSD Power State
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] ocp get-dssd-power-state-feature <device>
+'nvme' [<global-options>] 'ocp get-dssd-power-state-feature' <device>
 			[--sel=<select> | -S <select>] [--all | -a]
 			[--no-uuid | -n]
 

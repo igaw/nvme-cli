@@ -9,7 +9,7 @@ plugin command, return parsed log output
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] wdc get-dev-capabilities-log <device>
+'nvme' [<global-options>] 'wdc get-dev-capabilities-log' <device>
 
 DESCRIPTION
 -----------

@@ -8,7 +8,7 @@ nvme-show-hostnqn - Show the host NQN configured for the system
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] show-hostnqn
+'nvme' [<global-options>] 'show-hostnqn'
 
 DESCRIPTION
 -----------

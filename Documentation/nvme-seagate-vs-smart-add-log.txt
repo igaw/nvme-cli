@@ -9,7 +9,7 @@ Information
 SYNOPSIS
 --------
 [verse]
-'nvme' [<global-options>] seagate vs-smart-add-log <device> [OPTIONS]
+'nvme' [<global-options>] 'seagate vs-smart-add-log' <device> [OPTIONS]
 
 DESCRIPTION
 -----------
