@@ -173,6 +173,8 @@ enum ioctl_state {
 	IOCTL_STATE_IOCTL64 = 2,
 };
 
+struct nvme_mi_msg_hdr;
+
 struct libnvme_transport_handle {
 	struct libnvme_global_ctx *ctx;
 	enum libnvme_transport_handle_type type;
@@ -185,6 +187,12 @@ struct libnvme_transport_handle {
 			int err, void *user_data);
 	bool (*decide_retry)(struct libnvme_transport_handle *hdl,
 			struct libnvme_passthru_cmd *cmd, int err);
+
+	void *(*mi_submit_entry)(__u8 type, const struct nvme_mi_msg_hdr *hdr,
+			size_t hdr_len, const void *data, size_t data_len);
+	void  (*mi_submit_exit)(__u8 type, const struct nvme_mi_msg_hdr *hdr,
+			size_t hdr_len, const void *data, size_t data_len,
+			 void *user_data);
 
 	/* global command timeout */
 	__u32 timeout;

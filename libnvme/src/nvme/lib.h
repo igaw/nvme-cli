@@ -22,6 +22,9 @@ enum libnvme_log_level {
 
 #define LIBNVME_DEFAULT_LOGLEVEL LIBNVME_LOG_WARN
 
+/* Forward declare for the mi_submit_* callbacks/hooks */
+struct nvme_mi_msg_hdr;
+
 /**
  * libnvme_create_global_ctx() - Initialize global context object
  * @fp:		File descriptor for logging messages
@@ -158,6 +161,12 @@ bool libnvme_transport_handle_is_ns(struct libnvme_transport_handle *hdl);
  *		context. This pointer is later passed unmodified to the
  *		submit-exit callback. Implementations typically use this hook
  *		for logging, tracing, or allocating per-command state.
+ * @mi_submit_entry: Callback invoked immediately before a passthrough command
+ *		is submitted. The function receives the command about to be
+ *		issued and may return an opaque pointer representing per-command
+ *		context. This pointer is later passed unmodified to the
+ *		mi-submit-exit callback. Implementations typically use this hook
+ *		for logging, tracing, or allocating per-command state.
  *
  * Installs a user-defined callback that is invoked at the moment a passthrough
  * command enters the NVMe submission path. Passing NULL removes any previously
@@ -168,7 +177,11 @@ bool libnvme_transport_handle_is_ns(struct libnvme_transport_handle *hdl);
 void libnvme_transport_handle_set_submit_entry(
 		struct libnvme_transport_handle *hdl,
 		void *(*submit_entry)(struct libnvme_transport_handle *hdl,
-				struct libnvme_passthru_cmd *cmd));
+				struct libnvme_passthru_cmd *cmd),
+		void *(*mi_submit_entry)(__u8 type,
+				const struct nvme_mi_msg_hdr *hdr,
+				size_t hdr_len, const void *data,
+				size_t data_len));
 
 /**
  * libnvme_transport_handle_set_submit_exit() - Install a submit-exit callback
@@ -177,6 +190,12 @@ void libnvme_transport_handle_set_submit_entry(
  *		function receives the command, the completion status @err
  *		(0 for success, a negative errno, or an NVMe status value), and
  *		the @user_data pointer returned earlier by the submit-entry
+ *		callback. Implementations typically use this hook for logging,
+ *		tracing, or freeing per-command state.
+ * @submit_exit: Callback invoked after a passthrough command completes. The
+ *		function receives the command, the completion status @err
+ *		(0 for success, a negative errno, or an NVMe status value), and
+ *		the @user_data pointer returned earlier by the mi-submit-entry
  *		callback. Implementations typically use this hook for logging,
  *		tracing, or freeing per-command state.
  *
@@ -189,7 +208,11 @@ void libnvme_transport_handle_set_submit_exit(
 		struct libnvme_transport_handle *hdl,
 		void (*submit_exit)(struct libnvme_transport_handle *hdl,
 				struct libnvme_passthru_cmd *cmd,
-				int err, void *user_data));
+				int err, void *user_data),
+		void  (*mi_submit_exit)(__u8 type,
+				const struct nvme_mi_msg_hdr *hdr,
+				size_t hdr_len, const void *data,
+				size_t data_len, void *user_data));
 
 /**
  * libnvme_transport_handle_set_decide_retry() - Install a retry-decision

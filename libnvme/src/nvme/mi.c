@@ -496,13 +496,13 @@ int libnvme_mi_async_read(libnvme_mi_ep_t ep, struct libnvme_mi_resp *resp)
 
 
 int libnvme_mi_submit(libnvme_mi_ep_t ep, struct libnvme_mi_req *req,
-		   struct libnvme_mi_resp *resp)
+		struct libnvme_mi_resp *resp)
 {
 	int rc;
 	void *user_data;
 
-	user_data = libnvme_mi_submit_entry(req->hdr->type, req->hdr, req->hdr_len, req->data,
-					 req->data_len);
+	user_data = hdl->mi_submit_entry(req->hdr->type, req->hdr, req->hdr_len,
+		req->data, req->data_len);
 
 	if (req->hdr_len < sizeof(struct nvme_mi_msg_hdr))
 		return -EINVAL;
@@ -569,8 +569,8 @@ int libnvme_mi_submit(libnvme_mi_ep_t ep, struct libnvme_mi_req *req,
 		return -EIO;
 	}
 
-	libnvme_mi_submit_exit(resp->hdr->type, resp->hdr, resp->hdr_len, resp->data, resp->data_len,
-			    user_data);
+	hdl->mi_submit_exit(resp->hdr->type, resp->hdr, resp->hdr_len,
+		resp->data, resp->data_len, user_data);
 
 	return 0;
 }
