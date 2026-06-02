@@ -219,7 +219,10 @@ class TestNVMe(unittest.TestCase):
         return result
 
     def parse_json_output(self, output, context, expected_type=dict):
-        """Parse JSON output and fail the testcase gracefully on malformed data."""
+        """Parse JSON output and fail test clearly on malformed or wrong-typed data.
+
+        Pass expected_type=None to skip type validation.
+        """
         try:
             data = json.loads(output)
         except (TypeError, json.JSONDecodeError) as exc:
@@ -233,7 +236,7 @@ class TestNVMe(unittest.TestCase):
         return data
 
     def json_get(self, data, key, default=None, context="JSON output"):
-        """Safely read a key from a JSON object, failing gracefully if shape is wrong."""
+        """Return key from a JSON object, with default and graceful shape validation."""
         if not isinstance(data, dict):
             self.fail(
                 f"ERROR : expected JSON object for {context}, got {type(data).__name__}"
@@ -547,7 +550,7 @@ class TestNVMe(unittest.TestCase):
         return result.returncode, result.stdout
 
     def _get_created_nsid(self, stdout):
-        """Extract the namespace id from create-ns output."""
+        """Extract namespace id from create-ns output (JSON or legacy text)."""
         try:
             json_output = json.loads(stdout)
         except json.JSONDecodeError:
@@ -561,8 +564,11 @@ class TestNVMe(unittest.TestCase):
             )
             return int(match.group(1))
 
-        self.assertIsInstance(json_output, dict,
-                              f"ERROR : unexpected create-ns JSON output type: {type(json_output).__name__}")
+        self.assertIsInstance(
+            json_output,
+            dict,
+            f"ERROR : unexpected create-ns JSON output type: {type(json_output).__name__}",
+        )
         self.assertIn(
             'nsid',
             json_output,
