@@ -254,44 +254,6 @@ struct nvme_args nvme_args = {
 	.timeout = NVME_DEFAULT_IOCTL_TIMEOUT,
 };
 
-static void nvme_show_verbose_message(FILE *stream, const char *fmt, ...)
-{
-	va_list ap;
-	__cleanup_free char *msg = NULL;
-	const char *out;
-	size_t len;
-
-	if (!nvme_is_output_format_json() && !nvme_args.verbose)
-		return;
-
-	va_start(ap, fmt);
-	if (vasprintf(&msg, fmt, ap) < 0)
-		msg = NULL;
-	va_end(ap);
-	out = msg ? msg : alloc_error;
-
-	if (nvme_is_output_format_json()) {
-		if (msg) {
-			len = strlen(msg);
-			while (len && msg[len - 1] == '\n')
-				msg[--len] = '\0';
-		}
-
-		nvme_show_result("%s", out);
-		return;
-	}
-
-	len = strlen(out);
-	fprintf(stream, "%s", out);
-	if (!len || out[len - 1] != '\n')
-		fputc('\n', stream);
-}
-
-#define nvme_show_verbose_result(fmt, ...) \
-	nvme_show_verbose_message(stderr, fmt, ##__VA_ARGS__)
-#define nvme_show_verbose_info(fmt, ...) \
-	nvme_show_verbose_message(stdout, fmt, ##__VA_ARGS__)
-
 static void *mmap_registers(struct libnvme_transport_handle *hdl, bool writable);
 static int munmap_registers(void *addr);
 
