@@ -501,12 +501,16 @@ class TestNVMe(unittest.TestCase):
             match = re.search(r"created nsid:\s*(\d+)", stdout)
             self.assertIsNotNone(
                 match,
-                f"ERROR : expected create-ns output with nsid, got: {stdout!r}",
+                "ERROR : expected create-ns output with nsid, "
+                f"got: {stdout!r}",
             )
             return int(match.group(1))
 
-        self.assertIn('nsid', json_output,
-                      f"ERROR : unexpected create-ns JSON output: {json_output}")
+        self.assertIn(
+            'nsid',
+            json_output,
+            f"ERROR : unexpected create-ns JSON output: {json_output}",
+        )
         return int(json_output['nsid'])
 
     def create_and_validate_ns(self, nsid, nsze, ncap, flbas, dps):
