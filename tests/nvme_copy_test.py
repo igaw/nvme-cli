@@ -109,7 +109,11 @@ class TestNVMeCopy(TestNVMe):
             return 0
         nvm_id_ns_data = self.parse_json_output(result.stdout, "nvme nvm-id-ns")
         elbafs = nvm_id_ns_data.get("elbafs", [])
+        self.assertIsInstance(elbafs, list,
+                              f"ERROR : nvm-id-ns returned invalid elbafs type: {type(elbafs).__name__}")
         if lbaf_idx < len(elbafs):
+            self.assertIsInstance(elbafs[lbaf_idx], dict,
+                                  f"ERROR : invalid elbaf entry: {elbafs[lbaf_idx]!r}")
             return elbafs[lbaf_idx].get("pif", 0)
         return 0
 
@@ -146,7 +150,11 @@ class TestNVMeCopy(TestNVMe):
             return None
         nvm_id_ns_data = self.parse_json_output(result.stdout, "nvme nvm-id-ns")
         elbafs = nvm_id_ns_data.get("elbafs", [])
+        self.assertIsInstance(elbafs, list,
+                              f"ERROR : nvm-id-ns returned invalid elbafs type: {type(elbafs).__name__}")
         for i, elbaf in enumerate(elbafs):
+            self.assertIsInstance(elbaf, dict,
+                                  f"ERROR : invalid elbaf entry: {elbaf!r}")
             if elbaf.get("pif", 0) == 2:  # NVME_NVM_PIF_64B_GUARD = 2
                 return i
         return None

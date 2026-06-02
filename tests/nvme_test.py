@@ -551,7 +551,12 @@ class TestNVMe(unittest.TestCase):
         return result.returncode, result.stdout
 
     def _get_created_nsid(self, stdout):
-        """Extract namespace id from create-ns output (JSON or legacy text)."""
+        """Extract namespace id from create-ns output (JSON or legacy text).
+
+        Returns:
+            int: Namespace ID from `{"nsid": ...}` JSON output or from
+                 legacy text output like "created nsid: X".
+        """
         try:
             json_output = json.loads(stdout)
         except json.JSONDecodeError:
