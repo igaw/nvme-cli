@@ -221,6 +221,7 @@ class TestNVMe(unittest.TestCase):
     def parse_json_output(self, output, context, expected_type=dict):
         """Parse JSON output and fail test clearly on malformed or wrong-typed data.
 
+        context should identify the command/action that produced output.
         Pass expected_type=None to skip type validation.
         """
         try:
@@ -236,7 +237,7 @@ class TestNVMe(unittest.TestCase):
         return data
 
     def json_get(self, data, key, default=None, context="JSON output"):
-        """Return key from a JSON object, with default and graceful shape validation."""
+        """Return key from a JSON object and fail the test if data is not a dict."""
         if not isinstance(data, dict):
             self.fail(
                 f"ERROR : expected JSON object for {context}, got {type(data).__name__}"
@@ -374,8 +375,8 @@ class TestNVMe(unittest.TestCase):
         self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
         json_output = self.parse_json_output(result.stdout, "nvme id-ns")
         for lbaf in json_output.get('lbafs', []):
-            if not isinstance(lbaf, dict):
-                continue
+            self.assertIsInstance(lbaf, dict,
+                                  f"ERROR : id-ns returned invalid lbaf entry: {lbaf!r}")
             if lbaf.get('in_use') == 1:
                 self.assertIn('lbaf', lbaf,
                               f"ERROR : id-ns lbaf entry missing lbaf index: {lbaf!r}")
@@ -449,12 +450,12 @@ class TestNVMe(unittest.TestCase):
         json_output = self.parse_json_output(result.stdout, "nvme id-ns")
         lbafs = self.json_get(json_output, 'lbafs', [], "nvme id-ns")
         self.assertIsInstance(lbafs, list,
-                              f"Error : id-ns returned invalid lbafs type, expected list, got {type(lbafs).__name__}")
+                              f"ERROR : id-ns returned invalid lbafs type, expected list, got {type(lbafs).__name__}")
         self.assertTrue(len(lbafs) > self.flbas,
                         "Error : could not match the given flbas to an existing lbaf")
         lbaf_json = lbafs[int(self.flbas)]
         self.assertIsInstance(lbaf_json, dict,
-                              f"Error : id-ns returned invalid lbaf entry, expected dict, got {type(lbaf_json).__name__}")
+                              f"ERROR : id-ns returned invalid lbaf entry, expected dict, got {type(lbaf_json).__name__}")
         self.assertIn('ms', lbaf_json, "Error : id-ns lbaf missing 'ms'")
         self.assertIn('ds', lbaf_json, "Error : id-ns lbaf missing 'ds'")
         ms = int(lbaf_json['ms'])
