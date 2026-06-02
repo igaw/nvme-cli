@@ -78,6 +78,12 @@ option(
   description: 'Run tests against real hardware'
 )
 option(
+  'nvme-bin',
+  type : 'string',
+  value : '',
+  description: 'Path to nvme binary used for end-to-end tests (default: use the binary from the build tree)'
+)
+option(
   'tests',
   type : 'boolean',
   value : true,

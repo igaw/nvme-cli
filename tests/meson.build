@@ -41,6 +41,18 @@ python_module = import('python')
 
 python = python_module.find_installation('python3')
 
+# Determine which nvme binary to expose to the end-to-end tests.
+# The -Dnvme-bin option lets callers point at a distribution-provided (or
+# any other) binary without touching config.json:
+#   meson setup .build -Dnvme-bin=/usr/bin/nvme
+# When the option is not set the binary produced by the current build is used.
+nvme_bin_opt = get_option('nvme-bin')
+if nvme_bin_opt != ''
+    nvme_bin_for_test = nvme_bin_opt
+else
+    nvme_bin_for_test = meson.project_build_root() / 'nvme'
+endif
+
 foreach t : tests
     t_name = t.split('.')[0]
     test(
@@ -51,7 +63,10 @@ foreach t : tests
             '--start-dir', meson.current_source_dir(),
             t_name,
         ],
-        env: ['PATH=' + meson.project_build_root() + ':/usr/bin:/usr/sbin'],
+        env: [
+            'PATH=' + meson.project_build_root() + ':/usr/bin:/usr/sbin',
+            'NVME_BIN=' + nvme_bin_for_test,
+        ],
         timeout: 500,
         protocol: 'tap',
         is_parallel: false,

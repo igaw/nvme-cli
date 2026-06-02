@@ -168,6 +168,16 @@ class TestNVMe(unittest.TestCase):
             if not logging.getLogger().handlers:
                 logging.basicConfig(format='%(message)s', stream=sys.stdout)
             logging.getLogger().setLevel(log_level)
+
+            # Environment variable takes the highest priority, overriding both
+            # the default and any value from config.json.  This allows running
+            # the tests against a distribution-provided (or any other) binary
+            # without modifying config.json:
+            #   NVME_BIN=/usr/bin/nvme python3 tests/tap_runner.py ...
+            env_nvme_bin = os.environ.get('NVME_BIN')
+            if env_nvme_bin:
+                self.nvme_bin = env_nvme_bin
+
             logger.debug("Using nvme binary '%s'", self.nvme_bin)
 
             if self.clear_log_dir is True:
