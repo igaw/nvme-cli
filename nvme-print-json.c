@@ -113,40 +113,40 @@ static void obj_add_prix64(struct json_object *o, const char *k, uint64_t v)
 static void obj_add_ctrl_address_details(struct json_object *o, const char *k,
 					 libnvme_ctrl_t c)
 {
-	struct json_object *address = json_create_object();
+	struct json_object *address_details = json_create_object();
 	const char *value;
 	bool has_value = false;
 
 	value = libnvme_ctrl_get_traddr(c);
 	if (value) {
-		obj_add_str(address, "traddr", value);
+		obj_add_str(address_details, "traddr", value);
 		has_value = true;
 	}
 
 	value = libnvme_ctrl_get_host_traddr(c);
 	if (value) {
-		obj_add_str(address, "host_traddr", value);
+		obj_add_str(address_details, "host_traddr", value);
 		has_value = true;
 	}
 
 	value = libnvme_ctrl_get_host_iface(c);
 	if (value) {
-		obj_add_str(address, "host_iface", value);
+		obj_add_str(address_details, "host_iface", value);
 		has_value = true;
 	}
 
 	value = libnvme_ctrl_get_trsvcid(c);
 	if (value) {
-		obj_add_str(address, "trsvcid", value);
+		obj_add_str(address_details, "trsvcid", value);
 		has_value = true;
 	}
 
 	if (!has_value) {
-		json_free_object(address);
+		json_free_object(address_details);
 		return;
 	}
 
-	obj_add_obj(o, k, address);
+	obj_add_obj(o, k, address_details);
 }
 
 static void obj_add_ctrl_address(struct json_object *o, const char *k,
