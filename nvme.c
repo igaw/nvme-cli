@@ -10648,7 +10648,8 @@ static int libnvme_mi(int argc, char **argv, __u8 admin_opcode, const char *desc
 			result & 0xff, result >> 8);
 	}
 	if (result & 0xff)
-		printf("status: %s\n", libnvme_mi_status_to_string(result & 0xff));
+		fprintf(stderr, "status: %s\n",
+			libnvme_mi_status_to_string(result & 0xff));
 	if (!send && strlen(cfg.input_file)) {
 		if (write(fd, (void *)data, cfg.data_len) < 0)
 			perror("failed to write data buffer");
