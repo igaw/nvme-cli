@@ -49,3 +49,21 @@ Running testcases with framework
 
     2. Running all the testcases (in the build root directory) :-
        $ meson test -C .build
+
+Selecting the nvme binary
+--------------------------
+    By default the tests use the nvme binary built in the current build tree.
+    To test against a different version (e.g. a distribution-provided binary)
+    two mechanisms are available:
+
+    a. Environment variable (highest priority, overrides config.json):
+       $ NVME_BIN=/usr/bin/nvme python3 tests/tap_runner.py --start-dir tests nvme_id_ctrl_test
+
+    b. Meson option (for meson-driven test runs):
+       $ meson setup .build -Dnvme-bin=/usr/bin/nvme
+       $ meson test -C .build
+
+    c. config.json entry (lower priority than NVME_BIN):
+       Add "nvme_bin": "/usr/bin/nvme" to tests/config.json.
+
+    Priority order: NVME_BIN env var > config.json nvme_bin > build-tree binary
