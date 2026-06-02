@@ -91,6 +91,6 @@ foreach table: tables_bad
         args: [
             files(tables_bad_dir/table),
         ],
-        should_fail: true,
+        expected_fail: true,
     )
 endforeach
