@@ -493,6 +493,22 @@ class TestNVMe(unittest.TestCase):
         result = self.run_cmd(create_ns_cmd)
         return result.returncode, result.stdout
 
+    def _get_created_nsid(self, stdout):
+        """Extract the namespace id from create-ns output."""
+        try:
+            json_output = json.loads(stdout)
+        except json.JSONDecodeError:
+            match = re.search(r"created nsid:\s*(\d+)", stdout)
+            self.assertIsNotNone(
+                match,
+                f"ERROR : expected create-ns output with nsid, got: {stdout!r}",
+            )
+            return int(match.group(1))
+
+        self.assertIn('nsid', json_output,
+                      f"ERROR : unexpected create-ns JSON output: {json_output}")
+        return int(json_output['nsid'])
+
     def create_and_validate_ns(self, nsid, nsze, ncap, flbas, dps):
         """ Wrapper for creating and validating a namespace.
             - Args:
@@ -506,8 +522,8 @@ class TestNVMe(unittest.TestCase):
         """
         err, stdout = self.create_ns(nsze, ncap, flbas, dps)
         if err == 0:
-            json_output = json.loads(stdout)
-            self.assertEqual(int(json_output['nsid']), nsid,
+            created_nsid = self._get_created_nsid(stdout)
+            self.assertEqual(created_nsid, nsid,
                              "ERROR : create namespace failed")
             id_ns_cmd = f"{self.nvme_bin} id-ns {self.ctrl} " + \
                 f"--namespace-id={str(nsid)}"
