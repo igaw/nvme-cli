@@ -22,8 +22,6 @@ NVMe Copy Testcase:-
 
 """
 
-import json
-
 from nvme_test import TestNVMe, to_decimal
 
 
@@ -101,14 +99,16 @@ class TestNVMeCopy(TestNVMe):
         result = self.run_cmd(id_ns_cmd)
         if result.returncode != 0:
             return 0
-        flbas = int(json.loads(result.stdout).get("flbas", 0))
+        id_ns_data = self.parse_json_output(result.stdout, "nvme id-ns")
+        flbas = int(id_ns_data.get("flbas", 0))
         lbaf_idx = (flbas & 0xF) | (((flbas >> 5) & 0x3) << 4)
 
         nvm_id_ns_cmd = f"{self.nvme_bin} nvm-id-ns {self.ns1} --output-format=json"
         result = self.run_cmd(nvm_id_ns_cmd)
         if result.returncode != 0:
             return 0
-        elbafs = json.loads(result.stdout).get("elbafs", [])
+        nvm_id_ns_data = self.parse_json_output(result.stdout, "nvme nvm-id-ns")
+        elbafs = nvm_id_ns_data.get("elbafs", [])
         if lbaf_idx < len(elbafs):
             return elbafs[lbaf_idx].get("pif", 0)
         return 0
@@ -144,7 +144,8 @@ class TestNVMeCopy(TestNVMe):
         result = self.run_cmd(nvm_id_ns_cmd)
         if result.returncode != 0:
             return None
-        elbafs = json.loads(result.stdout).get("elbafs", [])
+        nvm_id_ns_data = self.parse_json_output(result.stdout, "nvme nvm-id-ns")
+        elbafs = nvm_id_ns_data.get("elbafs", [])
         for i, elbaf in enumerate(elbafs):
             if elbaf.get("pif", 0) == 2:  # NVME_NVM_PIF_64B_GUARD = 2
                 return i
@@ -215,7 +216,7 @@ class TestNVMeCopy(TestNVMe):
         result = self.run_cmd(get_features_cmd)
         self.assertEqual(result.returncode, 0,
                          "ERROR : nvme feat host-behavior-support failed")
-        data = json.loads(result.stdout)
+        data = self.parse_json_output(result.stdout, "nvme feat host-behavior-support")
         fields = data.get("Feature: 0x16", [{}])[0]
         current_cdfe = (
             (0x4 if fields.get("Copy Descriptor Format 2h Enable (CDF2E)") == "True" else 0) |

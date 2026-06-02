@@ -218,6 +218,28 @@ class TestNVMe(unittest.TestCase):
             logger.debug(result.stderr)
         return result
 
+    def parse_json_output(self, output, context, expected_type=dict):
+        """Parse JSON output and fail the testcase gracefully on malformed data."""
+        try:
+            data = json.loads(output)
+        except (TypeError, json.JSONDecodeError) as exc:
+            self.fail(f"ERROR : invalid JSON from {context}: {exc}; output={output!r}")
+
+        if expected_type is not None and not isinstance(data, expected_type):
+            self.fail(
+                "ERROR : unexpected JSON type from "
+                f"{context}: expected {expected_type.__name__}, got {type(data).__name__}"
+            )
+        return data
+
+    def json_get(self, data, key, default=None, context="JSON output"):
+        """Safely read a key from a JSON object, failing gracefully if shape is wrong."""
+        if not isinstance(data, dict):
+            self.fail(
+                f"ERROR : expected JSON object for {context}, got {type(data).__name__}"
+            )
+        return data.get(key, default)
+
     def exec_cmd(self, cmd):
         """ Wrapper for executing a shell command and return the result. """
         return self.run_cmd(cmd).returncode
@@ -247,10 +269,18 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(get_ctrl_id)
         self.assertEqual(result.returncode, 0, "ERROR : nvme list-ctrl failed")
-        json_output = json.loads(result.stdout)
-        self.assertTrue(len(json_output['ctrl_list']) > 0,
+        json_output = self.parse_json_output(result.stdout, "nvme list-ctrl")
+        ctrl_list = self.json_get(json_output, 'ctrl_list', [], "nvme list-ctrl")
+        self.assertIsInstance(ctrl_list, list,
+                              "ERROR : nvme list-ctrl returned invalid ctrl_list type")
+        self.assertTrue(len(ctrl_list) > 0,
                         "ERROR : nvme list-ctrl could not find ctrl")
-        return str(json_output['ctrl_list'][0]['ctrl_id'])
+        first_ctrl = ctrl_list[0] if ctrl_list else {}
+        self.assertIsInstance(first_ctrl, dict,
+                              "ERROR : nvme list-ctrl returned invalid controller entry")
+        self.assertIn('ctrl_id', first_ctrl,
+                      f"ERROR : nvme list-ctrl missing ctrl_id: {first_ctrl!r}")
+        return str(first_ctrl['ctrl_id'])
 
     def get_ns_mgmt_support(self):
         """
@@ -288,9 +318,16 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(ns_list_cmd)
         self.assertEqual(result.returncode, 0, "ERROR : nvme list namespace failed")
-        json_output = json.loads(result.stdout)
+        json_output = self.parse_json_output(result.stdout, "nvme list-ns")
 
-        for ns in json_output['nsid_list']:
+        nsid_list = self.json_get(json_output, 'nsid_list', [], "nvme list-ns")
+        self.assertIsInstance(nsid_list, list,
+                              "ERROR : nvme list-ns returned invalid nsid_list type")
+        for ns in nsid_list:
+            self.assertIsInstance(ns, dict,
+                                  f"ERROR : nvme list-ns returned invalid namespace entry: {ns!r}")
+            self.assertIn('nsid', ns,
+                          f"ERROR : nvme list-ns entry missing nsid: {ns!r}")
             ns_list.append(ns['nsid'])
 
         return ns_list
@@ -306,8 +343,10 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(max_ns_cmd)
         self.assertEqual(result.returncode, 0, "ERROR : reading maximum namespace count failed")
-        json_output = json.loads(result.stdout)
-        return int(json_output['nn'])
+        json_output = self.parse_json_output(result.stdout, "nvme id-ctrl")
+        nn = self.json_get(json_output, 'nn', None, "nvme id-ctrl")
+        self.assertIsNotNone(nn, "ERROR : reading maximum namespace count failed")
+        return int(nn)
 
     def get_lba_status_supported(self):
         """ Check if 'Get LBA Status' command is supported by the device
@@ -330,9 +369,13 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(nvme_id_ns_cmd)
         self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
-        json_output = json.loads(result.stdout)
+        json_output = self.parse_json_output(result.stdout, "nvme id-ns")
         for lbaf in json_output.get('lbafs', []):
+            if not isinstance(lbaf, dict):
+                continue
             if lbaf.get('in_use') == 1:
+                self.assertIn('lbaf', lbaf,
+                              f"ERROR : id-ns lbaf entry missing lbaf index: {lbaf!r}")
                 return int(lbaf['lbaf'])
         return 0
 
@@ -349,7 +392,7 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(nvme_id_ns_cmd)
         self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
-        json_output = json.loads(result.stdout)
+        json_output = self.parse_json_output(result.stdout, "nvme id-ns")
         return int(json_output.get('dps', 0))
 
     def _get_pif(self):
@@ -371,7 +414,7 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(nvme_id_ns_cmd)
         self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
-        json_output = json.loads(result.stdout)
+        json_output = self.parse_json_output(result.stdout, "nvme id-ns")
         dps = int(json_output.get('dps', 0))
         return (dps >> 3) & 0x7
 
@@ -385,7 +428,7 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(nvme_id_ns_cmd)
         self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
-        json_output = json.loads(result.stdout)
+        json_output = self.parse_json_output(result.stdout, "nvme id-ns")
         flbas = int(json_output.get('flbas', 0))
         return bool(flbas & (1 << 4))
 
@@ -400,10 +443,17 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(nvme_id_ns_cmd)
         self.assertEqual(result.returncode, 0, "ERROR : reading id-ns")
-        json_output = json.loads(result.stdout)
-        self.assertTrue(len(json_output['lbafs']) > self.flbas,
+        json_output = self.parse_json_output(result.stdout, "nvme id-ns")
+        lbafs = self.json_get(json_output, 'lbafs', [], "nvme id-ns")
+        self.assertIsInstance(lbafs, list,
+                              "Error : id-ns returned invalid lbafs type")
+        self.assertTrue(len(lbafs) > self.flbas,
                         "Error : could not match the given flbas to an existing lbaf")
-        lbaf_json = json_output['lbafs'][int(self.flbas)]
+        lbaf_json = lbafs[int(self.flbas)]
+        self.assertIsInstance(lbaf_json, dict,
+                              "Error : id-ns returned invalid lbaf entry")
+        self.assertIn('ms', lbaf_json, "Error : id-ns lbaf missing 'ms'")
+        self.assertIn('ds', lbaf_json, "Error : id-ns lbaf missing 'ds'")
         ms = int(lbaf_json['ms'])
         ds_expo = int(lbaf_json['ds'])
         ds = (1 << ds_expo) if ds_expo > 0 else 0
@@ -429,7 +479,7 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(id_ctrl_cmd)
         self.assertEqual(result.returncode, 0, "ERROR : reading id-ctrl failed")
-        json_output = json.loads(result.stdout)
+        json_output = self.parse_json_output(result.stdout, "nvme id-ctrl")
         self.assertTrue(field in json_output,
                         f"ERROR : reading field '{field}' failed")
         return str(json_output[field])
@@ -445,7 +495,7 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(id_ns_cmd)
         self.assertEqual(result.returncode, 0, "ERROR : reading id-ns failed")
-        json_output = json.loads(result.stdout)
+        json_output = self.parse_json_output(result.stdout, "nvme id-ns")
         self.assertTrue(field in json_output,
                         f"ERROR : reading field '{field}' failed")
         return str(json_output[field])
@@ -473,8 +523,11 @@ class TestNVMe(unittest.TestCase):
             "--output-format=json"
         result = self.run_cmd(list_ns_cmd)
         self.assertEqual(result.returncode, 0, "ERROR : nvme list-ns failed")
-        json_output = json.loads(result.stdout)
-        self.assertEqual(len(json_output['nsid_list']), 0,
+        json_output = self.parse_json_output(result.stdout, "nvme list-ns")
+        nsid_list = self.json_get(json_output, 'nsid_list', [], "nvme list-ns")
+        self.assertIsInstance(nsid_list, list,
+                              "ERROR : nvme list-ns returned invalid nsid_list type")
+        self.assertEqual(len(nsid_list), 0,
                          "ERROR : deleting all namespace failed")
 
     def create_ns(self, nsze, ncap, flbas, dps):
@@ -508,6 +561,8 @@ class TestNVMe(unittest.TestCase):
             )
             return int(match.group(1))
 
+        self.assertIsInstance(json_output, dict,
+                              f"ERROR : unexpected create-ns JSON output type: {type(json_output).__name__}")
         self.assertIn(
             'nsid',
             json_output,
