@@ -449,12 +449,12 @@ class TestNVMe(unittest.TestCase):
         json_output = self.parse_json_output(result.stdout, "nvme id-ns")
         lbafs = self.json_get(json_output, 'lbafs', [], "nvme id-ns")
         self.assertIsInstance(lbafs, list,
-                              "Error : id-ns returned invalid lbafs type")
+                              f"Error : id-ns returned invalid lbafs type, expected list, got {type(lbafs).__name__}")
         self.assertTrue(len(lbafs) > self.flbas,
                         "Error : could not match the given flbas to an existing lbaf")
         lbaf_json = lbafs[int(self.flbas)]
         self.assertIsInstance(lbaf_json, dict,
-                              "Error : id-ns returned invalid lbaf entry")
+                              f"Error : id-ns returned invalid lbaf entry, expected dict, got {type(lbaf_json).__name__}")
         self.assertIn('ms', lbaf_json, "Error : id-ns lbaf missing 'ms'")
         self.assertIn('ds', lbaf_json, "Error : id-ns lbaf missing 'ds'")
         ms = int(lbaf_json['ms'])
@@ -572,7 +572,7 @@ class TestNVMe(unittest.TestCase):
         self.assertIn(
             'nsid',
             json_output,
-            f"ERROR : unexpected create-ns JSON output: {json_output}",
+            f"ERROR : create-ns JSON output missing nsid field: {json_output}",
         )
         return int(json_output['nsid'])
 

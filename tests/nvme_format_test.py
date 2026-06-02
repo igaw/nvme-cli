@@ -127,7 +127,7 @@ class TestNVMeFormatCmd(TestNVMe):
         # iterate through all supported format
         for flbas, lba_format in enumerate(self.lba_format_list):
             self.assertIsInstance(lba_format, dict,
-                                  f"ERROR : invalid lba format entry: {lba_format!r}")
+                                  f"ERROR : lba format entry must be dict, got {type(lba_format).__name__}: {lba_format!r}")
             self.assertIn('ds', lba_format,
                           f"ERROR : lba format entry missing ds: {lba_format!r}")
             self.assertIn('ms', lba_format,
