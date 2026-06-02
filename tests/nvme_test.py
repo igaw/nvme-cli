@@ -275,7 +275,7 @@ class TestNVMe(unittest.TestCase):
                               "ERROR : nvme list-ctrl returned invalid ctrl_list type")
         self.assertTrue(len(ctrl_list) > 0,
                         "ERROR : nvme list-ctrl could not find ctrl")
-        first_ctrl = ctrl_list[0] if ctrl_list else {}
+        first_ctrl = ctrl_list[0]
         self.assertIsInstance(first_ctrl, dict,
                               "ERROR : nvme list-ctrl returned invalid controller entry")
         self.assertIn('ctrl_id', first_ctrl,
@@ -552,7 +552,7 @@ class TestNVMe(unittest.TestCase):
             json_output = json.loads(stdout)
         except json.JSONDecodeError:
             match = re.search(
-                r"created nsid:\s*(\d+)", stdout, re.IGNORECASE,
+                r"created nsid:\s*(\d+)", stdout, re.IGNORECASE
             )
             self.assertIsNotNone(
                 match,
