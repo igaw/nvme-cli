@@ -115,22 +115,36 @@ static void obj_add_ctrl_address(struct json_object *o, const char *k,
 {
 	struct json_object *address = json_create_object();
 	const char *value;
+	bool has_value = false;
 
 	value = libnvme_ctrl_get_traddr(c);
-	if (value)
+	if (value) {
 		obj_add_str(address, "traddr", value);
+		has_value = true;
+	}
 
 	value = libnvme_ctrl_get_host_traddr(c);
-	if (value)
+	if (value) {
 		obj_add_str(address, "host_traddr", value);
+		has_value = true;
+	}
 
 	value = libnvme_ctrl_get_host_iface(c);
-	if (value)
+	if (value) {
 		obj_add_str(address, "host_iface", value);
+		has_value = true;
+	}
 
 	value = libnvme_ctrl_get_trsvcid(c);
-	if (value)
+	if (value) {
 		obj_add_str(address, "trsvcid", value);
+		has_value = true;
+	}
+
+	if (!has_value) {
+		json_free_object(address);
+		return;
+	}
 
 	obj_add_obj(o, k, address);
 }
