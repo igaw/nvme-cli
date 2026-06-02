@@ -271,16 +271,19 @@ static void nvme_show_verbose_message(FILE *stream, const char *fmt, ...)
 	out = msg ? msg : alloc_error;
 
 	if (nvme_is_output_format_json()) {
-		len = strlen(out);
-		while (msg && len && out[len - 1] == '\n')
-			msg[--len] = '\0';
+		if (msg) {
+			len = strlen(msg);
+			while (len && msg[len - 1] == '\n')
+				msg[--len] = '\0';
+		}
 
-		nvme_show_result("%s", msg ? msg : out);
+		nvme_show_result("%s", out);
 		return;
 	}
 
+	len = strlen(out);
 	fprintf(stream, "%s", out);
-	if (!*out || out[strlen(out) - 1] != '\n')
+	if (!len || out[len - 1] != '\n')
 		fputc('\n', stream);
 }
 
@@ -8264,7 +8267,7 @@ static int resv_register(int argc, char **argv, struct command *acmd, struct plu
 		return err;
 	}
 
-	nvme_show_verbose_result("NVME Reservation  success");
+	nvme_show_verbose_result("NVME Reservation success");
 
 	return err;
 }
