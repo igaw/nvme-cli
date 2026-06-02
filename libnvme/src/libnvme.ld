@@ -176,6 +176,7 @@ LIBNVME_3 {
 		libnvme_status_to_string;
 		libnvme_strerror;
 		libnvme_submit_admin_passthru;
+		libnvme_submit_admin_passthru_async;
 		libnvme_submit_io_passthru;
 		libnvme_subsystem_first_ctrl;
 		libnvme_subsystem_first_ns;
@@ -201,6 +202,7 @@ LIBNVME_3 {
 		libnvme_update_key;
 		libnvme_uuid_from_string;
 		libnvme_uuid_to_string;
+		libnvme_reap_admin_passthru_async;
 		libnvme_wait_admin_passthru;
 		libnvme_wait_io_passthru;
 	local:

@@ -40,12 +40,51 @@ int libnvme_submit_admin_passthru(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd);
 
 /**
+ * struct libnvme_admin_passthru_completion - Async admin completion record
+ * @cmd:	Command that completed
+ * @cookie:	User cookie provided to libnvme_submit_admin_passthru_async()
+ * @status:	Completion status (NVMe status or negative errno)
+ */
+struct libnvme_admin_passthru_completion {
+	struct libnvme_passthru_cmd *cmd;
+	void *cookie;
+	int status;
+};
+
+/**
+ * libnvme_submit_admin_passthru_async() - Queue admin passthru command
+ * @hdl:	Transport handle
+ * @cmd:	The nvme admin command to send
+ * @cookie:	User-defined opaque value returned at completion
+ *
+ * Queues @cmd for asynchronous execution. Completion is reported via
+ * libnvme_reap_admin_passthru_async().
+ *
+ * Return: 0 on successful queueing, negative error code otherwise.
+ */
+int libnvme_submit_admin_passthru_async(struct libnvme_transport_handle *hdl,
+		struct libnvme_passthru_cmd *cmd, void *cookie);
+
+/**
+ * libnvme_reap_admin_passthru_async() - Reap one async admin completion
+ * @hdl:	Transport handle
+ * @completion: Completion output structure
+ *
+ * Waits for one queued admin passthru command to complete and stores the
+ * completed command pointer, associated cookie, and completion status in
+ * @completion.
+ *
+ * Return: 0 on success, negative error code otherwise.
+ */
+int libnvme_reap_admin_passthru_async(struct libnvme_transport_handle *hdl,
+		struct libnvme_admin_passthru_completion *completion);
+
+/**
  * libnvme_wait_admin_passthru() - Wait for pending admin passthru completions
  * @hdl:	Transport handle
  *
- * When io_uring is enabled, libnvme_submit_admin_passthru() queues commands
- * asynchronously. Call this function after one or more submits to drain all
- * pending completions before inspecting response data.
+ * Call this function after one or more submit calls to drain all pending
+ * asynchronous admin completions before inspecting response data.
  *
  * This is a no-op when io_uring is not available.
  *

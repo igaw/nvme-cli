@@ -243,7 +243,7 @@ __libnvme_public int libnvme_submit_admin_passthru(
 		return -ENODEV;
 
 	if (hdl->uring_enabled)
-		return libnvme_submit_admin_passthru_async(hdl, cmd);
+		return libnvme_submit_admin_passthru_async(hdl, cmd, NULL);
 
 	if (!cmd->timeout_ms && hdl->timeout)
 		cmd->timeout_ms = hdl->timeout;
