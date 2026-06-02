@@ -10647,7 +10647,7 @@ static int libnvme_mi(int argc, char **argv, __u8 admin_opcode, const char *desc
 			nvme_cmd_to_string(true, admin_opcode), result,
 			result & 0xff, result >> 8);
 	}
-	if (result & 0xff)
+	if (nvme_args.verbose && (result & 0xff))
 		fprintf(stderr, "status: %s\n",
 			libnvme_mi_status_to_string(result & 0xff));
 	if (!send && strlen(cfg.input_file)) {
