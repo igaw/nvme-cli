@@ -110,6 +110,31 @@ static void obj_add_prix64(struct json_object *o, const char *k, uint64_t v)
 	obj_add_str(o, k, str);
 }
 
+static void obj_add_ctrl_address(struct json_object *o, const char *k,
+				 libnvme_ctrl_t c)
+{
+	struct json_object *address = json_create_object();
+	const char *value;
+
+	value = libnvme_ctrl_get_traddr(c);
+	if (value)
+		obj_add_str(address, "traddr", value);
+
+	value = libnvme_ctrl_get_host_traddr(c);
+	if (value)
+		obj_add_str(address, "host_traddr", value);
+
+	value = libnvme_ctrl_get_host_iface(c);
+	if (value)
+		obj_add_str(address, "host_iface", value);
+
+	value = libnvme_ctrl_get_trsvcid(c);
+	if (value)
+		obj_add_str(address, "trsvcid", value);
+
+	obj_add_obj(o, k, address);
+}
+
 static void obj_add_int_secs(struct json_object *o, const char *k, int v)
 {
 	char str[STR_LEN];
@@ -2701,7 +2726,7 @@ static unsigned int json_print_nvme_subsystem_multipath(libnvme_subsystem_t s, j
 		path_attrs = json_create_object();
 		obj_add_str(path_attrs, "Name", libnvme_ctrl_get_name(c));
 		obj_add_str(path_attrs, "Transport", libnvme_ctrl_get_transport(c));
-		obj_add_str(path_attrs, "Address", libnvme_ctrl_get_traddr(c));
+		obj_add_ctrl_address(path_attrs, "Address", c);
 		obj_add_str(path_attrs, "State", libnvme_ctrl_get_state(c));
 		obj_add_str(path_attrs, "ANAState", libnvme_path_get_ana_state(p));
 		array_add_obj(paths, path_attrs);
@@ -2722,7 +2747,7 @@ static void json_print_nvme_subsystem_ctrls(libnvme_subsystem_t s,
 		path_attrs = json_create_object();
 		obj_add_str(path_attrs, "Name", libnvme_ctrl_get_name(c));
 		obj_add_str(path_attrs, "Transport", libnvme_ctrl_get_transport(c));
-		obj_add_str(path_attrs, "Address", libnvme_ctrl_get_traddr(c));
+		obj_add_ctrl_address(path_attrs, "Address", c);
 		obj_add_str(path_attrs, "State", libnvme_ctrl_get_state(c));
 		array_add_obj(paths, path_attrs);
 	}
@@ -4678,7 +4703,7 @@ static void json_print_detail_list_multipath(libnvme_subsystem_t s,
 			obj_add_str(jpath, "ModelNumber", libnvme_ctrl_get_model(c));
 			obj_add_str(jpath, "Firmware", libnvme_ctrl_get_firmware(c));
 			obj_add_str(jpath, "Transport", libnvme_ctrl_get_transport(c));
-			obj_add_str(jpath, "Address", libnvme_ctrl_get_traddr(c));
+			obj_add_ctrl_address(jpath, "Address", c);
 			obj_add_str(jpath, "Slot", libnvme_ctrl_get_phy_slot(c));
 
 			array_add_obj(jpaths, jpath);
@@ -4706,7 +4731,7 @@ static void json_print_detail_list(libnvme_subsystem_t s, struct json_object *js
 		obj_add_str(jctrl, "ModelNumber", libnvme_ctrl_get_model(c));
 		obj_add_str(jctrl, "Firmware", libnvme_ctrl_get_firmware(c));
 		obj_add_str(jctrl, "Transport", libnvme_ctrl_get_transport(c));
-		obj_add_str(jctrl, "Address", libnvme_ctrl_get_traddr(c));
+		obj_add_ctrl_address(jctrl, "Address", c);
 		obj_add_str(jctrl, "Slot", libnvme_ctrl_get_phy_slot(c));
 
 		libnvme_ctrl_for_each_ns(c, n) {
@@ -4814,7 +4839,7 @@ static void json_detail_list(struct libnvme_global_ctx *ctx)
 				obj_add_str(jctrl, "ModelNumber", libnvme_ctrl_get_model(c));
 				obj_add_str(jctrl, "Firmware", libnvme_ctrl_get_firmware(c));
 				obj_add_str(jctrl, "Transport", libnvme_ctrl_get_transport(c));
-				obj_add_str(jctrl, "Address", libnvme_ctrl_get_traddr(c));
+				obj_add_ctrl_address(jctrl, "Address", c);
 				obj_add_str(jctrl, "Slot", libnvme_ctrl_get_phy_slot(c));
 
 				libnvme_ctrl_for_each_ns(c, n) {
@@ -4994,7 +5019,7 @@ static unsigned int json_subsystem_topology_multipath(libnvme_subsystem_t s,
 			ctrl_attrs = json_create_object();
 			obj_add_str(ctrl_attrs, "Name", libnvme_ctrl_get_name(c));
 			obj_add_str(ctrl_attrs, "Transport", libnvme_ctrl_get_transport(c));
-			obj_add_str(ctrl_attrs, "Address", libnvme_ctrl_get_traddr(c));
+			obj_add_ctrl_address(ctrl_attrs, "Address", c);
 			obj_add_str(ctrl_attrs, "State", libnvme_ctrl_get_state(c));
 			array_add_obj(ctrls, ctrl_attrs);
 			obj_add_array(path_attrs, "Controller", ctrls);
@@ -5031,8 +5056,7 @@ static void json_print_nvme_subsystem_topology(libnvme_subsystem_t s,
 						     libnvme_ctrl_get_name(c));
 			obj_add_str(ctrl_attrs, "Transport",
 						     libnvme_ctrl_get_transport(c));
-			obj_add_str(ctrl_attrs, "Address",
-						     libnvme_ctrl_get_traddr(c));
+			obj_add_ctrl_address(ctrl_attrs, "Address", c);
 			obj_add_str(ctrl_attrs, "State",
 						     libnvme_ctrl_get_state(c));
 
