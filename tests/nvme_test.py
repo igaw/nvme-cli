@@ -498,7 +498,9 @@ class TestNVMe(unittest.TestCase):
         try:
             json_output = json.loads(stdout)
         except json.JSONDecodeError:
-            match = re.search(r"created nsid:\s*(\d+)", stdout)
+            match = re.search(
+                r"created nsid:\s*(\d+)", stdout, re.IGNORECASE,
+            )
             self.assertIsNotNone(
                 match,
                 "ERROR : expected create-ns output with nsid, "
