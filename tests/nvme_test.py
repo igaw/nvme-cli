@@ -454,12 +454,12 @@ class TestNVMe(unittest.TestCase):
         self.assertIsInstance(lbafs, list,
                               f"ERROR : id-ns returned invalid lbafs type, expected list, got {type(lbafs).__name__}")
         self.assertTrue(len(lbafs) > self.flbas,
-                        "Error : could not match the given flbas to an existing lbaf")
+                        "ERROR : could not match the given flbas to an existing lbaf")
         lbaf_json = lbafs[int(self.flbas)]
         self.assertIsInstance(lbaf_json, dict,
                               f"ERROR : id-ns returned invalid lbaf entry, expected dict, got {type(lbaf_json).__name__}")
-        self.assertIn('ms', lbaf_json, "Error : id-ns lbaf missing 'ms'")
-        self.assertIn('ds', lbaf_json, "Error : id-ns lbaf missing 'ds'")
+        self.assertIn('ms', lbaf_json, "ERROR : id-ns lbaf missing 'ms'")
+        self.assertIn('ds', lbaf_json, "ERROR : id-ns lbaf missing 'ds'")
         ms = int(lbaf_json['ms'])
         ds_expo = int(lbaf_json['ds'])
         ds = (1 << ds_expo) if ds_expo > 0 else 0
@@ -567,7 +567,8 @@ class TestNVMe(unittest.TestCase):
             )
             self.assertIsNotNone(
                 match,
-                "ERROR : expected create-ns output with nsid, "
+                "ERROR : create-ns output missing nsid "
+                "(expected format: 'created nsid: <number>'), "
                 f"got: {stdout!r}",
             )
             return int(match.group(1))
