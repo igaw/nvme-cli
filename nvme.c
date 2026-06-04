@@ -9826,7 +9826,7 @@ static int show_hostnqn_cmd(int argc, char **argv, struct command *acmd, struct 
 	return 0;
 }
 
-
+#ifdef CONFIG_FABRICS
 static int gen_dhchap_key(int argc, char **argv, struct command *acmd, struct plugin *plugin)
 {
 	const char *desc =
@@ -10574,6 +10574,7 @@ static int tls_key(int argc, char **argv, struct command *acmd, struct plugin *p
 
 	return err;
 }
+#endif /* CONFIG_FABRICS */
 
 static int show_topology_cmd(int argc, char **argv, struct command *acmd, struct plugin *plugin)
 {
