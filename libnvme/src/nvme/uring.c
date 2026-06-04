@@ -154,7 +154,7 @@ no_uring:
 	return err;
 }
 
-static int libnvme_submit_passthru_async(
+static int libnvme_submit_passthru(
 		struct libnvme_transport_handle *hdl,
 		unsigned long ioctl_cmd,
 		struct libnvme_passthru_cmd *cmd, void *cookie)
@@ -212,23 +212,23 @@ static int libnvme_submit_passthru_async(
 	return 0;
 }
 
-__libnvme_public int libnvme_submit_admin_passthru_async(
+__libnvme_public int libnvme_submit_admin_passthru(
 		struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd, void *cookie)
 {
-	return libnvme_submit_passthru_async(hdl, LIBNVME_URING_CMD_ADMIN,
+	return libnvme_submit_passthru(hdl, LIBNVME_URING_CMD_ADMIN,
 		cmd, cookie);
 }
 
-__libnvme_public int libnvme_submit_io_passthru_async(
+__libnvme_public int libnvme_submit_io_passthru(
 		struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd, void *cookie)
 {
-	return libnvme_submit_passthru_async(hdl, LIBNVME_URING_CMD_IO,
+	return libnvme_submit_passthru(hdl, LIBNVME_URING_CMD_IO,
 		cmd, cookie);
 }
 
-__libnvme_public int libnvme_reap_passthru_async(
+__libnvme_public int libnvme_reap_passthru(
 		struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_completion *completion)
 {

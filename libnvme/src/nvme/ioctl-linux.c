@@ -175,8 +175,7 @@ out:
 	return err;
 }
 
-__libnvme_public int libnvme_submit_io_passthru(
-		struct libnvme_transport_handle *hdl,
+static int __libnvme_submit_io_passthru(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd)
 {
 	int err;
@@ -235,8 +234,7 @@ do_ioctl32:
 	return libnvme_submit_passthru32(hdl, LIBNVME_IOCTL_ADMIN_CMD, cmd);
 }
 
-__libnvme_public int libnvme_submit_admin_passthru(
-		struct libnvme_transport_handle *hdl,
+static int __libnvme_submit_admin_passthru(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd)
 {
 	if (!hdl)
@@ -270,7 +268,7 @@ __libnvme_public int libnvme_exec_admin_passthru(
 	if (hdl->uring_state == LIBNVME_IO_URING_STATE_NOT_AVAILABLE)
 		goto no_uring;
 
-	err = libnvme_submit_admin_passthru_async(hdl, cmd, NULL);
+	err = libnvme_submit_admin_passthru(hdl, cmd, NULL);
 	if (err) {
 		if (err == -ENOTSUP)
 			goto no_uring;
@@ -278,14 +276,14 @@ __libnvme_public int libnvme_exec_admin_passthru(
 		return err;
 	}
 
-	err = libnvme_reap_passthru_async(hdl, &completion);
+	err = libnvme_reap_passthru(hdl, &completion);
 	if (err)
 		return err;
 
 	return completion.status;
 
 no_uring:
-	return libnvme_submit_admin_passthru(hdl, cmd);
+	return __libnvme_submit_admin_passthru(hdl, cmd);
 }
 
 __libnvme_public int libnvme_exec_io_passthru(
@@ -301,7 +299,7 @@ __libnvme_public int libnvme_exec_io_passthru(
 	if (hdl->uring_state == LIBNVME_IO_URING_STATE_NOT_AVAILABLE)
 		goto no_uring;
 
-	err = libnvme_submit_io_passthru_async(hdl, cmd, NULL);
+	err = libnvme_submit_io_passthru(hdl, cmd, NULL);
 	if (err) {
 		if (err == -ENOTSUP)
 			goto no_uring;
@@ -309,12 +307,12 @@ __libnvme_public int libnvme_exec_io_passthru(
 		return err;
 	}
 
-	err = libnvme_reap_passthru_async(hdl, &completion);
+	err = libnvme_reap_passthru(hdl, &completion);
 	if (err)
 		return err;
 
 	return completion.status;
 
 no_uring:
-	return libnvme_submit_io_passthru(hdl, cmd);
+	return __libnvme_submit_io_passthru(hdl, cmd);
 }
