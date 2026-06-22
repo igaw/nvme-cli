@@ -344,9 +344,8 @@ static void identity_test_compat(struct libnvme_global_ctx *ctx,
 
 int main(void)
 {
-	struct libnvme_global_ctx *ctx =
-		libnvme_create_global_ctx();
-		libnvme_set_log_file(ctx, stdout);
+	struct libnvme_global_ctx *ctx = libnvme_create_global_ctx();
+	libnvme_set_log_file(ctx, stdout);
 
 	for (int i = 0; i < ARRAY_SIZE(test_data_psk); i++)
 		export_test(ctx, &test_data_psk[i]);
