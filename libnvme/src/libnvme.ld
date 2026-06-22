@@ -173,6 +173,7 @@ LIBNVME_3 {
 		libnvme_set_etdas;
 		libnvme_set_ioctl_probing;
 		libnvme_set_keyring;
+		libnvme_set_log_fd;
 		libnvme_set_log_file;
 		libnvme_set_logging_level;
 		libnvme_set_owner;

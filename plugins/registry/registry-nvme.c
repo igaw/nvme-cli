@@ -50,6 +50,8 @@ static int registry_list(int argc, char **argv, struct command *acmd,
 		return -EINVAL;
 
 	ctx = libnvme_create_global_ctx();
+	if (!ctx)
+		return -ENOMEM;
 	libnvme_set_log_file(ctx, stdout);
 	return libnvmf_registry_device_for_each(ctx, print_device, ctx);
 }
@@ -86,6 +88,8 @@ static int registry_retrieve(int argc, char **argv, struct command *acmd,
 	strip_dev_prefix(&cfg.device);
 
 	ctx = libnvme_create_global_ctx();
+	if (!ctx)
+		return -ENOMEM;
 	libnvme_set_log_file(ctx, stdout);
 	ret = libnvmf_registry_retrieve(ctx, cfg.device, cfg.attr, &value);
 	if (ret == -ENOENT) {
@@ -141,6 +145,8 @@ static int registry_update(int argc, char **argv, struct command *acmd,
 	strip_dev_prefix(&cfg.device);
 
 	ctx = libnvme_create_global_ctx();
+	if (!ctx)
+		return -ENOMEM;
 	libnvme_set_log_file(ctx, stdout);
 	ret = libnvmf_registry_update(ctx, cfg.device, cfg.attr, cfg.value);
 	if (ret)
@@ -176,6 +182,8 @@ static int registry_delete(int argc, char **argv, struct command *acmd,
 	strip_dev_prefix(&cfg.device);
 
 	ctx = libnvme_create_global_ctx();
+	if (!ctx)
+		return -ENOMEM;
 	libnvme_set_log_file(ctx, stdout);
 	ret = libnvmf_registry_delete(ctx, cfg.device);
 	if (ret)

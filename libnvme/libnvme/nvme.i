@@ -1077,7 +1077,7 @@ struct libnvme_ns *libnvme_ctrl_next_ns(struct libnvme_ctrl *c, struct libnvme_n
 		"        or None to revert to the default (stderr).") log_file;
 	void log_file(PyObject *fp) {
 		if (!fp || fp == Py_None) {
-			libnvme_set_log_file($self, NULL);
+			libnvme_set_log_fd($self, -1);
 		} else {
 			int fd = PyObject_AsFileDescriptor(fp);
 			if (fd < 0) {
@@ -1085,7 +1085,7 @@ struct libnvme_ns *libnvme_ctrl_next_ns(struct libnvme_ctrl *c, struct libnvme_n
 					"log_file requires a file-like object with fileno()");
 				return;
 			}
-			$self->log.fd = fd;
+			libnvme_set_log_fd($self, fd);
 		}
 	}
 	%pythoncode %{

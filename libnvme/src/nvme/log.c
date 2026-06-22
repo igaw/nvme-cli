@@ -138,6 +138,11 @@ __libnvme_public int libnvme_get_logging_level(struct libnvme_global_ctx *ctx,
 	return ctx->log.level;
 }
 
+__libnvme_public void libnvme_set_log_fd(struct libnvme_global_ctx *ctx, int fd)
+{
+	ctx->log.fd = fd >= 0 ? fd : STDERR_FILENO;
+}
+
 __libnvme_public void libnvme_set_log_file(struct libnvme_global_ctx *ctx,
 		FILE *fp)
 {

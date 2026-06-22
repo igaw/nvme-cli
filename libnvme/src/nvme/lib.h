@@ -87,6 +87,16 @@ int libnvme_get_logging_level(struct libnvme_global_ctx *ctx, bool *log_pid,
 		bool *log_tstamp);
 
 /**
+ * libnvme_set_log_fd() - Set the log output file descriptor for the global context
+ * @ctx:	struct libnvme_global_ctx object
+ * @fd:		File descriptor to write log messages to, or -1 to use stderr
+ *
+ * Sets the file descriptor used for log output.  Passing -1 reverts to the
+ * default (stderr).
+ */
+void libnvme_set_log_fd(struct libnvme_global_ctx *ctx, int fd);
+
+/**
  * libnvme_set_log_file() - Set the log output file for the global context
  * @ctx:	struct libnvme_global_ctx object
  * @fp:		File stream to write log messages to, or NULL to use stderr
