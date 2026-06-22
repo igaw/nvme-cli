@@ -131,7 +131,9 @@ static struct libnvme_global_ctx *create_tree(void)
 	struct libnvme_global_ctx *ctx;
 	libnvme_host_t h;
 
-	ctx = libnvme_create_global_ctx(stdout, LIBNVME_LOG_DEBUG);
+	ctx = libnvme_create_global_ctx();
+	libnvme_set_log_file(ctx, stdout);
+	libnvme_set_logging_level(ctx, LIBNVME_LOG_DEBUG, false, false);
 	assert(ctx);
 	libnvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
 	assert(h);
@@ -301,7 +303,9 @@ static bool test_src_addr(void)
 
 	printf("\ntest_src_addr:\n");
 
-	ctx = libnvme_create_global_ctx(stdout, LIBNVME_LOG_DEBUG);
+	ctx = libnvme_create_global_ctx();
+	libnvme_set_log_file(ctx, stdout);
+	libnvme_set_logging_level(ctx, LIBNVME_LOG_DEBUG, false, false);
 	assert(ctx);
 
 	libnvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
@@ -477,7 +481,9 @@ static bool ctrl_match(const char *tag,
 	const struct libnvme_ctrl_params *cp = &candidate->f.ctrl_params;
 	const struct libnvme_ctrl_params *rp = &reference->f.ctrl_params;
 
-	ctx = libnvme_create_global_ctx(stdout, LIBNVME_LOG_INFO);
+	ctx = libnvme_create_global_ctx();
+	libnvme_set_log_file(ctx, stdout);
+	libnvme_set_logging_level(ctx, LIBNVME_LOG_INFO, false, false);
 	assert(ctx);
 
 	libnvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
@@ -1292,7 +1298,9 @@ static bool ctrl_config_match(const char *tag,
 	libnvme_ctrl_t reference_ctrl; /* Existing controller (from sysfs) */
 	libnvme_subsystem_t s;
 
-	ctx = libnvme_create_global_ctx(stdout, LIBNVME_LOG_INFO);
+	ctx = libnvme_create_global_ctx();
+	libnvme_set_log_file(ctx, stdout);
+	libnvme_set_logging_level(ctx, LIBNVME_LOG_INFO, false, false);
 	assert(ctx);
 
 	libnvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
@@ -1505,7 +1513,9 @@ static bool test_well_known_nqn(void)
 
 	printf("\ntest_well_known_nqn:\n");
 
-	ctx = libnvme_create_global_ctx(stdout, LIBNVME_LOG_INFO);
+	ctx = libnvme_create_global_ctx();
+	libnvme_set_log_file(ctx, stdout);
+	libnvme_set_logging_level(ctx, LIBNVME_LOG_INFO, false, false);
 	assert(ctx);
 
 	libnvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);
@@ -1729,7 +1739,9 @@ static bool test_lookup_ctrl_pagination(void)
 
 	printf("\ntest_lookup_ctrl_pagination:\n");
 
-	ctx = libnvme_create_global_ctx(stdout, LIBNVME_LOG_INFO);
+	ctx = libnvme_create_global_ctx();
+	libnvme_set_log_file(ctx, stdout);
+	libnvme_set_logging_level(ctx, LIBNVME_LOG_INFO, false, false);
 	assert(ctx);
 
 	libnvme_get_host(ctx, DEFAULT_HOSTNQN, DEFAULT_HOSTID, &h);

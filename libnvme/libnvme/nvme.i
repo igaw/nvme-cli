@@ -1036,9 +1036,10 @@ struct libnvme_ns *libnvme_ctrl_next_ns(struct libnvme_ctrl *c, struct libnvme_n
 	libnvme_global_ctx(const char *owner = NULL, const char *config_file = NULL) {
 		struct libnvme_global_ctx *ctx;
 
-		ctx = libnvme_create_global_ctx(stdout, LIBNVME_DEFAULT_LOGLEVEL);
+		ctx = libnvme_create_global_ctx();
 		if (!ctx)
 			return NULL;
+		libnvme_set_log_file(ctx, stdout);
 		if (owner)
 			libnvme_set_owner(ctx, owner);
 
@@ -1068,6 +1069,24 @@ struct libnvme_ns *libnvme_ctrl_next_ns(struct libnvme_ctrl *c, struct libnvme_n
 		else if (!strcmp(level, "warning")) log_level = LIBNVME_LOG_WARN;
 		else if (!strcmp(level, "err")) log_level = LIBNVME_LOG_ERR;
 		libnvme_set_logging_level($self, log_level, false, false);
+	}
+	%feature("autodoc", "Set the log output file for the global context.\n"
+		"\n"
+		"Args:\n"
+		"    fp: A Python file object to write log messages to,\n"
+		"        or None to revert to the default (stderr).") log_file;
+	void log_file(PyObject *fp) {
+		if (!fp || fp == Py_None) {
+			libnvme_set_log_file($self, NULL);
+		} else {
+			int fd = PyObject_AsFileDescriptor(fp);
+			if (fd < 0) {
+				PyErr_SetString(PyExc_TypeError,
+					"log_file requires a file-like object with fileno()");
+				return;
+			}
+			$self->log.fd = fd;
+		}
 	}
 	%pythoncode %{
 	def hosts(self):
