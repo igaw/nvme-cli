@@ -408,9 +408,9 @@ static int nvme_apply_option(struct libnvme_global_ctx *ctx, const char *kv)
 			!strncasecmp(val, "enable", 6));
 	} else if (!strcmp(key, "mi_probe_enabled")) {
 		libnvme_set_probe_enabled(ctx,
-			strcmp(val, "0") &&
-			strcasecmp(val, "false") &&
-			strncasecmp(val, "disable", 7));
+			!strcmp(val, "1") ||
+			!strcasecmp(val, "true") ||
+			!strncasecmp(val, "enable", 6));
 	} else if (!strcmp(key, "hostnqn")) {
 		ret = libnvme_set_hostnqn(ctx, val);
 	} else if (!strcmp(key, "hostid")) {
@@ -428,6 +428,7 @@ struct libnvme_global_ctx *nvme_create_global_ctx(void)
 {
 	struct libnvme_global_ctx *ctx;
 	const char *opt;
+	char *buf, *p;
 
 	ctx = libnvme_create_global_ctx();
 	if (!ctx)
@@ -440,12 +441,12 @@ struct libnvme_global_ctx *nvme_create_global_ctx(void)
 	 * Support comma-separated list: --set-option force_4k=1,hostnqn=nqn.x
 	 * Each pair is applied in order; the last value for a key wins.
 	 */
-	char *buf = strdup(nvme_args.set_option);
+	buf = strdup(nvme_args.set_option);
 	if (!buf) {
 		libnvme_free_global_ctx(ctx);
 		return NULL;
 	}
-	char *p = buf;
+	p = buf;
 	while ((opt = strsep(&p, ",")) != NULL) {
 		if (!*opt)
 			continue;
