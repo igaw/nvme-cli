@@ -355,6 +355,10 @@ int libnvmf_host_get_ids(struct libnvme_global_ctx *ctx,
 	}
 
 	/* /etc/nvme/hostid and/or /etc/nvme/hostnqn */
+	if (!hid && ctx && ctx->hostid)
+		hid = strdup(ctx->hostid);
+	if (!hnqn && ctx && ctx->hostnqn)
+		hnqn = strdup(ctx->hostnqn);
 	if (!hid)
 		hid = libnvmf_read_hostid();
 	if (!hnqn)

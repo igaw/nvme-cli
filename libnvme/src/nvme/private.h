@@ -434,6 +434,8 @@ struct libnvme_global_ctx { // !generate-python:alias=GlobalCtx
 	char *config_file;
 	char *owner; /* orchestrator identity; NULL = unowned */
 	char *test_base_dir; /* test sandbox under /tmp; NULL = prod */
+	char *hostnqn; /* override hostnqn (from --set-option or API) */
+	char *hostid;  /* override hostid  (from --set-option or API) */
 	struct list_head endpoints; /* MI endpoints */
 	struct list_head hosts;
 	struct libnvme_log log;
@@ -441,6 +443,7 @@ struct libnvme_global_ctx { // !generate-python:alias=GlobalCtx
 	bool ioctl_probing;
 	bool create_only;
 	bool dry_run;
+	bool force_4k; /* force 4k log page transfer size */
 #ifdef CONFIG_FABRICS
 	struct libnvme_fabric_options *options;
 	struct ifaddrs *ifaddrs_cache; /* init with libnvmf_getifaddrs() */

@@ -303,6 +303,46 @@ void libnvme_transport_handle_set_timeout(struct libnvme_transport_handle *hdl,
 void libnvme_set_probe_enabled(struct libnvme_global_ctx *ctx, bool enabled);
 
 /**
+ * libnvme_set_force_4k() - Force 4k transfer size for log page retrieval
+ * @ctx:	&struct libnvme_global_ctx object
+ * @enable:	Enable/disable 4k-forced transfer size
+ *
+ * When enabled, all Get Log Page commands are issued in 4k chunks regardless
+ * of the controller's MDTS.  Useful for controllers that misbehave with larger
+ * transfers.  Defaults to the value of the LIBNVME_FORCE_4K environment
+ * variable at context-creation time (off if the variable is absent).
+ */
+void libnvme_set_force_4k(struct libnvme_global_ctx *ctx, bool enable);
+
+/**
+ * libnvme_set_hostnqn() - Override the host NQN for this context
+ * @ctx:	&struct libnvme_global_ctx object
+ * @hostnqn:	Host NQN string, or NULL to clear the override
+ *
+ * Sets a context-level host NQN that takes priority over the JSON config file
+ * and the /etc/nvme/hostnqn file (but is overridden by per-command arguments).
+ * Initialised from the LIBNVME_HOSTNQN environment variable at context-
+ * creation time.
+ *
+ * Return: 0 on success, -EINVAL if @ctx is NULL, -ENOMEM on allocation failure.
+ */
+int libnvme_set_hostnqn(struct libnvme_global_ctx *ctx, const char *hostnqn);
+
+/**
+ * libnvme_set_hostid() - Override the host identifier for this context
+ * @ctx:	&struct libnvme_global_ctx object
+ * @hostid:	Host identifier string (UUID format), or NULL to clear
+ *
+ * Sets a context-level host identifier that takes priority over the JSON
+ * config file and the /etc/nvme/hostid file (but is overridden by per-command
+ * arguments).  Initialised from the LIBNVME_HOSTID environment variable at
+ * context-creation time.
+ *
+ * Return: 0 on success, -EINVAL if @ctx is NULL, -ENOMEM on allocation failure.
+ */
+int libnvme_set_hostid(struct libnvme_global_ctx *ctx, const char *hostid);
+
+/**
  * libnvme_set_dry_run() - Set global dry run state
  * @ctx:	struct libnvme_global_ctx object
  * @enable:	Enable/disable dry run state

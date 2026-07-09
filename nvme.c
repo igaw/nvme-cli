@@ -371,6 +371,94 @@ static void setup_transport_handle(struct libnvme_global_ctx *ctx,
 		libnvme_transport_handle_set_timeout(hdl, nvme_args.timeout);
 }
 
+/*
+ * nvme_apply_option() - apply a single "key=value" pair to @ctx.
+ *
+ * Accepted keys (matching the LIBNVME_* environment variable names, lower-case
+ * without the prefix):
+ *   force_4k         boolean (0/1, true/false, enable/disable)
+ *   mi_probe_enabled boolean
+ *   hostnqn          string
+ *   hostid           string
+ *
+ * Returns 0 on success, -EINVAL for unknown keys or missing '='.
+ */
+static int nvme_apply_option(struct libnvme_global_ctx *ctx, const char *kv)
+{
+	char *str, *key, *val;
+	int ret = 0;
+
+	str = strdup(kv);
+	if (!str)
+		return -ENOMEM;
+
+	val = strchr(str, '=');
+	if (!val) {
+		nvme_show_error("--set-option: missing '=' in '%s'", kv);
+		free(str);
+		return -EINVAL;
+	}
+	*val++ = '\0';
+	key = str;
+
+	if (!strcmp(key, "force_4k")) {
+		libnvme_set_force_4k(ctx,
+			!strcmp(val, "1") ||
+			!strcasecmp(val, "true") ||
+			!strncasecmp(val, "enable", 6));
+	} else if (!strcmp(key, "mi_probe_enabled")) {
+		libnvme_set_probe_enabled(ctx,
+			strcmp(val, "0") &&
+			strcasecmp(val, "false") &&
+			strncasecmp(val, "disable", 7));
+	} else if (!strcmp(key, "hostnqn")) {
+		ret = libnvme_set_hostnqn(ctx, val);
+	} else if (!strcmp(key, "hostid")) {
+		ret = libnvme_set_hostid(ctx, val);
+	} else {
+		nvme_show_error("--set-option: unknown key '%s'", key);
+		ret = -EINVAL;
+	}
+
+	free(str);
+	return ret;
+}
+
+struct libnvme_global_ctx *nvme_create_global_ctx(void)
+{
+	struct libnvme_global_ctx *ctx;
+	const char *opt;
+
+	ctx = libnvme_create_global_ctx();
+	if (!ctx)
+		return NULL;
+
+	if (!nvme_args.set_option)
+		return ctx;
+
+	/*
+	 * Support comma-separated list: --set-option force_4k=1,hostnqn=nqn.x
+	 * Each pair is applied in order; the last value for a key wins.
+	 */
+	char *buf = strdup(nvme_args.set_option);
+	if (!buf) {
+		libnvme_free_global_ctx(ctx);
+		return NULL;
+	}
+	char *p = buf;
+	while ((opt = strsep(&p, ",")) != NULL) {
+		if (!*opt)
+			continue;
+		if (nvme_apply_option(ctx, opt)) {
+			free(buf);
+			libnvme_free_global_ctx(ctx);
+			return NULL;
+		}
+	}
+	free(buf);
+	return ctx;
+}
+
 int parse_and_open(struct libnvme_global_ctx **ctx,
 		   struct libnvme_transport_handle **hdl, int argc, char **argv,
 		   const char *desc, struct argconfig_commandline_options *opts)
@@ -383,7 +471,7 @@ int parse_and_open(struct libnvme_global_ctx **ctx,
 	if (ret)
 		return ret;
 
-	ctx_new = libnvme_create_global_ctx();
+	ctx_new = nvme_create_global_ctx();
 	if (!ctx_new)
 		return -ENOMEM;
 	libnvme_set_logging_file(ctx_new, stdout);
@@ -420,7 +508,7 @@ int open_exclusive(struct libnvme_global_ctx **ctx,
 	if (!ignore_exclusive)
 		flags |= O_EXCL;
 
-	ctx_new = libnvme_create_global_ctx();
+	ctx_new = nvme_create_global_ctx();
 	if (!ctx_new)
 		return -ENOMEM;
 	libnvme_set_logging_file(ctx_new, stdout);
@@ -3534,7 +3622,7 @@ static int list_subsys(int argc, char **argv, struct command *acmd,
 	if (nvme_args.verbose)
 		flags |= VERBOSE;
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx) {
 		if (devname)
 			nvme_show_error("Failed to scan nvme subsystem for %s", devname);
@@ -3634,7 +3722,7 @@ static int list(int argc, char **argv, struct command *acmd, struct plugin *plug
 	if (nvme_args.verbose)
 		flags |= VERBOSE;
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx) {
 		nvme_show_error("Failed to create global context");
 		return -ENOMEM;
@@ -6801,7 +6889,7 @@ static void show_relatives(const char *name, nvme_print_flags_t flags)
 	__cleanup_nvme_global_ctx struct libnvme_global_ctx *ctx;
 	int err;
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx) {
 		nvme_show_error("Failed to create global context");
 		return;
@@ -9911,7 +9999,7 @@ static int gen_dhchap_key(int argc, char **argv, struct command *acmd, struct pl
 	if (err)
 		return err;
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx) {
 		nvme_show_error("Failed to create global context");
 		return -ENOMEM;
@@ -10234,7 +10322,7 @@ static int gen_tls_key(int argc, char **argv, struct command *acmd, struct plugi
 	if (cfg.hmac == 2)
 		key_len = 48;
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx) {
 		nvme_show_error("Failed to create global context");
 		return -ENOMEM;
@@ -10349,7 +10437,7 @@ static int check_tls_key(int argc, char **argv, struct command *acmd, struct plu
 		return -EINVAL;
 	}
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx) {
 		nvme_show_error("Failed to create global context");
 		return -ENOMEM;
@@ -10539,7 +10627,7 @@ static int tls_key(int argc, char **argv, struct command *acmd, struct plugin *p
 	if (err)
 		return err;
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx) {
 		nvme_show_error("Failed to create global context");
 		return -ENOMEM;
@@ -10664,7 +10752,7 @@ static int show_topology_cmd(int argc, char **argv, struct command *acmd, struct
 		return -EINVAL;
 	}
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx) {
 		nvme_show_error("Failed to create global context");
 		return -ENOMEM;

@@ -92,7 +92,7 @@ static int registry_list(int argc, char **argv, struct command *acmd,
 	if (argconfig_parse(argc, argv, desc, opts))
 		return -EINVAL;
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx)
 		return -ENOMEM;
 	libnvme_set_logging_file(ctx, stdout);
@@ -133,7 +133,7 @@ static int registry_retrieve(int argc, char **argv, struct command *acmd,
 		return -EINVAL;
 	}
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx)
 		return -ENOMEM;
 	libnvme_set_logging_file(ctx, stdout);
@@ -192,7 +192,7 @@ static int registry_update(int argc, char **argv, struct command *acmd,
 		return 0;
 	}
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx)
 		return -ENOMEM;
 	libnvme_set_logging_file(ctx, stdout);
@@ -242,7 +242,7 @@ static int registry_delete(int argc, char **argv, struct command *acmd,
 		return 0;
 	}
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx)
 		return -ENOMEM;
 	libnvme_set_logging_file(ctx, stdout);

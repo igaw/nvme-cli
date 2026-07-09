@@ -1472,7 +1472,7 @@ void stdout_top(int refresh_interval)
 	int data_start, frame_rows, quit = 0, scroll = 0;
 	int num_subsys = 0, subsys_idx = 0;
 
-	ctx = libnvme_create_global_ctx();
+	ctx = nvme_create_global_ctx();
 	if (!ctx) {
 		nvme_show_error("Failed to create global context");
 		return;

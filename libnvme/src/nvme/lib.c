@@ -53,6 +53,7 @@ __libnvme_public struct libnvme_global_ctx *libnvme_create_global_ctx(void)
 {
 	struct libnvme_global_ctx *ctx;
 	const char *base;
+	const char *val;
 
 	ctx = calloc(1, sizeof(*ctx));
 	if (!ctx)
@@ -76,6 +77,25 @@ __libnvme_public struct libnvme_global_ctx *libnvme_create_global_ctx(void)
 	base = getenv("LIBNVME_TEST_BASE_DIR");
 	if (is_valid_test_base_dir(base))
 		ctx->test_base_dir = strdup(base); /* NULL on OOM = prod */
+
+	/*
+	 * Legacy environment-variable shims.  Callers should prefer the
+	 * programmatic setters (libnvme_set_force_4k() etc.) or the
+	 * --set-option command-line interface offered by nvme-cli.
+	 */
+	val = getenv("LIBNVME_FORCE_4K");
+	if (val && (!strcmp(val, "1") ||
+		    !strcasecmp(val, "true") ||
+		    !strncasecmp(val, "enable", 6)))
+		ctx->force_4k = true;
+
+	val = getenv("LIBNVME_HOSTNQN");
+	if (val && *val)
+		ctx->hostnqn = strdup(val);
+
+	val = getenv("LIBNVME_HOSTID");
+	if (val && *val)
+		ctx->hostid = strdup(val);
 
 	return ctx;
 }
@@ -114,6 +134,54 @@ __libnvme_public int libnvme_set_test_base_dir(struct libnvme_global_ctx *ctx,
 	return 0;
 }
 
+__libnvme_public int libnvme_set_hostnqn(struct libnvme_global_ctx *ctx,
+					 const char *hostnqn)
+{
+	char *dup = NULL;
+
+	if (!ctx)
+		return -EINVAL;
+	if (hostnqn) {
+		dup = strdup(hostnqn);
+		if (!dup)
+			return -ENOMEM;
+	}
+	free(ctx->hostnqn);
+	ctx->hostnqn = dup;
+	return 0;
+}
+
+__libnvme_public int libnvme_set_hostid(struct libnvme_global_ctx *ctx,
+					const char *hostid)
+{
+	char *dup = NULL;
+
+	if (!ctx)
+		return -EINVAL;
+	if (hostid) {
+		dup = strdup(hostid);
+		if (!dup)
+			return -ENOMEM;
+	}
+	free(ctx->hostid);
+	ctx->hostid = dup;
+	return 0;
+}
+
+__libnvme_public void libnvme_set_force_4k(struct libnvme_global_ctx *ctx,
+					   bool enable)
+{
+	if (ctx)
+		ctx->force_4k = enable;
+}
+
+__libnvme_public void libnvme_set_probe_enabled(struct libnvme_global_ctx *ctx,
+						bool enabled)
+{
+	if (ctx)
+		ctx->mi_probe_enabled = enabled;
+}
+
 __libnvme_public void libnvme_free_global_ctx(struct libnvme_global_ctx *ctx)
 {
 	struct libnvme_host *h, *_h;
@@ -139,6 +207,8 @@ __libnvme_public void libnvme_free_global_ctx(struct libnvme_global_ctx *ctx)
 	free(ctx->config_file);
 	free(ctx->owner);
 	free(ctx->test_base_dir);
+	free(ctx->hostnqn);
+	free(ctx->hostid);
 	free(ctx);
 }
 
