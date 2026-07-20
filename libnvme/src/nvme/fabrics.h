@@ -301,6 +301,32 @@ const char *libnvmf_get_default_trsvcid(const char *transport,
 		bool discovery_ctrl);
 
 /**
+ * libnvmf_set_default_hostnqn() - Set default host NQN
+ * @ctx: Global context
+ * @hostnqn: Host NQN to use as default
+ *
+ * Sets the default host NQN used for NVMe-oF discovery and connection
+ * operations when no explicit host NQN is provided.
+ *
+ * Return: 0 on success, negative error code otherwise.
+ */
+int libnvmf_set_default_hostnqn(struct libnvme_global_ctx *ctx,
+		const char *hostnqn);
+
+/**
+ * libnvmf_set_default_hostid() - Set default host identifier
+ * @ctx: Global context
+ * @hostid: Host identifier to use as default
+ *
+ * Sets the default host identifier used for NVMe-oF discovery and connection
+ * operations when no explicit host identifier is provided.
+ *
+ * Return: 0 on success, negative error code otherwise.
+ */
+int libnvmf_set_default_hostid(struct libnvme_global_ctx *ctx,
+		const char *hostid);
+
+/**
  * libnvmf_context_create() - Create a new fabrics context for discovery/connect
  * @ctx: Global context
  * @decide_retry: Hook to decide if a retry should be attempted

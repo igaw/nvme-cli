@@ -449,6 +449,8 @@ struct libnvme_global_ctx { // !generate-python:alias=GlobalCtx
 #ifdef CONFIG_FABRICS
 	struct libnvme_fabric_options *options;
 	struct ifaddrs *ifaddrs_cache; /* init with libnvmf_getifaddrs() */
+	char *hostnqn;	/* default hostnqn */
+	char *hostid;	/* default hostid */
 #endif
 };
 int libnvme_set_attr(const char *dir, const char *attr, const char *value);

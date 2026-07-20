@@ -105,12 +105,14 @@ LIBNVMF_3 {
 		libnvmf_revoke_tls_key;
 		libnvmf_scan_tls_keys;
 		libnvmf_sectype_str;
+		libnvmf_set_default_hostid;
+		libnvmf_set_default_hostnqn;
 		libnvmf_set_keyring;
 		libnvmf_subtype_str;
 		libnvmf_tid_dup;
-		libnvmf_tid_is_empty;
 		libnvmf_tid_from_fields;
 		libnvmf_tid_get_canonical;
+		libnvmf_tid_is_empty;
 		libnvmf_tid_parse;
 		libnvmf_tid_parse_strict;
 		libnvmf_tid_set_identity;

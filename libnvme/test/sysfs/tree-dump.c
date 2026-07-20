@@ -33,6 +33,12 @@ static int set_options(struct libnvme_global_ctx *ctx,
 	if (!strcmp(key, "test-sysfs-dir"))
 		return libnvme_set_test_sysfs_dir(ctx, value);
 
+	if (!strcmp(key, "hostnqn"))
+		return libnvmf_set_default_hostnqn(ctx, value);
+
+	if (!strcmp(key, "hostid"))
+		return libnvmf_set_default_hostid(ctx, value);
+
 	fprintf(stderr, "Unknown option '%s'\n", key);
 	return -EINVAL;
 }
