@@ -1483,10 +1483,26 @@ struct libnvme_ns *libnvme_ctrl_next_ns(struct libnvme_ctrl *c, struct libnvme_n
 		     const char *hostid = NULL,
 		     const char *hostkey = NULL,
 		     const char *hostsymname = NULL) {
+		char *resolved_hostnqn = NULL;
+		char *resolved_hostid = NULL;
 		libnvme_host_t h;
+		int err;
 
-		if (libnvme_get_host(ctx, hostnqn, hostid, &h))
+		if (!hostnqn || !hostid) {
+			if (libnvmf_host_get_ids(ctx, hostnqn, hostid,
+						 &resolved_hostnqn,
+						 &resolved_hostid))
+				return NULL;
+			hostnqn = resolved_hostnqn;
+			hostid = resolved_hostid;
+		}
+
+		err = libnvme_get_host(ctx, hostnqn, hostid, &h);
+		free(resolved_hostnqn);
+		free(resolved_hostid);
+		if (err)
 			return NULL;
+
 		if (hostsymname)
 			libnvme_host_set_hostsymname(h, hostsymname);
 		if (hostkey)
