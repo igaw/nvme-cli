@@ -95,7 +95,7 @@ char *libnvmf_read_hostid(void);
  *
  * The order is:
  *
- *  - Start with informartion from DMI or device-tree
+ *  - Start with information from DMI or device-tree
  *  - Override hostnqn and hostid from /etc/nvme files
  *  - Override hostnqn or hostid with values from JSON
  *    configuration file. The first host entry in the file is

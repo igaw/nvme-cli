@@ -210,7 +210,7 @@ static int set_fctx_host_params(struct libnvme_global_ctx *ctx,
 	}
 
 	libnvmf_context_set_hostnqn(fctx, resolved_hostnqn, resolved_hostid);
-	/* owned by fctx, released in %typemap(freearg) */
+	/* fctx stores borrowed pointers, keep these allocations alive */
 	resolved_hostnqn = NULL;
 	resolved_hostid = NULL;
 
@@ -299,6 +299,7 @@ PyObject *host_get_ids(struct libnvme_global_ctx *ctx,
 		       const char *hostid_arg)
 {
 	char *hostnqn = NULL, *hostid = NULL;
+	PyObject *hostnqn_obj = NULL, *hostid_obj = NULL;
 	PyObject *obj;
 	int err;
 
@@ -309,9 +310,26 @@ PyObject *host_get_ids(struct libnvme_global_ctx *ctx,
 		return NULL;
 	}
 
-	obj = PyTuple_Pack(2,
-		hostnqn ? PyUnicode_FromString(hostnqn) : Py_NewRef(Py_None),
-		hostid ? PyUnicode_FromString(hostid) : Py_NewRef(Py_None));
+	hostnqn_obj = hostnqn ? PyUnicode_FromString(hostnqn) : Py_NewRef(Py_None);
+	hostid_obj = hostid ? PyUnicode_FromString(hostid) : Py_NewRef(Py_None);
+	if (!hostnqn_obj || !hostid_obj) {
+		Py_XDECREF(hostnqn_obj);
+		Py_XDECREF(hostid_obj);
+		free(hostnqn);
+		free(hostid);
+		return NULL;
+	}
+
+	obj = PyTuple_New(2);
+	if (!obj) {
+		Py_DECREF(hostnqn_obj);
+		Py_DECREF(hostid_obj);
+		free(hostnqn);
+		free(hostid);
+		return NULL;
+	}
+	PyTuple_SET_ITEM(obj, 0, hostnqn_obj);
+	PyTuple_SET_ITEM(obj, 1, hostid_obj);
 	free(hostnqn);
 	free(hostid);
 	return obj;
