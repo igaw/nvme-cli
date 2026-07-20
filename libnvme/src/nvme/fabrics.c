@@ -392,10 +392,14 @@ __libnvme_public int libnvmf_host_get_ids(struct libnvme_global_ctx *ctx,
 			 hid, hnqn);
 	}
 
-	*hostid = hid;
-	*hostnqn = hnqn;
-	hid = NULL;
-	hnqn = NULL;
+	if (hostid) {
+		*hostid = hid;
+		hid = NULL;
+	}
+	if (hostnqn) {
+		*hostnqn = hnqn;
+		hnqn = NULL;
+	}
 
 	return 0;
 }
@@ -567,6 +571,8 @@ __libnvme_public void libnvmf_context_free(struct libnvmf_context *fctx)
 	if (!fctx)
 		return;
 
+	free(fctx->hostnqn);
+	free(fctx->hostid);
 	free(fctx->tls_key);
 	free(fctx);
 }
@@ -626,10 +632,17 @@ static const char *hostid_from_hostnqn(const char *hostnqn)
 __libnvme_public int libnvmf_context_set_hostnqn(struct libnvmf_context *fctx,
 		const char *hostnqn, const char *hostid)
 {
-	fctx->hostnqn = hostnqn;
+	char *new_hostnqn = hostnqn ? strdup(hostnqn) : NULL;
+	char *new_hostid;
+
 	if (!hostid)
 		hostid = hostid_from_hostnqn(hostnqn);
-	fctx->hostid = hostid;
+	new_hostid = hostid ? strdup(hostid) : NULL;
+
+	free(fctx->hostnqn);
+	free(fctx->hostid);
+	fctx->hostnqn = new_hostnqn;
+	fctx->hostid = new_hostid;
 
 	return 0;
 }

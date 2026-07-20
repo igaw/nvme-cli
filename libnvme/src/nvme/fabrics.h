@@ -87,8 +87,8 @@ char *libnvmf_read_hostid(void);
  * @ctx:		struct libnvme_global_ctx object
  * @hostnqn_arg:	Input hostnqn (command line) argument
  * @hostid_arg:		Input hostid (command line) argument
- * @hostnqn:		Output hostnqn
- * @hostid:		Output hostid
+ * @hostnqn:		Output hostnqn; may be NULL if the caller does not need it
+ * @hostid:		Output hostid; may be NULL if the caller does not need it
  *
  * libnvmf_host_get_ids figures out which hostnqn/hostid is to be used.
  * There are several sources where this information can be retrieved.

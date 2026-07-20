@@ -9988,7 +9988,6 @@ static int gen_dhchap_key(int argc, char **argv, struct command *acmd, struct pl
 	__cleanup_nvme_global_ctx struct libnvme_global_ctx *ctx = NULL;
 	__cleanup_free unsigned char *raw_secret = NULL;
 	__cleanup_free char *hnqn = NULL;
-	__cleanup_free char *hid = NULL;
 	unsigned char key[68];
 	char encoded_key[128];
 	unsigned long crc = crc32(0L, NULL, 0);
@@ -10067,7 +10066,7 @@ static int gen_dhchap_key(int argc, char **argv, struct command *acmd, struct pl
 		return err;
 
 	if (!cfg.nqn) {
-		err = libnvmf_host_get_ids(ctx, NULL, NULL, &hnqn, &hid);
+		err = libnvmf_host_get_ids(ctx, NULL, NULL, &hnqn, NULL);
 		if (err)
 			return err;
 		cfg.nqn = hnqn;
@@ -10270,7 +10269,6 @@ static int gen_tls_key(int argc, char **argv, struct command *acmd, struct plugi
 	__cleanup_free unsigned char *raw_secret = NULL;
 	__cleanup_free char *encoded_key = NULL;
 	__cleanup_free char *hnqn = NULL;
-	__cleanup_free char *hid = NULL;
 	int key_len = 32;
 	int err;
 	long tls_key;
@@ -10354,7 +10352,7 @@ static int gen_tls_key(int argc, char **argv, struct command *acmd, struct plugi
 
 	if (cfg.insert) {
 		if (!cfg.hostnqn) {
-			err = libnvmf_host_get_ids(ctx, NULL, NULL, &hnqn, &hid);
+			err = libnvmf_host_get_ids(ctx, NULL, NULL, &hnqn, NULL);
 			if (err)
 				return err;
 			cfg.hostnqn = hnqn;
@@ -10404,7 +10402,6 @@ static int check_tls_key(int argc, char **argv, struct command *acmd, struct plu
 	__cleanup_nvme_global_ctx struct libnvme_global_ctx *ctx = NULL;
 	__cleanup_free unsigned char *decoded_key = NULL;
 	__cleanup_free char *hnqn = NULL;
-	__cleanup_free char *hid = NULL;
 	int decoded_len, err = 0;
 	unsigned int hmac;
 	long tls_key;
@@ -10473,7 +10470,7 @@ static int check_tls_key(int argc, char **argv, struct command *acmd, struct plu
 
 	if (cfg.subsysnqn) {
 		if (!cfg.hostnqn) {
-			err = libnvmf_host_get_ids(ctx, NULL, NULL, &hnqn, &hid);
+			err = libnvmf_host_get_ids(ctx, NULL, NULL, &hnqn, NULL);
 			if (err)
 				return err;
 			cfg.hostnqn = hnqn;

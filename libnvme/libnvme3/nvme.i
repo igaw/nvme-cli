@@ -210,9 +210,6 @@ static int set_fctx_host_params(struct libnvme_global_ctx *ctx,
 	}
 
 	libnvmf_context_set_hostnqn(fctx, resolved_hostnqn, resolved_hostid);
-	/* fctx stores borrowed pointers, keep these allocations alive */
-	resolved_hostnqn = NULL;
-	resolved_hostid = NULL;
 
 	if (hostkey || ctrlkey || keyring || tls_key || tls_key_identity)
 		libnvmf_context_set_crypto(fctx, hostkey, ctrlkey, keyring,

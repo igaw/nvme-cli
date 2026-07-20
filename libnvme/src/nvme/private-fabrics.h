@@ -58,9 +58,9 @@ struct libnvmf_context { // !generate-accessors:read=generated,write=generated
 	bool persistent;
 	const char *devid_file; // !access:write=custom
 
-	/* host configuration */
-	const char *hostnqn; // !access:write=custom
-	const char *hostid;  // !access:write=custom
+	/* host configuration (owned strings, freed by libnvmf_context_free) */
+	char *hostnqn; // !access:write=custom
+	char *hostid;  // !access:write=custom
 
 	/* authentication and transport encryption configuration */
 	const char *hostkey;          // !access:write=custom
