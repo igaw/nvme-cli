@@ -73,6 +73,9 @@ static inline PyObject *Py_NewRef(PyObject *obj)
 
 PyObject *read_hostnqn();
 PyObject *read_hostid();
+PyObject *host_get_ids(struct libnvme_global_ctx *ctx,
+		       const char *hostnqn_arg = NULL,
+		       const char *hostid_arg = NULL);
 
 /*******************************************************************************
  * This is the single C implementation block. All pure C code — headers,
@@ -170,11 +173,15 @@ typedef struct { const char *key; const char **val; } str_fields_t;
  * flag — fields that require higher-level libnvmf_context_set_*() helpers
  * rather than direct struct assignment.
  */
-static void set_fctx_host_params(struct libnvmf_context *fctx, PyObject *dict)
+static int set_fctx_host_params(struct libnvme_global_ctx *ctx,
+				struct libnvmf_context *fctx,
+				PyObject *dict)
 {
 	const char *hostnqn = NULL, *hostid = NULL;
+	char *resolved_hostnqn = NULL, *resolved_hostid = NULL;
 	const char *hostkey = NULL, *ctrlkey = NULL;
 	const char *keyring = NULL, *tls_key = NULL, *tls_key_identity = NULL;
+	int err;
 	str_fields_t tbl[] = {
 		{"hostnqn",          &hostnqn},
 		{"hostid",           &hostid},
@@ -195,13 +202,23 @@ static void set_fctx_host_params(struct libnvmf_context *fctx, PyObject *dict)
 	for (p = tbl; p->key; p++)
 		*p->val = dict_get_str(dict, p->key);
 
-	/* hostnqn and hostid are passed together to a single setter */
-	if (hostnqn || hostid)
-		libnvmf_context_set_hostnqn(fctx, hostnqn, hostid);
+	err = libnvmf_host_get_ids(ctx, hostnqn, hostid,
+				   &resolved_hostnqn, &resolved_hostid);
+	if (err) {
+		raise_nvme(NvmeError, err);
+		return -1;
+	}
+
+	libnvmf_context_set_hostnqn(fctx, resolved_hostnqn, resolved_hostid);
+	/* owned by fctx, released in %typemap(freearg) */
+	resolved_hostnqn = NULL;
+	resolved_hostid = NULL;
 
 	if (hostkey || ctrlkey || keyring || tls_key || tls_key_identity)
 		libnvmf_context_set_crypto(fctx, hostkey, ctrlkey, keyring,
 					   tls_key, tls_key_identity);
+
+	return 0;
 }
 
 /*
@@ -215,7 +232,8 @@ static void set_fctx_host_params(struct libnvmf_context *fctx, PyObject *dict)
  * Returns 0 on success, -1 with a Python exception set on error.
  * Unknown keys are rejected via fctx_known_keys (built at module init).
  */
-static int set_fctx_from_dict(struct libnvmf_context *fctx, PyObject *dict)
+static int set_fctx_from_dict(struct libnvme_global_ctx *ctx,
+			      struct libnvmf_context *fctx, PyObject *dict)
 {
 	const char *subsysnqn, *transport;
 
@@ -234,7 +252,8 @@ static int set_fctx_from_dict(struct libnvmf_context *fctx, PyObject *dict)
 				       dict_get_str(dict, "host_traddr"),
 				       dict_get_str(dict, "host_iface"));
 
-	set_fctx_host_params(fctx, dict);
+	if (set_fctx_host_params(ctx, fctx, dict))
+		return -1;
 	set_fctx_fabrics_config(fctx, dict);
 
 	/* Reject any key not present in fctx_known_keys (built at module init).
@@ -272,6 +291,29 @@ PyObject *read_hostid()
 	char *val = libnvmf_read_hostid();
 	PyObject *obj = val ? PyUnicode_FromString(val) : Py_NewRef(Py_None);
 	free(val);
+	return obj;
+}
+
+PyObject *host_get_ids(struct libnvme_global_ctx *ctx,
+		       const char *hostnqn_arg,
+		       const char *hostid_arg)
+{
+	char *hostnqn = NULL, *hostid = NULL;
+	PyObject *obj;
+	int err;
+
+	err = libnvmf_host_get_ids(ctx, hostnqn_arg, hostid_arg,
+				   &hostnqn, &hostid);
+	if (err) {
+		raise_nvme(NvmeError, err);
+		return NULL;
+	}
+
+	obj = PyTuple_Pack(2,
+		hostnqn ? PyUnicode_FromString(hostnqn) : Py_NewRef(Py_None),
+		hostid ? PyUnicode_FromString(hostid) : Py_NewRef(Py_None));
+	free(hostnqn);
+	free(hostid);
 	return obj;
 }
 
@@ -990,7 +1032,7 @@ def exclusion_match(ctx, transport=None, traddr=None, trsvcid=None,
 				"failed to create fabrics context");
 		SWIG_fail;
 	}
-	if (set_fctx_from_dict(temp, $input)) {
+	if (set_fctx_from_dict(arg1, temp, $input)) {
 		libnvmf_context_free(temp);
 		temp = NULL;
 		SWIG_fail;

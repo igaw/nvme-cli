@@ -9988,6 +9988,7 @@ static int gen_dhchap_key(int argc, char **argv, struct command *acmd, struct pl
 	__cleanup_nvme_global_ctx struct libnvme_global_ctx *ctx = NULL;
 	__cleanup_free unsigned char *raw_secret = NULL;
 	__cleanup_free char *hnqn = NULL;
+	__cleanup_free char *hid = NULL;
 	unsigned char key[68];
 	char encoded_key[128];
 	unsigned long crc = crc32(0L, NULL, 0);
@@ -10066,11 +10067,10 @@ static int gen_dhchap_key(int argc, char **argv, struct command *acmd, struct pl
 		return err;
 
 	if (!cfg.nqn) {
-		cfg.nqn = hnqn = libnvmf_read_hostnqn();
-		if (!cfg.nqn) {
-			nvme_show_error("Could not read host NQN");
-			return -ENOENT;
-		}
+		err = libnvmf_host_get_ids(ctx, NULL, NULL, &hnqn, &hid);
+		if (err)
+			return err;
+		cfg.nqn = hnqn;
 	}
 
 	err = libnvmf_gen_dhchap_key(ctx, cfg.nqn, cfg.hmac,
@@ -10270,6 +10270,7 @@ static int gen_tls_key(int argc, char **argv, struct command *acmd, struct plugi
 	__cleanup_free unsigned char *raw_secret = NULL;
 	__cleanup_free char *encoded_key = NULL;
 	__cleanup_free char *hnqn = NULL;
+	__cleanup_free char *hid = NULL;
 	int key_len = 32;
 	int err;
 	long tls_key;
@@ -10329,13 +10330,6 @@ static int gen_tls_key(int argc, char **argv, struct command *acmd, struct plugi
 			nvme_show_error("No subsystem NQN specified");
 			return -EINVAL;
 		}
-		if (!cfg.hostnqn) {
-			cfg.hostnqn = hnqn = libnvmf_read_hostnqn();
-			if (!cfg.hostnqn) {
-				nvme_show_error("Failed to read host NQN");
-				return -EINVAL;
-			}
-		}
 	}
 	if (cfg.hmac == 2)
 		key_len = 48;
@@ -10359,6 +10353,13 @@ static int gen_tls_key(int argc, char **argv, struct command *acmd, struct plugi
 	nvme_show_result("%s", encoded_key);
 
 	if (cfg.insert) {
+		if (!cfg.hostnqn) {
+			err = libnvmf_host_get_ids(ctx, NULL, NULL, &hnqn, &hid);
+			if (err)
+				return err;
+			cfg.hostnqn = hnqn;
+		}
+
 		if (cfg.compat)
 			err = libnvmf_insert_tls_key_compat(ctx, cfg.keyring,
 				cfg.keytype, cfg.hostnqn,
@@ -10403,6 +10404,7 @@ static int check_tls_key(int argc, char **argv, struct command *acmd, struct plu
 	__cleanup_nvme_global_ctx struct libnvme_global_ctx *ctx = NULL;
 	__cleanup_free unsigned char *decoded_key = NULL;
 	__cleanup_free char *hnqn = NULL;
+	__cleanup_free char *hid = NULL;
 	int decoded_len, err = 0;
 	unsigned int hmac;
 	long tls_key;
@@ -10471,11 +10473,10 @@ static int check_tls_key(int argc, char **argv, struct command *acmd, struct plu
 
 	if (cfg.subsysnqn) {
 		if (!cfg.hostnqn) {
-			cfg.hostnqn = hnqn = libnvmf_read_hostnqn();
-			if (!cfg.hostnqn) {
-				nvme_show_error("Failed to read host NQN");
-				return -EINVAL;
-			}
+			err = libnvmf_host_get_ids(ctx, NULL, NULL, &hnqn, &hid);
+			if (err)
+				return err;
+			cfg.hostnqn = hnqn;
 		}
 	} else {
 		nvme_show_error("Need to specify a subsystem NQN");

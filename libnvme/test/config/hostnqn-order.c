@@ -15,7 +15,6 @@
 #include <libnvme.h>
 
 #include "nvme/private.h"
-#include "nvme/private-fabrics.h"
 
 static bool json_config(struct libnvme_global_ctx *ctx, char *file)
 {
