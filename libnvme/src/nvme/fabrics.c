@@ -635,7 +635,7 @@ __libnvme_public int libnvmf_context_set_hostnqn(struct libnvmf_context *fctx,
 	char *new_hostnqn = hostnqn ? strdup(hostnqn) : NULL;
 	char *new_hostid;
 
-	if (!hostid)
+	if (!hostid && hostnqn)
 		hostid = hostid_from_hostnqn(hostnqn);
 	new_hostid = hostid ? strdup(hostid) : NULL;
 
