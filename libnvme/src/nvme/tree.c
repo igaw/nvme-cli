@@ -528,6 +528,20 @@ struct libnvme_host *libnvme_lookup_host(struct libnvme_global_ctx *ctx,
 		return h;
 	}
 
+	return NULL;
+}
+
+struct libnvme_host *libnvme_get_or_create_host(struct libnvme_global_ctx *ctx,
+		const char *hostnqn, const char *hostid)
+{
+	struct libnvme_host *h;
+
+	if (!hostnqn)
+		return NULL;
+
+	h = libnvme_lookup_host(ctx, hostnqn, hostid);
+	if (h)
+		return h;
 	if (libnvme_create_host(ctx, hostnqn, hostid, &h))
 		return NULL;
 
@@ -550,7 +564,7 @@ __libnvme_public int libnvme_get_host(
 	if (!hostid)
 		hostid = NVME_DEFAULT_HOSTID;
 
-	h = libnvme_lookup_host(ctx, hostnqn, hostid);
+	h = libnvme_get_or_create_host(ctx, hostnqn, hostid);
 	if (!h)
 		return -ENOMEM;
 

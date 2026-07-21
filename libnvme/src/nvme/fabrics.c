@@ -2858,7 +2858,7 @@ __libnvme_public int libnvmf_discovery_config_json(
 	struct libnvme_ctrl *c;
 	int ret = 0, err;
 
-	h = libnvme_lookup_host(ctx, fctx->hostnqn, fctx->hostid);
+	h = libnvme_get_or_create_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
 			"Failed to lookup host '%s'\n",
@@ -2911,7 +2911,7 @@ __libnvme_public int libnvmf_connect_config_json(struct libnvme_global_ctx *ctx,
 	libnvme_ctrl_t c, _c;
 	int ret = 0, err;
 
-	h = libnvme_lookup_host(ctx, fctx->hostnqn, fctx->hostid);
+	h = libnvme_get_or_create_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
 			"Failed to lookup host '%s'\n",
@@ -3008,7 +3008,7 @@ __libnvme_public int libnvmf_config_modify(struct libnvme_global_ctx *ctx,
 	struct libnvme_subsystem *s;
 	struct libnvme_ctrl *c;
 
-	h = libnvme_lookup_host(ctx, fctx->hostnqn, fctx->hostid);
+	h = libnvme_get_or_create_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
 			"Failed to lookup host '%s'\n",
@@ -3377,7 +3377,7 @@ __libnvme_public int libnvmf_discovery_nbft(struct libnvme_global_ctx *ctx,
 	struct libnvme_host *h;
 	int ret, rr, i;
 
-	h = libnvme_lookup_host(ctx, hostnqn, hostid);
+	h = libnvme_get_or_create_host(ctx, hostnqn, hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
 			"Failed to lookup host '%s'\n",
@@ -3422,7 +3422,7 @@ __libnvme_public int libnvmf_discovery_nbft(struct libnvme_global_ctx *ctx,
 				hostid = fctx->hostid;
 		}
 
-		h = libnvme_lookup_host(ctx, hostnqn, hostid);
+		h = libnvme_get_or_create_host(ctx, hostnqn, hostid);
 		if (!h) {
 			libnvme_msg(ctx, LIBNVME_LOG_ERR,
 				"Failed to lookup host '%s'\n",
@@ -3611,7 +3611,7 @@ __libnvme_public int libnvmf_discovery(
 	struct libnvme_host *h;
 	int ret;
 
-	h = libnvme_lookup_host(ctx, fctx->hostnqn, fctx->hostid);
+	h = libnvme_get_or_create_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
 			"Failed to lookup host '%s'\n",
@@ -3718,7 +3718,7 @@ __libnvme_public int libnvmf_connect(
 			return devid_fd;
 	}
 
-	h = libnvme_lookup_host(ctx, fctx->hostnqn, fctx->hostid);
+	h = libnvme_get_or_create_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
 			"Failed to lookup host '%s'\n",

@@ -492,6 +492,8 @@ void nvme_deconfigure_ctrl(struct libnvme_ctrl *c);
 
 struct libnvme_host *libnvme_lookup_host(struct libnvme_global_ctx *ctx,
 		const char *hostnqn, const char *hostid);
+struct libnvme_host *libnvme_get_or_create_host(struct libnvme_global_ctx *ctx,
+		const char *hostnqn, const char *hostid);
 struct libnvme_subsystem *libnvme_lookup_subsystem(struct libnvme_host *h,
 		const char *name, const char *subsysnqn);
 struct libnvme_ctrl *libnvme_lookup_ctrl(struct libnvme_subsystem *s,
