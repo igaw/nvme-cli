@@ -3381,7 +3381,7 @@ __libnvme_public int libnvmf_discovery_nbft(struct libnvme_global_ctx *ctx,
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
 			"Failed to get or create host '%s'\n",
-			fctx->hostnqn ? fctx->hostnqn : "<unset>");
+			hostnqn ? hostnqn : "<unset>");
 		return -ENODEV;
 	}
 
