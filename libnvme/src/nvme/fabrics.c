@@ -2861,7 +2861,7 @@ __libnvme_public int libnvmf_discovery_config_json(
 	h = libnvme_get_or_create_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
-			"Failed to lookup host '%s'\n",
+			"Failed to get or create host '%s'\n",
 			fctx->hostnqn ? fctx->hostnqn : "<unset>");
 		return -ENODEV;
 	}
@@ -2914,7 +2914,7 @@ __libnvme_public int libnvmf_connect_config_json(struct libnvme_global_ctx *ctx,
 	h = libnvme_get_or_create_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
-			"Failed to lookup host '%s'\n",
+			"Failed to get or create host '%s'\n",
 			fctx->hostnqn ? fctx->hostnqn : "<unset>");
 		return -ENODEV;
 	}
@@ -3011,7 +3011,7 @@ __libnvme_public int libnvmf_config_modify(struct libnvme_global_ctx *ctx,
 	h = libnvme_get_or_create_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
-			"Failed to lookup host '%s'\n",
+			"Failed to get or create host '%s'\n",
 			fctx->hostnqn ? fctx->hostnqn : "<unset>");
 		return -ENODEV;
 	}
@@ -3380,7 +3380,7 @@ __libnvme_public int libnvmf_discovery_nbft(struct libnvme_global_ctx *ctx,
 	h = libnvme_get_or_create_host(ctx, hostnqn, hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
-			"Failed to lookup host '%s'\n",
+			"Failed to get or create host '%s'\n",
 			fctx->hostnqn ? fctx->hostnqn : "<unset>");
 		return -ENODEV;
 	}
@@ -3425,7 +3425,7 @@ __libnvme_public int libnvmf_discovery_nbft(struct libnvme_global_ctx *ctx,
 		h = libnvme_get_or_create_host(ctx, hostnqn, hostid);
 		if (!h) {
 			libnvme_msg(ctx, LIBNVME_LOG_ERR,
-				"Failed to lookup host '%s'\n",
+				"Failed to get or create host '%s'\n",
 				hostnqn ? hostnqn : "<unset>");
 			ret = -ENODEV;
 			goto out_free;
@@ -3614,7 +3614,7 @@ __libnvme_public int libnvmf_discovery(
 	h = libnvme_get_or_create_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
-			"Failed to lookup host '%s'\n",
+			"Failed to get or create host '%s'\n",
 			fctx->hostnqn ? fctx->hostnqn : "<unset>");
 		return -ENODEV;
 	}
@@ -3721,7 +3721,7 @@ __libnvme_public int libnvmf_connect(
 	h = libnvme_get_or_create_host(ctx, fctx->hostnqn, fctx->hostid);
 	if (!h) {
 		libnvme_msg(ctx, LIBNVME_LOG_ERR,
-			"Failed to lookup host '%s'\n",
+			"Failed to get or create host '%s'\n",
 			fctx->hostnqn ? fctx->hostnqn : "<unset>");
 		return -ENODEV;
 	}
