@@ -66,6 +66,7 @@ The following options are common to NVMe over Fabrics commands such as
 	Keyring to use for TLS key lookup.
 
 -n <subnqn>::
+--subsysnqn=<subnqn>::
 --nqn=<subnqn>::
 	Specify the NVMe subsystem NQN to connect to.
 

@@ -11,7 +11,7 @@ SYNOPSIS
 [verse]
 'nvme' [<global-options>] 'dim'
 			[--task=<task> | -t <task>]
-			[--nqn=<nqn> | -n <nqn>]
+			[--subsysnqn=<nqn> | --nqn=<nqn> | -n <nqn>]
 			[--device=<device> | -d <device>]
 
 DESCRIPTION
@@ -41,6 +41,7 @@ OPTIONS
 	The task to perform: "register" or "deregister".
 
 -n <subnqn>::
+--subsysnqn <subnqn>::
 --nqn <nqn>::
 	The DIM command will be sent to the Discovery Controller (DC) matching this
 	NQN. A list of comma-separated NQNs can be supplied to apply the command to
@@ -60,7 +61,7 @@ EXAMPLES
 nqn.1988-11.com.dell:SFSS:1:20220118125153e8:
 +
 ------------
-# nvme dim --task=register --nqn=nqn.1988-11.com.dell:SFSS:1:20220118125153e8
+# nvme dim --task=register --subsysnqn=nqn.1988-11.com.dell:SFSS:1:20220118125153e8
 ------------
 
 * Deregister from Central Discovery Controller (CDC) associated with nvme4

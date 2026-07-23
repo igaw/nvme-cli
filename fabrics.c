@@ -69,7 +69,7 @@ static bool quiet;
 
 static const char *nvmf_tport		= "transport type";
 static const char *nvmf_traddr		= "transport address";
-static const char *nvmf_nqn		= "subsystem nqn";
+static const char *nvmf_subsysnqn	= "subsystem nqn";
 static const char *nvmf_trsvcid		= "transport service id (e.g. IP port)";
 static const char *nvmf_htraddr		= "host traddr (e.g. FC WWN's)";
 static const char *nvmf_hiface		= "host interface (for tcp transport)";
@@ -102,7 +102,8 @@ static const char *nvmf_config_file_ro	= "INI configuration file (default: " PAT
 #define NVMF_ARGS(n, f, ...)                                                                  \
 	NVME_ARGS(n,                                                                              \
 		OPT_STRING("transport",       't', "STR", &f.transport,     nvmf_tport),         \
-		OPT_STRING("nqn",             'n', "STR", &f.subsysnqn,     nvmf_nqn),           \
+		OPT_STRING("subsysnqn",       'n', "STR", &f.subsysnqn,     nvmf_subsysnqn),     \
+		OPT_STRING("nqn",               0, "STR", &f.subsysnqn,     nvmf_subsysnqn, NULL, true), \
 		OPT_STRING("traddr",          'a', "STR", &f.traddr,        nvmf_traddr),        \
 		OPT_STRING("trsvcid",         's', "STR", &f.trsvcid,       nvmf_trsvcid),       \
 		OPT_STRING("host-traddr",     'w', "STR", &f.host_traddr,   nvmf_htraddr),       \
@@ -947,7 +948,7 @@ int fabrics_connect(const char *desc, int argc, char **argv)
 
 	if (!fa.subsysnqn) {
 		nvme_show_error(
-			"required argument [--nqn | -n] not specified\n");
+			"required argument [--subsysnqn | --nqn | -n] not specified\n");
 		return -EINVAL;
 	}
 
@@ -1074,10 +1075,11 @@ static libnvme_ctrl_t lookup_nvme_ctrl(struct libnvme_global_ctx *ctx,
 	return NULL;
 }
 
-static void nvmf_disconnect_nqn(struct libnvme_global_ctx *ctx, char *nqn)
+static void nvmf_disconnect_subsysnqn(struct libnvme_global_ctx *ctx,
+				      char *subsysnqn)
 {
 	int i = 0;
-	char *n = nqn;
+	char *n = subsysnqn;
 	char *p;
 	libnvme_host_t h;
 	libnvme_subsystem_t s;
@@ -1097,7 +1099,8 @@ static void nvmf_disconnect_nqn(struct libnvme_global_ctx *ctx, char *nqn)
 			}
 		}
 	}
-	nvme_show_verbose_result("NQN:%s disconnected %d controller(s)", nqn, i);
+	nvme_show_verbose_result("subsysnqn:%s disconnected %d controller(s)",
+				 subsysnqn, i);
 }
 
 int fabrics_disconnect(const char *desc, int argc, char **argv)
@@ -1110,7 +1113,7 @@ int fabrics_disconnect(const char *desc, int argc, char **argv)
 	int ret;
 
 	struct config {
-		char *nqn;
+		char *subsysnqn;
 		char *device;
 		bool  exclude;
 	};
@@ -1118,7 +1121,10 @@ int fabrics_disconnect(const char *desc, int argc, char **argv)
 	struct config cfg = { 0 };
 
 	NVME_ARGS(opts,
-		OPT_STRING("nqn",        'n', "NAME", &cfg.nqn,     nvmf_nqn),
+		OPT_STRING("subsysnqn",  'n', "NAME", &cfg.subsysnqn,
+			   nvmf_subsysnqn),
+		OPT_STRING("nqn",          0, "NAME", &cfg.subsysnqn,
+			   nvmf_subsysnqn, NULL, true),
 		OPT_STRING("device",     'd', "DEV",  &cfg.device,  device),
 		OPT_FLAG("exclude", 'x', &cfg.exclude, exclude_help));
 
@@ -1126,14 +1132,14 @@ int fabrics_disconnect(const char *desc, int argc, char **argv)
 	if (ret)
 		return ret;
 
-	if (cfg.nqn && cfg.device) {
+	if (cfg.subsysnqn && cfg.device) {
 		nvme_show_error(
-			"Both device name [--device | -d] and NQN [--nqn | -n] are specified\n");
+			"Both device name [--device | -d] and subsystem NQN [--subsysnqn | --nqn | -n] are specified\n");
 		return -EINVAL;
 	}
-	if (!cfg.nqn && !cfg.device) {
+	if (!cfg.subsysnqn && !cfg.device) {
 		nvme_show_error(
-			"Neither device name [--device | -d] nor NQN [--nqn | -n] provided\n");
+			"Neither device name [--device | -d] nor subsystem NQN [--subsysnqn | --nqn | -n] provided\n");
 		return -EINVAL;
 	}
 
@@ -1163,7 +1169,7 @@ int fabrics_disconnect(const char *desc, int argc, char **argv)
 		return ret;
 	}
 
-	if (cfg.nqn) {
+	if (cfg.subsysnqn) {
 		/*
 		 * Disconnecting by NQN affects every controller of that
 		 * subsystem; with --exclude, write a matching subsysnqn=
@@ -1172,13 +1178,13 @@ int fabrics_disconnect(const char *desc, int argc, char **argv)
 		 */
 		if (cfg.exclude) {
 			ret = libnvmf_exclusion_add_subsysnqn(ctx, NULL,
-							      cfg.nqn);
+							      cfg.subsysnqn);
 			if (ret)
 				nvme_show_error(
 					"Warning: failed to write exclusion entry: %s\n",
 					libnvme_strerror(-ret));
 		}
-		nvmf_disconnect_nqn(ctx, cfg.nqn);
+		nvmf_disconnect_subsysnqn(ctx, cfg.subsysnqn);
 	}
 
 	if (cfg.device) {
@@ -1545,13 +1551,16 @@ int fabrics_dim(const char *desc, int argc, char **argv)
 	int ret;
 
 	struct {
-		char *nqn;
+		char *subsysnqn;
 		char *device;
 		char *tas;
 	} cfg = { 0 };
 
 	NVME_ARGS(opts,
-		OPT_STRING("nqn",    'n', "NAME", &cfg.nqn,    "Comma-separated list of DC nqn"),
+		OPT_STRING("subsysnqn", 'n', "NAME", &cfg.subsysnqn,
+			   "Comma-separated list of DC subsystem NQNs"),
+		OPT_STRING("nqn",       0, "NAME", &cfg.subsysnqn,
+			   "Comma-separated list of DC subsystem NQNs", NULL, true),
 		OPT_STRING("device", 'd', "DEV",  &cfg.device, "Comma-separated list of DC nvme device handle."),
 		OPT_STRING("task",   't', "TASK", &cfg.tas,    "[register|deregister]"));
 
@@ -1559,9 +1568,9 @@ int fabrics_dim(const char *desc, int argc, char **argv)
 	if (ret)
 		return ret;
 
-	if (!cfg.nqn && !cfg.device) {
+	if (!cfg.subsysnqn && !cfg.device) {
 		nvme_show_error(
-			"Neither device name [--device | -d] nor NQN [--nqn | -n] provided\n");
+			"Neither device name [--device | -d] nor subsystem NQN [--subsysnqn | --nqn | -n] provided\n");
 		return -EINVAL;
 	}
 
@@ -1599,10 +1608,10 @@ int fabrics_dim(const char *desc, int argc, char **argv)
 		return ret;
 	}
 
-	if (cfg.nqn) {
+	if (cfg.subsysnqn) {
 		libnvme_host_t h;
 		libnvme_subsystem_t s;
-		char *n = cfg.nqn;
+		char *n = cfg.subsysnqn;
 
 		while ((p = strsep(&n, ",")) != NULL) {
 			if (!strlen(p))
