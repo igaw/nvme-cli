@@ -1099,7 +1099,7 @@ static void nvmf_disconnect_subsysnqn(struct libnvme_global_ctx *ctx,
 			}
 		}
 	}
-	nvme_show_verbose_result("subsysnqn:%s disconnected %d controller(s)",
+	nvme_show_verbose_result("Subsystem NQN:%s disconnected %d controller(s)",
 				 subsysnqn, i);
 }
 

@@ -396,7 +396,7 @@ nvme_list_opts () {
 		opts+=" --output-format= -o --timeout="
 			;;
 		"discover")
-		opts+=" --transport= -t --subsysnqn= --nqn= -n -traddr= -a -trsvcid= -s \
+		opts+=" --transport= -t --subsysnqn= -n --nqn= -traddr= -a -trsvcid= -s \
 			--host-traddr= -w --host-iface= -f \
 			--hostnqn= -q --hostid -I --raw= -r \
 			--raw= -r --device= -d --keep-alive-tmo= -k \
@@ -408,7 +408,7 @@ nvme_list_opts () {
 			--owner= --output-format= -o"
 			;;
 		"connect-all")
-		opts+=" --transport= -t --subsysnqn= --nqn= -n -traddr= -a -trsvcid= -s \
+		opts+=" --transport= -t --subsysnqn= -n --nqn= -traddr= -a -trsvcid= -s \
 			--host-traddr= -w --host-iface= -f \
 			--hostnqn= -q --hostid -I --raw= -r \
 			--raw= -r --device= -d --keep-alive-tmo= -k \
@@ -420,7 +420,7 @@ nvme_list_opts () {
 			--owner= --output-format= -o"
 			;;
 		"connect")
-		opts+=" --transport= -t --subsysnqn= --nqn= -n --traddr= -a --trsvcid -s \
+		opts+=" --transport= -t --subsysnqn= -n --nqn= --traddr= -a --trsvcid -s \
 			--hostnqn= -q --host-id= -I --nr-io-queues= -i \
 			--nr-poll-queues= -P --queue-size= -Q \
 			--keep-alive-tmo= -k --reconnect-delay= -r \
