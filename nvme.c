@@ -531,8 +531,7 @@ int parse_and_open(struct libnvme_global_ctx **ctx,
 	if (ret)
 		return ret;
 
-	ret = nvme_create_global_ctx_with_hostid(&ctx_new, NULL, NULL,
-						 NULL, NULL);
+	ret = nvme_create_global_ctx(&ctx_new);
 	if (ret)
 		return ret;
 	libnvme_set_logging_file(ctx_new, stdout);
@@ -569,8 +568,7 @@ int open_exclusive(struct libnvme_global_ctx **ctx,
 	if (!ignore_exclusive)
 		flags |= O_EXCL;
 
-	ret = nvme_create_global_ctx_with_hostid(&ctx_new, NULL, NULL,
-						 NULL, NULL);
+	ret = nvme_create_global_ctx(&ctx_new);
 	if (ret)
 		return ret;
 	libnvme_set_logging_file(ctx_new, stdout);
