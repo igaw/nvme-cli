@@ -801,13 +801,16 @@ int fabrics_discovery(const char *desc, int argc, char **argv, bool connect)
 
 	log_level = map_log_level(nvme_args.verbose, quiet);
 
-	ret = nvme_create_global_ctx(&ctx);
+	ret = nvme_create_global_ctx_with_hostid(&ctx, fa.hostnqn, fa.hostid,
+						 &hnqn, &hid);
 	if (ret) {
-		nvme_show_error("Failed to create topology root: %s",
+		nvme_show_error("failed to determine hostnqn/hostid: %s",
 			libnvme_strerror(-ret));
 		return ret;
 	}
 	libnvme_set_logging_level(ctx, log_level, false, false);
+	fa.hostnqn = hnqn;
+	fa.hostid = hid;
 
 	/*
 	 * --nbft defaults the owner to "nbft" so legacy boot scripts that
@@ -842,15 +845,6 @@ int fabrics_discovery(const char *desc, int argc, char **argv, bool connect)
 	ret = nvmf_resolve_addr(fa.transport, &fa.traddr);
 	if (ret)
 		return ret;
-
-	ret = libnvmf_host_get_ids(ctx, fa.hostnqn, fa.hostid, &hnqn, &hid);
-	if (ret) {
-		nvme_show_error("failed to determine hostnqn/hostid: %s",
-			libnvme_strerror(-ret));
-		return ret;
-	}
-	fa.hostnqn = hnqn;
-	fa.hostid = hid;
 
 	struct hook_fabrics_data dld = {
 		.flags = flags,
@@ -1024,13 +1018,16 @@ int fabrics_connect(const char *desc, int argc, char **argv)
 do_connect:
 	log_level = map_log_level(nvme_args.verbose, quiet);
 
-	ret = nvme_create_global_ctx(&ctx);
+	ret = nvme_create_global_ctx_with_hostid(&ctx, fa.hostnqn, fa.hostid,
+						 &hnqn, &hid);
 	if (ret) {
-		nvme_show_error("Failed to create topology root: %s",
+		nvme_show_error("failed to determine hostnqn/hostid: %s",
 			libnvme_strerror(-ret));
 		return ret;
 	}
 	libnvme_set_logging_level(ctx, log_level, false, false);
+	fa.hostnqn = hnqn;
+	fa.hostid = hid;
 
 	if (owner) {
 		ret = libnvme_set_owner(ctx, owner);
@@ -1052,15 +1049,6 @@ do_connect:
 	if (config_file)
 		return fabrics_connect_config(ctx, config_file, fa.hostnqn,
 			fa.hostid, flags);
-
-	ret = libnvmf_host_get_ids(ctx, fa.hostnqn, fa.hostid, &hnqn, &hid);
-	if (ret) {
-		nvme_show_error("failed to determine hostnqn/hostid: %s",
-			libnvme_strerror(-ret));
-		return ret;
-	}
-	fa.hostnqn = hnqn;
-	fa.hostid = hid;
 
 	struct hook_fabrics_data hfd = {
 		.flags = flags,

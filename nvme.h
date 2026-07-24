@@ -161,13 +161,27 @@ extern const char *namespace_id_desired;
 extern struct nvme_args nvme_args;
 
 /*
- * nvme_create_global_ctx() - Create a global context and apply --set-options
+ * nvme_create_global_ctx_with_hostid() - Create context and resolve host IDs
+ * @ctx: output global context
+ * @hostnqn_arg: optional hostnqn override
+ * @hostid_arg: optional hostid override
+ * @hostnqn: optional output resolved hostnqn (caller frees)
+ * @hostid: optional output resolved hostid (caller frees)
  *
- * Wrapper around libnvme_create_global_ctx() that additionally applies any
- * key=value pairs passed via --set-options.  All code in nvme-cli that creates
- * a context should call this instead of libnvme_create_global_ctx() directly.
- *
+ * Creates a global context, applies --set-options, resolves hostnqn/hostid
+ * via libnvmf_host_get_ids(), and stores the resolved values in the context.
  * This function has to be called after @parse_args.
+ */
+int nvme_create_global_ctx_with_hostid(struct libnvme_global_ctx **ctx,
+				       const char *hostnqn_arg,
+				       const char *hostid_arg,
+				       char **hostnqn, char **hostid);
+
+/*
+ * nvme_create_global_ctx() - Create a tree-safe global context with defaults
+ *
+ * Convenience wrapper around nvme_create_global_ctx_with_hostid() using
+ * default host identity inputs and no returned host strings.
  */
 int nvme_create_global_ctx(struct libnvme_global_ctx **ctx);
 

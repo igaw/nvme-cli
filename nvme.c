@@ -443,7 +443,7 @@ static int nvme_apply_option(struct libnvme_global_ctx *ctx, const char *kv)
 	return ret;
 }
 
-int nvme_create_global_ctx(struct libnvme_global_ctx **pctx)
+static int __nvme_create_global_ctx(struct libnvme_global_ctx **pctx)
 {
 	__cleanup_nvme_global_ctx struct libnvme_global_ctx *ctx = NULL;
 	__cleanup_free char *buf = NULL;
@@ -478,6 +478,47 @@ out:
 	return 0;
 }
 
+int nvme_create_global_ctx_with_hostid(struct libnvme_global_ctx **pctx,
+				       const char *hostnqn_arg,
+				       const char *hostid_arg,
+				       char **hostnqn, char **hostid)
+{
+	__cleanup_nvme_global_ctx struct libnvme_global_ctx *ctx = NULL;
+	__cleanup_free char *hnqn = NULL;
+	__cleanup_free char *hid = NULL;
+	int err;
+
+	err = __nvme_create_global_ctx(&ctx);
+	if (err)
+		return err;
+
+	err = libnvmf_host_get_ids(ctx, hostnqn_arg, hostid_arg, &hnqn, &hid);
+	if (err)
+		return err;
+
+	libnvme_set_hostnqn(ctx, hnqn);
+	libnvme_set_hostid(ctx, hid);
+
+	if (hostnqn) {
+		*hostnqn = hnqn;
+		hnqn = NULL;
+	}
+	if (hostid) {
+		*hostid = hid;
+		hid = NULL;
+	}
+
+	*pctx = ctx;
+	ctx = NULL;
+
+	return 0;
+}
+
+int nvme_create_global_ctx(struct libnvme_global_ctx **pctx)
+{
+	return nvme_create_global_ctx_with_hostid(pctx, NULL, NULL, NULL, NULL);
+}
+
 int parse_and_open(struct libnvme_global_ctx **ctx,
 		   struct libnvme_transport_handle **hdl, int argc, char **argv,
 		   const char *desc, struct argconfig_commandline_options *opts)
@@ -490,7 +531,8 @@ int parse_and_open(struct libnvme_global_ctx **ctx,
 	if (ret)
 		return ret;
 
-	ret = nvme_create_global_ctx(&ctx_new);
+	ret = nvme_create_global_ctx_with_hostid(&ctx_new, NULL, NULL,
+						 NULL, NULL);
 	if (ret)
 		return ret;
 	libnvme_set_logging_file(ctx_new, stdout);
@@ -527,7 +569,8 @@ int open_exclusive(struct libnvme_global_ctx **ctx,
 	if (!ignore_exclusive)
 		flags |= O_EXCL;
 
-	ret = nvme_create_global_ctx(&ctx_new);
+	ret = nvme_create_global_ctx_with_hostid(&ctx_new, NULL, NULL,
+						 NULL, NULL);
 	if (ret)
 		return ret;
 	libnvme_set_logging_file(ctx_new, stdout);
