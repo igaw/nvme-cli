@@ -62,6 +62,56 @@ struct expect {
 	unsigned int line;
 };
 
+static const char *pick_temp_dir(void)
+{
+#if defined(_WIN32)
+	const char *candidates[] = { "TMP", "TEMP", "TMPDIR", NULL };
+#else
+	const char *candidates[] = { "TMPDIR", "TMP", "TEMP", NULL };
+#endif
+	const char *val;
+	int i;
+
+	for (i = 0; candidates[i]; i++) {
+		val = getenv(candidates[i]);
+		if (val && *val)
+			return val;
+	}
+
+#if defined(_WIN32)
+	return ".";
+#else
+	return "/tmp";
+#endif
+}
+
+static bool build_temp_template(char *path, size_t path_size)
+{
+	const char *dir = pick_temp_dir();
+	const char *sep = "/";
+	size_t len;
+	int n;
+
+	if (!dir || !*dir) {
+		printf(" - no usable temp directory found [FAIL]\n");
+		return false;
+	}
+
+	len = strlen(dir);
+	if (len && (dir[len - 1] == '/' || dir[len - 1] == '\\'))
+		sep = "";
+	else if (strchr(dir, '\\'))
+		sep = "\\";
+
+	n = snprintf(path, path_size, "%s%snvme-ini-test-XXXXXX", dir, sep);
+	if (n < 0 || (size_t)n >= path_size) {
+		printf(" - temp path construction failed [FAIL]\n");
+		return false;
+	}
+
+	return true;
+}
+
 static bool check(const char *name, const char *text,
 		  const struct expect *want, int nwant)
 {
@@ -212,15 +262,28 @@ static bool test_file(void)
 		{ SHR_INI_SECTION, "f", "f", NULL, 2 },
 		{ SHR_INI_KV, "f", "key", "val", 3 },
 	};
-	char path[] = "/tmp/nvme-ini-test-XXXXXX";
+	char path[512];
 	bool pass = true;
 	int fd, ret, i;
 
 	printf("test_file:\n");
 
+	if (!build_temp_template(path, sizeof(path)))
+		return false;
+
 	fd = mkstemp(path);
-	assert(fd >= 0);
-	assert(write(fd, "# file\n[f]\nkey = val\n", 21) == 21);
+	if (fd < 0) {
+		printf(" - mkstemp failed on '%s': %s [FAIL]\n",
+		       path, strerror(errno));
+		return false;
+	}
+	if (write(fd, "# file\n[f]\nkey = val\n", 21) != 21) {
+		printf(" - write temp ini content failed: %s [FAIL]\n",
+		       strerror(errno));
+		close(fd);
+		unlink(path);
+		return false;
+	}
 	close(fd);
 
 	ngot = 0;
@@ -249,7 +312,7 @@ static bool test_file(void)
 	}
 
 	/* A directory must be rejected, not silently read as empty. */
-	ret = shr_ini_parse_file("/tmp", record, NULL);
+	ret = shr_ini_parse_file(".", record, NULL);
 	if (ret != -EISDIR) {
 		printf(" - directory path ret=%d (want -EISDIR) [FAIL]\n", ret);
 		pass = false;
