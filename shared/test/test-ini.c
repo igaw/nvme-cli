@@ -92,8 +92,8 @@ static bool build_temp_template(char *path, size_t path_size)
 	size_t len;
 	int n;
 
-	if (!*dir) {
-		printf(" - no usable temp directory found [FAIL]\n");
+	if (!path || !path_size) {
+		printf(" - invalid temp template buffer [FAIL]\n");
 		return false;
 	}
 
@@ -265,6 +265,7 @@ static bool test_file(void)
 		{ SHR_INI_KV, "f", "key", "val", 3 },
 	};
 	char path[512];
+	char dir_path[512];
 	bool pass = true;
 	int fd, ret, i;
 
@@ -272,6 +273,23 @@ static bool test_file(void)
 
 	if (!build_temp_template(path, sizeof(path)))
 		return false;
+
+	snprintf(dir_path, sizeof(dir_path), "%s", path);
+	{
+		char *sep = strrchr(dir_path, '/');
+#if defined(_WIN32)
+		char *win_sep = strrchr(dir_path, '\\');
+
+		if (!sep || (win_sep && win_sep > sep))
+			sep = win_sep;
+#endif
+		if (sep)
+			*sep = '\0';
+		else
+			snprintf(dir_path, sizeof(dir_path), ".");
+		if (!dir_path[0])
+			snprintf(dir_path, sizeof(dir_path), "/");
+	}
 
 	fd = mkstemp(path);
 	if (fd < 0) {
@@ -314,9 +332,10 @@ static bool test_file(void)
 	}
 
 	/* A directory must be rejected, not silently read as empty. */
-	ret = shr_ini_parse_file(".", record, NULL);
+	ret = shr_ini_parse_file(dir_path, record, NULL);
 	if (ret != -EISDIR) {
-		printf(" - directory path ret=%d (want -EISDIR) [FAIL]\n", ret);
+		printf(" - directory path '%s' ret=%d (want -EISDIR) [FAIL]\n",
+		       dir_path, ret);
 		pass = false;
 	} else {
 		printf(" - directory path -> -EISDIR [PASS]\n");
