@@ -85,17 +85,12 @@ static const char *pick_temp_dir(void)
 #endif
 }
 
-static bool build_temp_template(char *path, size_t path_size)
+static bool build_temp_path_template(char *path, size_t path_size)
 {
 	const char *dir = pick_temp_dir();
 	const char *sep = "/";
 	size_t len;
 	int n;
-
-	if (!path || !path_size) {
-		printf(" - invalid temp template buffer [FAIL]\n");
-		return false;
-	}
 
 	len = strlen(dir);
 	if (len && (dir[len - 1] == '/' || dir[len - 1] == '\\'))
@@ -271,10 +266,11 @@ static bool test_file(void)
 
 	printf("test_file:\n");
 
-	if (!build_temp_template(path, sizeof(path)))
+	if (!build_temp_path_template(path, sizeof(path)))
 		return false;
 
-	snprintf(dir_path, sizeof(dir_path), "%s", path);
+	strncpy(dir_path, path, sizeof(dir_path));
+	dir_path[sizeof(dir_path) - 1] = '\0';
 	{
 		char *sep = strrchr(dir_path, '/');
 #if defined(_WIN32)
@@ -288,7 +284,11 @@ static bool test_file(void)
 		else
 			snprintf(dir_path, sizeof(dir_path), ".");
 		if (!dir_path[0])
+#if defined(_WIN32)
+			snprintf(dir_path, sizeof(dir_path), ".");
+#else
 			snprintf(dir_path, sizeof(dir_path), "/");
+#endif
 	}
 
 	fd = mkstemp(path);
