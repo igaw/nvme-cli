@@ -92,7 +92,7 @@ static bool build_temp_template(char *path, size_t path_size)
 	size_t len;
 	int n;
 
-	if (!dir || !*dir) {
+	if (!*dir) {
 		printf(" - no usable temp directory found [FAIL]\n");
 		return false;
 	}
@@ -100,8 +100,10 @@ static bool build_temp_template(char *path, size_t path_size)
 	len = strlen(dir);
 	if (len && (dir[len - 1] == '/' || dir[len - 1] == '\\'))
 		sep = "";
-	else if (strchr(dir, '\\'))
+#if defined(_WIN32)
+	else
 		sep = "\\";
+#endif
 
 	n = snprintf(path, path_size, "%s%snvme-ini-test-XXXXXX", dir, sep);
 	if (n < 0 || (size_t)n >= path_size) {
