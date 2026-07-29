@@ -20,6 +20,7 @@
 #include <ini.h>
 
 #define MAX_EVENTS 32
+#define CURRENT_DIR "."
 
 struct ev {
 	enum shr_ini_event event;
@@ -269,8 +270,7 @@ static bool test_file(void)
 	if (!build_temp_path_template(path, sizeof(path)))
 		return false;
 
-	strncpy(dir_path, path, sizeof(dir_path));
-	dir_path[sizeof(dir_path) - 1] = '\0';
+	snprintf(dir_path, sizeof(dir_path), "%s", path);
 	{
 		char *sep = strrchr(dir_path, '/');
 #if defined(_WIN32)
@@ -282,10 +282,10 @@ static bool test_file(void)
 		if (sep)
 			*sep = '\0';
 		else
-			snprintf(dir_path, sizeof(dir_path), ".");
+			snprintf(dir_path, sizeof(dir_path), CURRENT_DIR);
 		if (!dir_path[0])
 #if defined(_WIN32)
-			snprintf(dir_path, sizeof(dir_path), ".");
+			snprintf(dir_path, sizeof(dir_path), CURRENT_DIR);
 #else
 			snprintf(dir_path, sizeof(dir_path), "/");
 #endif
