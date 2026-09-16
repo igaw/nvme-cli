@@ -157,6 +157,12 @@ option(
   description : 'build the ioctl serialization tests and their in-library loopback transport.'
 )
 option(
+  'privsep-spike',
+  type : 'boolean',
+  value : false,
+  description : 'build the throwaway Phase-0 privilege-separation wire-protocol spike (issue #3879). Requires ioctl-tests. Not shipped.'
+)
+option(
   'rundir',
   type : 'string',
   value : '/run',

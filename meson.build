@@ -61,6 +61,7 @@ want_json_c = get_option('json-c').disabled() == false
 want_libkmod = get_option('libkmod').disabled() == false and host_system == 'linux'
 want_tests = get_option('tests')
 want_ioctl_tests = want_tests and get_option('ioctl-tests')
+want_privsep_spike = want_ioctl_tests and get_option('privsep-spike')
 want_examples = get_option('examples') and host_system == 'linux'
 want_docs = get_option('docs')
 want_docs_build = get_option('docs-build')

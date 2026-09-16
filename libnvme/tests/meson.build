@@ -329,6 +329,10 @@ if want_ioctl_tests
     subdir('ioctl')
 endif
 
+if want_privsep_spike
+    subdir('privsep-spike')
+endif
+
 if host_system == 'linux'
     subdir('sysfs')
     if want_fabrics
