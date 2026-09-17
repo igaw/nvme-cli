@@ -14,6 +14,7 @@
  * onto the helper's memory at any point.
  */
 #include <errno.h>
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,14 +67,23 @@ static int privsep_passthru(struct libnvme_transport_handle *hdl,
 	if (cmd->data_len)
 		memcpy(req->data, (void *)(uintptr_t)cmd->addr, cmd->data_len);
 
+	libnvme_msg(hdl->ctx, LIBNVME_LOG_DEBUG,
+		    "privsep: sending %s opcode=0x%02x nsid=0x%x cdw10=0x%x data_len=%u\n",
+		    op == LIBNVME_PRIVSEP_OP_ADMIN ? "ADMIN" : "IO",
+		    cmd->opcode, cmd->nsid, cmd->cdw10, cmd->data_len);
+
 	if (libnvme_privsep_send_req(hdl->privsep_sock, req) !=
 			(ssize_t)libnvme_privsep_req_len(req)) {
+		libnvme_msg(hdl->ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to send request to helper\n");
 		ret = -EIO;
 		goto out;
 	}
 
 	ret = libnvme_privsep_recv_resp(hdl->privsep_sock, resp);
 	if (ret <= 0) {
+		libnvme_msg(hdl->ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to receive response from helper (%d)\n", ret);
 		ret = ret == 0 ? -EPIPE : ret;
 		goto out;
 	}
@@ -83,6 +93,10 @@ static int privsep_passthru(struct libnvme_transport_handle *hdl,
 
 	cmd->result = resp->result;
 	ret = resp->status;
+
+	libnvme_msg(hdl->ctx, LIBNVME_LOG_DEBUG,
+		    "privsep: received status=%d result=0x%" PRIx64 "\n",
+		    ret, (uint64_t)cmd->result);
 
 out:
 	free(req);
@@ -126,14 +140,21 @@ int __libnvme_privsep_fabrics_connect(struct libnvme_transport_handle *hdl,
 	req->data_len = (uint32_t)len;
 	memcpy(req->data, argstr, len);
 
+	libnvme_msg(hdl->ctx, LIBNVME_LOG_DEBUG,
+		    "privsep: sending FABRICS_CONNECT argstr_len=%zu\n", len);
+
 	if (libnvme_privsep_send_req(hdl->privsep_sock, req) !=
 			(ssize_t)libnvme_privsep_req_len(req)) {
+		libnvme_msg(hdl->ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to send request to helper\n");
 		ret = -EIO;
 		goto out;
 	}
 
 	ret = libnvme_privsep_recv_resp(hdl->privsep_sock, resp);
 	if (ret <= 0) {
+		libnvme_msg(hdl->ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to receive response from helper (%d)\n", ret);
 		ret = ret == 0 ? -EPIPE : ret;
 		goto out;
 	}
@@ -141,8 +162,12 @@ int __libnvme_privsep_fabrics_connect(struct libnvme_transport_handle *hdl,
 	if (resp->status == 0) {
 		*instance = (int)resp->result;
 		ret = *instance;
+		libnvme_msg(hdl->ctx, LIBNVME_LOG_DEBUG,
+			    "privsep: received status=0 instance=%d\n", *instance);
 	} else {
 		ret = resp->status;
+		libnvme_msg(hdl->ctx, LIBNVME_LOG_DEBUG,
+			    "privsep: received status=%d\n", resp->status);
 	}
 
 out:
@@ -176,19 +201,91 @@ __shr_public int libnvme_privsep_open_device(struct libnvme_transport_handle *hd
 	req->data_len = (uint32_t)len;
 	memcpy(req->data, devname, len);
 
+	libnvme_msg(hdl->ctx, LIBNVME_LOG_DEBUG,
+		    "privsep: sending OPEN_DEVICE devname=%s flags=0x%x\n",
+		    devname, flags);
+
 	if (libnvme_privsep_send_req(hdl->privsep_sock, req) !=
 			(ssize_t)libnvme_privsep_req_len(req)) {
+		libnvme_msg(hdl->ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to send request to helper\n");
 		ret = -EIO;
 		goto out;
 	}
 
 	ret = libnvme_privsep_recv_resp(hdl->privsep_sock, resp);
 	if (ret <= 0) {
+		libnvme_msg(hdl->ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to receive response from helper (%d)\n", ret);
 		ret = ret == 0 ? -EPIPE : ret;
 		goto out;
 	}
 
 	ret = resp->status;
+	if (ret == 0)
+		hdl->stat.st_mode = (mode_t)resp->result;
+
+	libnvme_msg(hdl->ctx, LIBNVME_LOG_DEBUG,
+		    "privsep: received status=%d\n", ret);
+
+out:
+	free(req);
+	free(resp);
+
+	return ret;
+}
+
+__shr_public int libnvme_privsep_raw_ioctl(struct libnvme_transport_handle *hdl,
+		unsigned long request, void *arg, size_t arg_size)
+{
+	struct libnvme_privsep_req *req;
+	struct libnvme_privsep_resp *resp;
+	int ret;
+
+	if (arg_size > LIBNVME_PRIVSEP_MAX_XFER)
+		return -EMSGSIZE;
+
+	req = malloc(sizeof(*req));
+	resp = malloc(sizeof(*resp));
+	if (!req || !resp) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	memset(req, 0, offsetof(struct libnvme_privsep_req, data));
+	req->op = LIBNVME_PRIVSEP_OP_RAW_IOCTL;
+	req->cdw10 = (uint32_t)request;
+	req->data_len = (uint32_t)arg_size;
+	if (arg_size)
+		memcpy(req->data, arg, arg_size);
+
+	libnvme_msg(hdl->ctx, LIBNVME_LOG_DEBUG,
+		    "privsep: sending RAW_IOCTL request=0x%lx arg_size=%zu\n",
+		    request, arg_size);
+
+	if (libnvme_privsep_send_req(hdl->privsep_sock, req) !=
+			(ssize_t)libnvme_privsep_req_len(req)) {
+		libnvme_msg(hdl->ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to send request to helper\n");
+		ret = -EIO;
+		goto out;
+	}
+
+	ret = libnvme_privsep_recv_resp(hdl->privsep_sock, resp);
+	if (ret <= 0) {
+		libnvme_msg(hdl->ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to receive response from helper (%d)\n", ret);
+		ret = ret == 0 ? -EPIPE : ret;
+		goto out;
+	}
+
+	if (arg_size && resp->data_len == arg_size)
+		memcpy(arg, resp->data, arg_size);
+
+	ret = resp->status;
+
+	libnvme_msg(hdl->ctx, LIBNVME_LOG_DEBUG,
+		    "privsep: received status=%d\n", ret);
 
 out:
 	free(req);

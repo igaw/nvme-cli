@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <linux/fs.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -173,6 +174,53 @@ static void run_io_write(struct libnvme_transport_handle *hdl)
 }
 
 /*
+ * Phase 5: relay a raw (non-passthru) ioctl through the same helper and
+ * channel used for admin/IO passthru above. Under the NVME_TEST_FD
+ * session, the allowlist/size check inside the helper runs for real, but
+ * the actual ioctl() syscall is skipped (test_submit_exit()'s dry-run
+ * contract, extended to this op) -- a deterministic zero-filled response
+ * comes back instead of real kernel geometry, so this validates
+ * marshal/allowlist/dispatch/unmarshal, not real kernel ioctl() behavior.
+ */
+static void run_raw_ioctl_relay(struct libnvme_transport_handle *hdl)
+{
+	uint64_t capacity = 0xdeadbeefdeadbeefULL;
+	int ret = libnvme_privsep_raw_ioctl(hdl, BLKGETSIZE64, &capacity,
+					     sizeof(capacity));
+
+	check(ret == 0, "raw ioctl relay (BLKGETSIZE64) failed: %d", ret);
+	check(capacity == 0, "raw ioctl relay: expected zero-filled dry-run "
+	      "response, got 0x%" PRIx64, capacity);
+}
+
+/*
+ * Not allowlisted at all -- confirms ioctl-allowlist.c's check runs on
+ * the real dispatch path, not just in its own unit test.
+ */
+static void run_raw_ioctl_not_allowed(struct libnvme_transport_handle *hdl)
+{
+	int dummy = 0;
+	int ret = libnvme_privsep_raw_ioctl(hdl, 0xdeadbeefUL, &dummy, sizeof(dummy));
+
+	check(ret == -EACCES, "raw ioctl relay: expected -EACCES for a "
+	      "non-allowlisted request, got %d", ret);
+}
+
+/*
+ * Allowlisted request number, wrong size -- confirms a caller can't lie
+ * about buffer size for an otherwise-allowed request through the real
+ * dispatch path, not just the pure allowlist unit test.
+ */
+static void run_raw_ioctl_wrong_size(struct libnvme_transport_handle *hdl)
+{
+	uint8_t buf[16] = {};
+	int ret = libnvme_privsep_raw_ioctl(hdl, BLKGETSIZE64, buf, sizeof(buf));
+
+	check(ret == -EACCES, "raw ioctl relay: expected -EACCES for wrong "
+	      "size, got %d", ret);
+}
+
+/*
  * Phase 2: relay a fabrics connect through the same helper and channel used
  * for admin/IO passthru above. There is no dry-run double for
  * __nvmf_add_ctrl() (unlike NVME_TEST_FD for ioctl passthru), so this can
@@ -244,6 +292,9 @@ static void run_session(bool force32)
 	run_admin_identify(hdl);
 	run_admin_get_log_smart(hdl);
 	run_io_write(hdl);
+	run_raw_ioctl_relay(hdl);
+	run_raw_ioctl_not_allowed(hdl);
+	run_raw_ioctl_wrong_size(hdl);
 	run_fabrics_connect_relay(hdl);
 	run_oversized_rejection(sock);
 

@@ -51,14 +51,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <fcntl.h>
+#include <linux/sed-opal.h>
 
 #include <libnvme.h>
 
 #include "allowlist.h"
 #include "harden.h"
+#include "ioctl-allowlist.h"
 #include "nvme/privsep-proto.h"
 #ifdef CONFIG_FABRICS
 #include "nvme/private-fabrics.h"
@@ -117,6 +121,7 @@ static void handle_open_device(struct libnvme_global_ctx *ctx,
 	const char *devname = (const char *)req->data;
 	bool is_test_fd = !strncmp(devname, "NVME_TEST_FD", 12);
 	struct libnvme_transport_handle *hdl;
+	struct stat st;
 	int ret;
 
 	if (!privsep_is_allowed_devname(devname)) {
@@ -150,7 +155,82 @@ static void handle_open_device(struct libnvme_global_ctx *ctx,
 		harden_once();
 	}
 
+	/* st_mode bits, so the client can fix up is_ctrl()/is_ns() for a
+	 * PRIVSEP handle -- see libnvme_privsep_open_device().
+	 */
+	if (!fstat(libnvme_transport_handle_get_fd(hdl), &st))
+		resp->result = (uint64_t)st.st_mode;
+
 	*hdlp = hdl;
+	resp->status = 0;
+}
+
+/*
+ * req->cdw10 is the ioctl request number; req->data[0..data_len) is the
+ * argument buffer. Refused unless (request, data_len) is exactly
+ * allowlisted (see ioctl-allowlist.h) -- untrusted input from the
+ * unprivileged parent. Under a test-fd session (dry_run), the allowlist
+ * check still runs for real but the actual syscall is skipped, same
+ * contract test_submit_exit() gives Admin/IO.
+ */
+static void handle_raw_ioctl(struct libnvme_global_ctx *ctx,
+		struct libnvme_transport_handle *hdl,
+		const struct libnvme_privsep_req *req,
+		struct libnvme_privsep_resp *resp)
+{
+	unsigned long request = (unsigned long)req->cdw10;
+	uint8_t buf[LIBNVME_PRIVSEP_OPAL_DISCOVERY_BUF_SIZE];
+	int ret;
+
+	if (!hdl) {
+		resp->status = -ENODEV;
+		return;
+	}
+
+	if (!privsep_is_allowed_ioctl(request, req->data_len)) {
+		resp->status = -EACCES;
+		return;
+	}
+
+	if (libnvme_get_dry_run(ctx)) {
+		/* Deterministic canned response: zero-fill and report
+		 * success, without touching the kernel at all.
+		 */
+		memset(buf, 0, req->data_len);
+		ret = 0;
+	} else if (request == (unsigned long)IOC_OPAL_DISCOVERY) {
+		/*
+		 * struct opal_discovery embeds a pointer the kernel
+		 * dereferences directly -- can't be the wire payload
+		 * itself (see ioctl-allowlist.h). Point it at our own
+		 * local buffer instead; the wire payload is that buffer's
+		 * contents, not the wrapper struct.
+		 */
+		struct opal_discovery discover = {
+			.data = (uintptr_t)buf,
+			.size = req->data_len,
+		};
+
+		ret = ioctl(libnvme_transport_handle_get_fd(hdl), request, &discover);
+		if (ret < 0)
+			ret = -errno;
+	} else {
+		if (req->data_len)
+			memcpy(buf, req->data, req->data_len);
+
+		ret = ioctl(libnvme_transport_handle_get_fd(hdl), request, buf);
+		if (ret < 0)
+			ret = -errno;
+	}
+
+	if (ret < 0) {
+		resp->status = ret;
+		return;
+	}
+
+	if (req->data_len)
+		memcpy(resp->data, buf, req->data_len);
+	resp->data_len = req->data_len;
 	resp->status = 0;
 }
 
@@ -209,6 +289,9 @@ static void dispatch(struct libnvme_global_ctx *ctx,
 		break;
 	case LIBNVME_PRIVSEP_OP_FABRICS_CONNECT:
 		handle_fabrics_connect(ctx, req, resp);
+		break;
+	case LIBNVME_PRIVSEP_OP_RAW_IOCTL:
+		handle_raw_ioctl(ctx, *hdlp, req, resp);
 		break;
 	default:
 		handle_one(ctx, *hdlp, req, resp);

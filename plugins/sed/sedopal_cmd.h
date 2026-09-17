@@ -11,6 +11,8 @@
 
 #define NVME_DEV_PATH			"/dev/nvme"
 
+struct libnvme_transport_handle;
+
 extern bool sedopal_ask_key;
 extern bool sedopal_ask_new_key;
 extern bool sedopal_destructive_revert;
@@ -39,17 +41,17 @@ struct cmd_table {
 /*
  * command handlers
  */
-int sedopal_cmd_initialize(int fd);
-int sedopal_cmd_lock(int fd);
-int sedopal_cmd_unlock(int fd);
-int sedopal_cmd_revert(int fd);
-int sedopal_cmd_password(int fd);
-int sedopal_cmd_discover(int fd);
+int sedopal_cmd_initialize(struct libnvme_transport_handle *hdl);
+int sedopal_cmd_lock(struct libnvme_transport_handle *hdl);
+int sedopal_cmd_unlock(struct libnvme_transport_handle *hdl);
+int sedopal_cmd_revert(struct libnvme_transport_handle *hdl);
+int sedopal_cmd_password(struct libnvme_transport_handle *hdl);
+int sedopal_cmd_discover(struct libnvme_transport_handle *hdl);
 
 /*
  * utility functions
  */
 int sedopal_open_nvme_device(char *device);
-int sedopal_lock_unlock(int fd, int lock_state);
+int sedopal_lock_unlock(struct libnvme_transport_handle *hdl, int lock_state);
 const char *sedopal_error_to_text(int code);
-int sedopal_locking_state(int fd);
+int sedopal_locking_state(struct libnvme_transport_handle *hdl);

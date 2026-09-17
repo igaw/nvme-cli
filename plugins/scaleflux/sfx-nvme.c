@@ -30,6 +30,7 @@
 #include "nvme-cmds.h"
 #include "nvme-print.h"
 #include "plugin.h"
+#include "sfx-ioctl.h"
 #include "sfx-types.h"
 #include "src/cleanup.h"
 
@@ -37,7 +38,6 @@
 #define SECTOR_SHIFT						9
 
 #define SFX_GET_FREESPACE			_IOWR('N', 0x240, struct sfx_freespace_ctx)
-#define NVME_IOCTL_CLR_CARD			_IO('N', 0x47)
 
 //See IDEMA LBA1-03
 #define IDEMA_CAP(exp_GB)			(((__u64)exp_GB - 50ULL) * 1953504ULL + 97696368ULL)
@@ -585,7 +585,12 @@ int sfx_nvme_get_log(struct libnvme_transport_handle *hdl, __u32 nsid, __u8 log_
  */
 static int get_bb_table(struct libnvme_transport_handle *hdl, __u32 nsid, unsigned char *buf, __u64 size)
 {
-	if (libnvme_transport_handle_get_fd(hdl) < 0 || !buf || size != 256*4096*sizeof(unsigned char)) {
+	/* No raw fd/ioctl use here -- only libnvme_exec_admin_passthru()
+	 * below, already privsep-transparent. A get_fd(hdl) < 0 check was
+	 * a bogus precondition: -1 is the correct, expected fd for a
+	 * PRIVSEP handle, not an error (issue #3879 Phase 5).
+	 */
+	if (!buf || size != 256*4096*sizeof(unsigned char)) {
 		nvme_show_error("Invalid Param");
 		return -EINVAL;
 	}
@@ -874,21 +879,14 @@ static int change_cap(int argc, char **argv, struct command *acmd, struct plugin
 		nvme_show_err(err, "sfx-change-cap");
 	} else {
 		nvme_show_verbose_result("ScaleFlux change-capacity: success");
-		ioctl(libnvme_transport_handle_get_fd(hdl), BLKRRPART);
+		nvme_raw_ioctl(hdl, BLKRRPART, NULL, 0);
 	}
 	return err;
 }
 
 static int sfx_verify_chr(struct libnvme_transport_handle *hdl)
 {
-	static struct stat nvme_stat;
-	int err = fstat(libnvme_transport_handle_get_fd(hdl), &nvme_stat);
-
-	if (err < 0) {
-		nvme_show_perror("fstat");
-		return errno;
-	}
-	if (!S_ISCHR(nvme_stat.st_mode)) {
+	if (!libnvme_transport_handle_is_ctrl(hdl)) {
 		nvme_show_error(
 			"Error: requesting clean card on non-controller handle\n");
 		return -ENOTBLK;
@@ -903,9 +901,9 @@ static int sfx_clean_card(struct libnvme_transport_handle *hdl)
 	ret = sfx_verify_chr(hdl);
 	if (ret)
 		return ret;
-	ret = ioctl(libnvme_transport_handle_get_fd(hdl), NVME_IOCTL_CLR_CARD);
+	ret = nvme_raw_ioctl(hdl, NVME_IOCTL_CLR_CARD, NULL, 0);
 	if (ret)
-		nvme_show_perror("Ioctl Fail.");
+		nvme_show_error("Ioctl Fail: %s", strerror(-ret));
 	else
 		nvme_show_verbose_result("ScaleFlux clean card success");
 
@@ -1600,16 +1598,10 @@ static int sfx_status(int argc, char **argv, struct command *acmd, struct plugin
 	}
 
 	//Calculate formatted capacity, not concerned with errors, we may have a char device
-	memset(&path, 0, 512);
-	snprintf(path, 512, "/dev/%s", libnvme_transport_handle_get_name(hdl));
-	fd = open(path, O_RDONLY | O_NONBLOCK);
-	if (fd >= 0) {
-		err = ioctl(fd, BLKSSZGET, &sector_size);
-		if (!err)
-			err = ioctl(fd, BLKGETSIZE64, &capacity);
-		capacity_valid = (!err);
-		close(fd);
-	}
+	err = nvme_raw_ioctl(hdl, BLKSSZGET, &sector_size, sizeof(sector_size));
+	if (!err)
+		err = nvme_raw_ioctl(hdl, BLKGETSIZE64, &capacity, sizeof(capacity));
+	capacity_valid = (!err);
 
 	if (capacity_valid && sector_size == 512)
 		capacity = IDEMA_CAP2GB(capacity/sector_size);

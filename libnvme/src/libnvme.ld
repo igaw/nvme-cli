@@ -104,6 +104,7 @@ LIBNVME_3 {
 		libnvme_path_reset_stat;
 		libnvme_path_update_stat;
 		libnvme_privsep_open_device;
+		libnvme_privsep_raw_ioctl;
 		libnvme_random_uuid;
 		libnvme_realloc;
 		libnvme_reap_passthru;

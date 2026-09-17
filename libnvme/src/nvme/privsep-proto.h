@@ -56,10 +56,34 @@ enum libnvme_privsep_op {
 	 * helper session, not a table of them. Subsequent ADMIN/IO requests
 	 * apply to whichever device was most recently opened this way; sent
 	 * before any successful OPEN_DEVICE, they get -ENODEV. resp->status
-	 * carries 0 or a negative errno; resp->result and resp->data are
-	 * unused.
+	 * carries 0 or a negative errno; resp->data is unused. resp->result
+	 * carries the opened device's st_mode (issue #3879 Phase 5) so the
+	 * client can populate its own hdl->stat.st_mode -- without this,
+	 * libnvme_transport_handle_is_ctrl()/is_ns() (S_ISCHR/S_ISBLK on
+	 * hdl->stat.st_mode) silently misreport for a PRIVSEP handle, since
+	 * the real open()/fstat() only ever happens inside the helper.
 	 */
 	LIBNVME_PRIVSEP_OP_OPEN_DEVICE,
+	/*
+	 * Raw ioctl relay (issue #3879 Phase 5), for the two plugins
+	 * (SED-Opal, ScaleFlux) whose ioctls don't fit struct
+	 * libnvme_passthru_cmd's Admin/IO submission-queue-entry shape at
+	 * all -- a different ioctl namespace entirely (block-layer/vendor,
+	 * not NVMe Admin/IO). req->cdw10 carries the ioctl request number
+	 * (Linux ioctl numbers are 32-bit by construction, via _IOC());
+	 * req->data[]/data_len carries the opaque argument buffer (0 bytes
+	 * for a no-arg ioctl like BLKRRPART; for IOC_OPAL_DISCOVERY
+	 * specifically, the actual discovery buffer, not struct
+	 * opal_discovery -- see ioctl-allowlist.h). The helper checks the
+	 * request number against a fixed allowlist and requires data_len to
+	 * exactly equal that request's expected size (usually, but not
+	 * always, _IOC_SIZE(request) -- see ioctl-allowlist.c for the
+	 * exceptions) before touching anything; see
+	 * libnvme/tests/privsep-helper/ioctl-allowlist.c. resp->data carries
+	 * the (possibly kernel-mutated) buffer back; resp->status carries 0
+	 * or a negative errno; resp->result is unused.
+	 */
+	LIBNVME_PRIVSEP_OP_RAW_IOCTL,
 };
 
 struct libnvme_privsep_req {

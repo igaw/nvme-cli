@@ -2,18 +2,19 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <linux/fs.h>
 #include <linux/sed-opal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/ioctl.h>
 #include <sys/mount.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include <libnvme.h>
 
+#include "global-ctx.h"
 #include "nvme-print.h"
 #include "sedopal_cmd.h"
 #include "sedopal_spec.h"
@@ -211,7 +212,7 @@ int sedopal_set_key(struct opal_key *key)
 /*
  * Prepare a drive for SED Opal locking.
  */
-int sedopal_cmd_initialize(int fd)
+int sedopal_cmd_initialize(struct libnvme_transport_handle *hdl)
 {
 	int rc;
 	struct opal_key key;
@@ -220,7 +221,7 @@ int sedopal_cmd_initialize(int fd)
 	struct opal_new_pw new_pw = {};
 	uint8_t locking_state;
 
-	locking_state = sedopal_locking_state(fd);
+	locking_state = sedopal_locking_state(hdl);
 
 	if (locking_state & OPAL_FEATURE_LOCKING_ENABLED) {
 		nvme_show_error(
@@ -237,7 +238,7 @@ int sedopal_cmd_initialize(int fd)
 	/*
 	 * take ownership of the device
 	 */
-	rc = ioctl(fd, IOC_OPAL_TAKE_OWNERSHIP, &key);
+	rc = nvme_raw_ioctl(hdl, IOC_OPAL_TAKE_OWNERSHIP, &key, sizeof(key));
 	if (rc != 0) {
 		nvme_show_error(
 			"Error: failed to take device ownership - %d\n", rc);
@@ -251,7 +252,7 @@ int sedopal_cmd_initialize(int fd)
 	lr_act.sum = false;
 	lr_act.key = key;
 
-	rc = ioctl(fd, IOC_OPAL_ACTIVATE_LSP, &lr_act);
+	rc = nvme_raw_ioctl(hdl, IOC_OPAL_ACTIVATE_LSP, &lr_act, sizeof(lr_act));
 	if (rc != 0) {
 		nvme_show_error("Error: failed to activate LSP - %d", rc);
 		return rc;
@@ -270,7 +271,7 @@ int sedopal_cmd_initialize(int fd)
 	lr_setup.session.sum = 0;
 	lr_setup.session.who = OPAL_ADMIN1;
 
-	rc = ioctl(fd, IOC_OPAL_LR_SETUP, &lr_setup);
+	rc = nvme_raw_ioctl(hdl, IOC_OPAL_LR_SETUP, &lr_setup, sizeof(lr_setup));
 	if (rc != 0) {
 		nvme_show_error(
 			"Error: failed to setup locking range - %d\n", rc);
@@ -288,7 +289,7 @@ int sedopal_cmd_initialize(int fd)
 	new_pw.session.opal_key = key;
 	new_pw.new_user_pw.opal_key = key;
 
-	rc = ioctl(fd, IOC_OPAL_SET_PW, &new_pw);
+	rc = nvme_raw_ioctl(hdl, IOC_OPAL_SET_PW, &new_pw, sizeof(new_pw));
 	if (rc != 0)
 		nvme_show_error("Error: failed setting password - %d", rc);
 
@@ -298,20 +299,20 @@ int sedopal_cmd_initialize(int fd)
 /*
  * Lock a SED Opal drive
  */
-int sedopal_cmd_lock(int fd)
+int sedopal_cmd_lock(struct libnvme_transport_handle *hdl)
 {
 	int lock_state = OPAL_LK;
 
 	if (sedopal_lock_ro)
 		lock_state = OPAL_RO;
 
-	return sedopal_lock_unlock(fd, lock_state);
+	return sedopal_lock_unlock(hdl, lock_state);
 }
 
 /*
  * Unlock a SED Opal drive
  */
-int sedopal_cmd_unlock(int fd)
+int sedopal_cmd_unlock(struct libnvme_transport_handle *hdl)
 {
 	int rc;
 	int lock_state = OPAL_RW;
@@ -319,14 +320,14 @@ int sedopal_cmd_unlock(int fd)
 	if (sedopal_lock_ro)
 		lock_state = OPAL_RO;
 
-	rc = sedopal_lock_unlock(fd, lock_state);
+	rc = sedopal_lock_unlock(hdl, lock_state);
 
 	/*
 	 * If the unlock was successful, force a re-read of the
 	 * partition table. Return rc of unlock operation.
 	 */
 	if (rc == 0) {
-		if (ioctl(fd, BLKRRPART, 0) != 0)
+		if (nvme_raw_ioctl(hdl, BLKRRPART, NULL, 0) != 0)
 			nvme_show_error(
 				"Warning: failed re-reading partition\n");
 	}
@@ -337,13 +338,13 @@ int sedopal_cmd_unlock(int fd)
 /*
  * Prepare and issue an ioctl to lock/unlock a drive
  */
-int sedopal_lock_unlock(int fd, int lock_state)
+int sedopal_lock_unlock(struct libnvme_transport_handle *hdl, int lock_state)
 {
 	int rc;
 	struct opal_lock_unlock opal_lu = {};
 	uint8_t locking_state;
 
-	locking_state = sedopal_locking_state(fd);
+	locking_state = sedopal_locking_state(hdl);
 
 	if (!(locking_state & OPAL_FEATURE_LOCKING_ENABLED)) {
 		nvme_show_error(
@@ -359,7 +360,7 @@ int sedopal_lock_unlock(int fd, int lock_state)
 	opal_lu.session.who = OPAL_ADMIN1;
 	opal_lu.l_state = lock_state;
 
-	rc = ioctl(fd, IOC_OPAL_LOCK_UNLOCK, &opal_lu);
+	rc = nvme_raw_ioctl(hdl, IOC_OPAL_LOCK_UNLOCK, &opal_lu, sizeof(opal_lu));
 	if (rc != 0)
 		nvme_show_error(
 			"Error: failed locking or unlocking - %d\n", rc);
@@ -394,7 +395,7 @@ static bool sedopal_confirm_revert(void)
 /*
  * perform a destructive drive revert
  */
-static int sedopal_revert_destructive(int fd)
+static int sedopal_revert_destructive(struct libnvme_transport_handle *hdl)
 {
 	struct opal_key key;
 	int rc;
@@ -411,7 +412,7 @@ static int sedopal_revert_destructive(int fd)
 
 	rc = sedopal_set_key(&key);
 	if (rc == 0)
-		rc = ioctl(fd, IOC_OPAL_REVERT_TPR, &key);
+		rc = nvme_raw_ioctl(hdl, IOC_OPAL_REVERT_TPR, &key, sizeof(key));
 
 	return rc;
 }
@@ -419,7 +420,7 @@ static int sedopal_revert_destructive(int fd)
 /*
  * perform a PSID drive revert
  */
-static int sedopal_revert_psid(int fd)
+static int sedopal_revert_psid(struct libnvme_transport_handle *hdl)
 {
 #ifdef IOC_OPAL_PSID_REVERT_TPR
 	struct opal_key key;
@@ -432,7 +433,7 @@ static int sedopal_revert_psid(int fd)
 
 	rc = sedopal_set_key(&key);
 	if (rc == 0) {
-		rc = ioctl(fd, IOC_OPAL_PSID_REVERT_TPR, &key);
+		rc = nvme_raw_ioctl(hdl, IOC_OPAL_PSID_REVERT_TPR, &key, sizeof(key));
 		if (rc != 0) {
 			if (rc == EPERM)
 				nvme_show_error("Error: incorrect password");
@@ -452,7 +453,7 @@ static int sedopal_revert_psid(int fd)
  * revert a drive from the provisioned state to a state where locking
  * is disabled.
  */
-int sedopal_cmd_revert(int fd)
+int sedopal_cmd_revert(struct libnvme_transport_handle *hdl)
 {
 	int rc;
 
@@ -462,16 +463,16 @@ int sedopal_cmd_revert(int fd)
 	sedopal_ask_key = true;
 
 	if (sedopal_psid_revert) {
-		rc = sedopal_revert_psid(fd);
+		rc = sedopal_revert_psid(hdl);
 	} else if (sedopal_destructive_revert) {
-		rc = sedopal_revert_destructive(fd);
+		rc = sedopal_revert_destructive(hdl);
 	} else {
 #ifdef IOC_OPAL_REVERT_LSP
 		struct opal_revert_lsp revert_lsp;
 		uint8_t locking_state;
 		char *revert = "LSP";
 
-		locking_state = sedopal_locking_state(fd);
+		locking_state = sedopal_locking_state(hdl);
 
 		if (!(locking_state & OPAL_FEATURE_LOCKING_ENABLED)) {
 			nvme_show_error(
@@ -492,13 +493,14 @@ int sedopal_cmd_revert(int fd)
 		revert_lsp.options = OPAL_PRESERVE;
 		revert_lsp.__pad = 0;
 
-		rc = ioctl(fd, IOC_OPAL_REVERT_LSP, &revert_lsp);
+		rc = nvme_raw_ioctl(hdl, IOC_OPAL_REVERT_LSP, &revert_lsp, sizeof(revert_lsp));
 		if (rc == 0) {
 			revert = "TPER";
 			/*
 			 * TPER must also be reverted.
 			 */
-			rc = ioctl(fd, IOC_OPAL_REVERT_TPR, &revert_lsp.key);
+			rc = nvme_raw_ioctl(hdl, IOC_OPAL_REVERT_TPR, &revert_lsp.key,
+					     sizeof(revert_lsp.key));
 			if (rc != 0)
 				nvme_show_error("Error: revert TPR - %d", rc);
 		}
@@ -525,7 +527,7 @@ int sedopal_cmd_revert(int fd)
  * Change the password of a drive. The existing password must be
  * provided and the new password is confirmed by re-entry.
  */
-int sedopal_cmd_password(int fd)
+int sedopal_cmd_password(struct libnvme_transport_handle *hdl)
 {
 	int rc;
 	struct opal_new_pw new_pw = {};
@@ -553,7 +555,7 @@ int sedopal_cmd_password(int fd)
 	/*
 	 * set admin1 password
 	 */
-	rc = ioctl(fd, IOC_OPAL_SET_PW, &new_pw);
+	rc = nvme_raw_ioctl(hdl, IOC_OPAL_SET_PW, &new_pw, sizeof(new_pw));
 	if (rc != 0) {
 		if (rc == EPERM)
 			nvme_show_error("Error: incorrect password");
@@ -566,7 +568,7 @@ int sedopal_cmd_password(int fd)
 	/*
 	 * set sid password
 	 */
-	rc = ioctl(fd, IOC_OPAL_SET_SID_PW, &new_pw);
+	rc = nvme_raw_ioctl(hdl, IOC_OPAL_SET_SID_PW, &new_pw, sizeof(new_pw));
 	if (rc != 0) {
 		if (rc == EPERM)
 			nvme_show_error("Error: incorrect password");
@@ -1034,18 +1036,26 @@ void sedopal_print_features(struct sedopal_feature_parser *sfp)
 /*
  * Query a drive to retrieve it's level 0 features.
  */
-int sedopal_discover_device(int fd, struct level_0_discovery_features **feat,
+int sedopal_discover_device(struct libnvme_transport_handle *hdl,
+		struct level_0_discovery_features **feat,
 		struct level_0_discovery_features **feat_end)
 {
 #ifdef IOC_OPAL_DISCOVERY
 	int rc;
-	struct opal_discovery discover;
 	struct level_0_discovery_header *dh;
 
-	discover.data = (uintptr_t)level0_discovery_buf;
-	discover.size = sizeof(level0_discovery_buf);
-
-	rc = ioctl(fd, IOC_OPAL_DISCOVERY, &discover);
+	/*
+	 * The wire payload for this one raw ioctl is the discovery buffer
+	 * itself, not struct opal_discovery -- that struct's `data` field
+	 * is a pointer the kernel dereferences directly, meaningless
+	 * across the privsep helper's process boundary. See
+	 * ioctl-allowlist.h (issue #3879 Phase 5) for the full rationale;
+	 * nvme_raw_ioctl()'s direct (non-privsep) path builds the real
+	 * struct opal_discovery internally too, so this call looks the
+	 * same either way.
+	 */
+	rc = nvme_raw_ioctl(hdl, IOC_OPAL_DISCOVERY, level0_discovery_buf,
+			     sizeof(level0_discovery_buf));
 	if (rc < 0) {
 		nvme_show_error("Error: ioctl IOC_OPAL_DISCOVERY failed");
 		return rc;
@@ -1074,14 +1084,14 @@ int sedopal_discover_device(int fd, struct level_0_discovery_features **feat,
  * Query a drive to determine if it's SED Opal capable and
  * it's current locking status.
  */
-int sedopal_cmd_discover(int fd)
+int sedopal_cmd_discover(struct libnvme_transport_handle *hdl)
 {
 	int rc, feat_length;
 	struct level_0_discovery_features *feat;
 	struct level_0_discovery_features *feat_end;
 	struct sedopal_feature_parser sfp = {};
 
-	rc = sedopal_discover_device(fd, &feat, &feat_end);
+	rc = sedopal_discover_device(hdl, &feat, &feat_end);
 	if (rc != 0)
 		return rc;
 
@@ -1114,13 +1124,13 @@ int sedopal_cmd_discover(int fd)
 /*
  * Query a drive to determine its locking state
  */
-int sedopal_locking_state(int fd)
+int sedopal_locking_state(struct libnvme_transport_handle *hdl)
 {
 	int rc, feat_length;
 	struct level_0_discovery_features *feat;
 	struct level_0_discovery_features *feat_end;
 
-	rc = sedopal_discover_device(fd, &feat, &feat_end);
+	rc = sedopal_discover_device(hdl, &feat, &feat_end);
 	if (rc != 0)
 		return rc;
 

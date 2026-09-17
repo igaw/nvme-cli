@@ -8,10 +8,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <linux/sed-opal.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 
 #include <libnvme-mi.h>
 #include <libnvme.h>
@@ -76,6 +79,37 @@ static int get_transport_handle(struct libnvme_global_ctx *ctx, int argc,
 		nvme_show_err(ret, devname);
 
 	return ret;
+}
+
+int nvme_raw_ioctl(struct libnvme_transport_handle *hdl, unsigned long request,
+		void *arg, size_t arg_size)
+{
+	int ret;
+
+	if (libnvme_transport_handle_is_privsep(hdl))
+		return libnvme_privsep_raw_ioctl(hdl, request, arg, arg_size);
+
+	if (request == (unsigned long)IOC_OPAL_DISCOVERY) {
+		/*
+		 * struct opal_discovery embeds a `data` pointer the kernel
+		 * dereferences directly -- @arg is the actual discovery
+		 * buffer here, not that wrapper struct (see
+		 * ioctl-allowlist.h, issue #3879 Phase 5, for the PRIVSEP
+		 * side of the same convention). Build the real kernel
+		 * argument locally so this call looks identical to callers
+		 * regardless of transport.
+		 */
+		struct opal_discovery discover = {
+			.data = (uintptr_t)arg,
+			.size = arg_size,
+		};
+
+		ret = ioctl(libnvme_transport_handle_get_fd(hdl), request, &discover);
+		return ret < 0 ? -errno : ret;
+	}
+
+	ret = ioctl(libnvme_transport_handle_get_fd(hdl), request, arg);
+	return ret < 0 ? -errno : ret;
 }
 
 void put_transport_handle(struct libnvme_transport_handle *hdl)

@@ -17,4 +17,4 @@ privsep_test = executable(
         libnvme_test_dep,
     ],
 )
-test('libnvme - privsep', privsep_test, args: [privsep_helper.full_path()])
+test('libnvme - privsep', privsep_test, args: [privsep_helper])

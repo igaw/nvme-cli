@@ -186,7 +186,7 @@ int main(int argc, char **argv)
 	 * currently holds root and a helper binary can be found; see
 	 * privsep-lifecycle.h.
 	 */
-	privsep_startup();
+	privsep_startup(argc, argv);
 
 	nvme.extensions->parent = &nvme;
 	atexit(free_plugins);

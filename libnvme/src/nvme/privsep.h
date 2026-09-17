@@ -9,14 +9,17 @@
  * harness/helper, and (as of Phase 3) nvme-cli's own
  * src/privsep-lifecycle.c, which owns forking and executing the helper.
  *
- * libnvme_open_privsep() and libnvme_privsep_open_device() are real public
- * API (__shr_public, listed in libnvme.ld) since nvme-cli itself is now a
- * genuine external-linkage caller, not just in-tree test code. The
+ * libnvme_open_privsep(), libnvme_privsep_open_device(), and
+ * libnvme_privsep_raw_ioctl() are real public API (__shr_public, listed in
+ * libnvme.ld) since nvme-cli itself is now a genuine external-linkage
+ * caller, not just in-tree test code. The
  * __libnvme_privsep_* functions below stay internal-linkage: they're only
  * ever reached indirectly, through the already-public
  * libnvme_exec_admin_passthru()/_io_passthru()/libnvme_close() dispatch.
  */
 #pragma once
+
+#include <stddef.h>
 
 struct libnvme_global_ctx;
 struct libnvme_transport_handle;
@@ -78,6 +81,31 @@ int __libnvme_privsep_fabrics_connect(struct libnvme_transport_handle *hdl,
  */
 int libnvme_privsep_open_device(struct libnvme_transport_handle *hdl,
 		const char *devname, int flags);
+
+/**
+ * libnvme_privsep_raw_ioctl() - Relay a non-NVMe-passthru ioctl through the
+ *				  helper (issue #3879 Phase 5)
+ * @hdl: An already-open PRIVSEP handle with a device open on it
+ *	 (libnvme_privsep_open_device()).
+ * @request: The ioctl request number. The helper only relays requests on
+ *	     its own fixed allowlist (SED-Opal and a handful of block/vendor
+ *	     ioctls, see libnvme/tests/privsep-helper/ioctl-allowlist.c) --
+ *	     this is not a generic "run any ioctl" escape hatch.
+ * @arg: Argument buffer, exactly as would be passed as ioctl()'s third
+ *	 argument -- except for IOC_OPAL_DISCOVERY, where @arg is the
+ *	 actual discovery buffer, not struct opal_discovery (see
+ *	 ioctl-allowlist.h for why). Updated in place with the helper's
+ *	 response on return, same as a real ioctl() would.
+ * @arg_size: Size of @arg. Must exactly equal the size the helper's
+ *	      allowlist expects for @request (usually, but not always,
+ *	      _IOC_SIZE(request)) or the helper rejects it.
+ *
+ * Return: 0 or the ioctl's own non-negative return value on success,
+ * negative error code otherwise (e.g. -EACCES if @request isn't
+ * allowlisted, -EMSGSIZE if @arg_size doesn't match).
+ */
+int libnvme_privsep_raw_ioctl(struct libnvme_transport_handle *hdl,
+		unsigned long request, void *arg, size_t arg_size);
 
 /* Closes hdl->privsep_sock and frees hdl. Called from libnvme_close(); does
  * not reap a helper process, since this phase does not spawn one.

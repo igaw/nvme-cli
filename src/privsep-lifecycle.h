@@ -83,8 +83,17 @@ bool privsep_find_drop_target(uid_t ruid, gid_t rgid, uid_t euid, gid_t egid,
  * privsep_get_channel()), or NULL if privsep is not in use for this
  * invocation -- callers fall back to the existing direct libnvme_open()
  * path unchanged.
+ *
+ * @argc, @argv: passed through untouched from main(), before any real
+ * argconfig parsing -- used only for a best-effort verbosity pre-scan
+ * (-v/-vv/-vvv/--verbose/-q/--quiet) so this function's own lifecycle
+ * narration (and the wire-level narration in ioctl-privsep.c, via the
+ * channel's ctx) can honor -vv from the very first line, before
+ * nvme_args.verbose exists. Not a real argconfig parse and not
+ * authoritative -- degrades gracefully if it misses something, since the
+ * real parse (later, per command) sets log_level again regardless.
  */
-struct libnvme_transport_handle *privsep_startup(void);
+struct libnvme_transport_handle *privsep_startup(int argc, char **argv);
 
 /**
  * privsep_get_channel() - The channel set up by privsep_startup()
