@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 /*
- * Phase 1 privsep helper (issue #3879): the process that will eventually
- * run privileged and issue the real ioctl. For this phase it is invoked
+ * privsep helper (issue #3879): the process that will eventually run
+ * privileged and issue the real ioctl. Through Phase 2 it was invoked
  * manually by the test harness (libnvme/tests/privsep/parent.c) over a
- * socket inherited at a fixed fd -- nothing in this phase spawns it
- * automatically or installs it. No allowlist, O_NOFOLLOW, or
- * capability/seccomp hardening yet: that's Phase 4. It reuses the
- * existing, already-shipped libnvme_open()/libnvme_exec_*_passthru() path
- * verbatim -- no path validation is reinvented here.
+ * socket inherited at a fixed fd; as of Phase 3, nvme-cli's own
+ * src/privsep-lifecycle.c spawns it the same way, at startup, before any
+ * device name is known -- nothing in this phase installs it anywhere yet.
+ * No allowlist, O_NOFOLLOW, or capability/seccomp hardening yet: that's
+ * Phase 4. It reuses the existing, already-shipped
+ * libnvme_open()/libnvme_exec_*_passthru() path verbatim -- no path
+ * validation is reinvented here.
+ *
+ * Session model (Phase 3): the helper starts with no device open. A
+ * LIBNVME_PRIVSEP_OP_OPEN_DEVICE request (see handle_open_device() below)
+ * opens one, closing whatever was previously open first -- one "current"
+ * device per session, not a table. ADMIN/IO requests before the first
+ * successful OPEN_DEVICE get -ENODEV.
  *
  * Test-only self-configuration: when told to open the literal sentinel
  * device name "NVME_TEST_FD"/"NVME_TEST_FD64" -- a mechanism libnvme_open()
@@ -81,6 +89,43 @@ static void handle_fabrics_connect(struct libnvme_global_ctx *ctx,
 }
 #endif
 
+/*
+ * req->data is the NUL-terminated device name (guaranteed by the sender,
+ * __libnvme_privsep_open_device()); req->cdw10 is the open() flags.
+ */
+static void handle_open_device(struct libnvme_global_ctx *ctx,
+		struct libnvme_transport_handle **hdlp,
+		const struct libnvme_privsep_req *req,
+		struct libnvme_privsep_resp *resp)
+{
+	const char *devname = (const char *)req->data;
+	bool is_test_fd = !strncmp(devname, "NVME_TEST_FD", 12);
+	struct libnvme_transport_handle *hdl;
+	int ret;
+
+	if (*hdlp) {
+		libnvme_close(*hdlp);
+		*hdlp = NULL;
+	}
+
+	/* Always set, not just when true: a later real open in the same
+	 * session must not inherit dry_run left on by an earlier test open.
+	 */
+	libnvme_set_dry_run(ctx, is_test_fd);
+
+	ret = libnvme_open(ctx, devname, (int)req->cdw10, &hdl);
+	if (ret) {
+		resp->status = ret;
+		return;
+	}
+
+	if (is_test_fd)
+		libnvme_transport_handle_set_submit_exit(hdl, test_submit_exit);
+
+	*hdlp = hdl;
+	resp->status = 0;
+}
+
 static void handle_one(struct libnvme_global_ctx *ctx,
 		struct libnvme_transport_handle *hdl,
 		const struct libnvme_privsep_req *req,
@@ -113,9 +158,6 @@ static void handle_one(struct libnvme_global_ctx *ctx,
 	case LIBNVME_PRIVSEP_OP_IO:
 		resp->status = libnvme_exec_io_passthru(hdl, &cmd);
 		break;
-	case LIBNVME_PRIVSEP_OP_FABRICS_CONNECT:
-		handle_fabrics_connect(ctx, req, resp);
-		return;
 	default:
 		resp->status = -EINVAL;
 		return;
@@ -125,40 +167,49 @@ static void handle_one(struct libnvme_global_ctx *ctx,
 	resp->data_len = req->data_len;
 }
 
+/* Dispatches every request type, including the two (OPEN_DEVICE,
+ * FABRICS_CONNECT) that don't operate on an already-open passthru handle.
+ */
+static void dispatch(struct libnvme_global_ctx *ctx,
+		struct libnvme_transport_handle **hdlp,
+		const struct libnvme_privsep_req *req,
+		struct libnvme_privsep_resp *resp)
+{
+	switch (req->op) {
+	case LIBNVME_PRIVSEP_OP_OPEN_DEVICE:
+		handle_open_device(ctx, hdlp, req, resp);
+		break;
+	case LIBNVME_PRIVSEP_OP_FABRICS_CONNECT:
+		handle_fabrics_connect(ctx, req, resp);
+		break;
+	default:
+		handle_one(ctx, *hdlp, req, resp);
+		break;
+	}
+}
+
 int main(int argc, char **argv)
 {
 	struct libnvme_global_ctx *ctx;
-	struct libnvme_transport_handle *hdl;
+	struct libnvme_transport_handle *hdl = NULL;
 	struct libnvme_privsep_req *req = malloc(sizeof(*req));
 	struct libnvme_privsep_resp *resp = malloc(sizeof(*resp));
-	const char *devname;
-	bool is_test_fd;
 	int ret;
 
-	if (argc < 2 || !req || !resp) {
-		fprintf(stderr, "usage: %s <devname> [32]\n", argv[0]);
+	if (!req || !resp) {
+		fprintf(stderr, "%s: out of memory\n", argv[0]);
 		return 2;
 	}
-	devname = argv[1];
-	is_test_fd = !strncmp(devname, "NVME_TEST_FD", 12);
 
 	ctx = libnvme_create_global_ctx();
 
-	if (is_test_fd) {
-		libnvme_set_dry_run(ctx, true);
-		if (argc > 2 && !strcmp(argv[2], "32"))
-			libnvme_set_ioctl_probing(ctx, false);
-	}
-
-	ret = libnvme_open(ctx, devname, 0, &hdl);
-	if (ret) {
-		fprintf(stderr, "%s: libnvme_open(%s) failed: %d\n",
-			argv[0], devname, ret);
-		return 1;
-	}
-
-	if (is_test_fd)
-		libnvme_transport_handle_set_submit_exit(hdl, test_submit_exit);
+	/* Test-only: force the 32-bit ioctl state machine for the whole
+	 * session (libnvme_set_ioctl_probing()'s doc explains why probing
+	 * alone can't reach it under dry_run). Real invocations never pass
+	 * this; nvme-cli's own spawner (src/privsep-lifecycle.c) doesn't.
+	 */
+	if (argc > 1 && !strcmp(argv[1], "32"))
+		libnvme_set_ioctl_probing(ctx, false);
 
 	for (;;) {
 		memset(resp, 0, offsetof(struct libnvme_privsep_resp, data));
@@ -175,11 +226,12 @@ int main(int argc, char **argv)
 		if (ret < 0)
 			break; /* garbled message: not a well-formed peer, stop */
 
-		handle_one(ctx, hdl, req, resp);
+		dispatch(ctx, &hdl, req, resp);
 		libnvme_privsep_send_resp(PRIVSEP_SOCK_FD, resp);
 	}
 
-	libnvme_close(hdl);
+	if (hdl)
+		libnvme_close(hdl);
 	libnvme_free_global_ctx(ctx);
 	free(req);
 	free(resp);

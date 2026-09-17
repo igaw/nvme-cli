@@ -21,6 +21,8 @@
 
 #include <libnvme.h>
 
+#include <shared/compiler-attributes-util.h>
+
 #include "private.h"
 #include "privsep.h"
 #include "privsep-proto.h"
@@ -150,7 +152,52 @@ out:
 	return ret;
 }
 
-int libnvme_open_privsep(struct libnvme_global_ctx *ctx, int sock,
+__shr_public int libnvme_privsep_open_device(struct libnvme_transport_handle *hdl,
+		const char *devname, int flags)
+{
+	struct libnvme_privsep_req *req;
+	struct libnvme_privsep_resp *resp;
+	size_t len = strlen(devname) + 1;
+	int ret;
+
+	if (len > LIBNVME_PRIVSEP_MAX_XFER)
+		return -EMSGSIZE;
+
+	req = malloc(sizeof(*req));
+	resp = malloc(sizeof(*resp));
+	if (!req || !resp) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	memset(req, 0, offsetof(struct libnvme_privsep_req, data));
+	req->op = LIBNVME_PRIVSEP_OP_OPEN_DEVICE;
+	req->cdw10 = (uint32_t)flags;
+	req->data_len = (uint32_t)len;
+	memcpy(req->data, devname, len);
+
+	if (libnvme_privsep_send_req(hdl->privsep_sock, req) !=
+			(ssize_t)libnvme_privsep_req_len(req)) {
+		ret = -EIO;
+		goto out;
+	}
+
+	ret = libnvme_privsep_recv_resp(hdl->privsep_sock, resp);
+	if (ret <= 0) {
+		ret = ret == 0 ? -EPIPE : ret;
+		goto out;
+	}
+
+	ret = resp->status;
+
+out:
+	free(req);
+	free(resp);
+
+	return ret;
+}
+
+__shr_public int libnvme_open_privsep(struct libnvme_global_ctx *ctx, int sock,
 		struct libnvme_transport_handle **hdlp)
 {
 	struct libnvme_transport_handle *hdl;

@@ -218,6 +218,16 @@ bool libnvme_transport_handle_is_direct(struct libnvme_transport_handle *hdl);
 bool libnvme_transport_handle_is_mi(struct libnvme_transport_handle *hdl);
 
 /**
+ * libnvme_transport_handle_is_privsep - Check if transport handle is using
+ * the privilege-separation passthru channel (issue #3879)
+ * @hdl:	Transport handle
+ *
+ * Return: Return true if transport handle is using the privsep channel,
+ * otherwise false.
+ */
+bool libnvme_transport_handle_is_privsep(struct libnvme_transport_handle *hdl);
+
+/**
  * libnvme_transport_handle_is_ns - Check if transport handle is a
  * namespace device
  * @hdl:	Transport handle

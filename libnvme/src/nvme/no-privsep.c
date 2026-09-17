@@ -7,9 +7,11 @@
 
 #include <libnvme.h>
 
+#include <shared/compiler-attributes-util.h>
+
 #include "privsep.h"
 
-int libnvme_open_privsep(struct libnvme_global_ctx *ctx, int sock,
+__shr_public int libnvme_open_privsep(struct libnvme_global_ctx *ctx, int sock,
 		struct libnvme_transport_handle **hdlp)
 {
 	return -ENOTSUP;
@@ -29,6 +31,12 @@ int __libnvme_privsep_io_passthru(struct libnvme_transport_handle *hdl,
 
 int __libnvme_privsep_fabrics_connect(struct libnvme_transport_handle *hdl,
 		const char *argstr, int *instance)
+{
+	return -ENOTSUP;
+}
+
+__shr_public int libnvme_privsep_open_device(struct libnvme_transport_handle *hdl,
+		const char *devname, int flags)
 {
 	return -ENOTSUP;
 }

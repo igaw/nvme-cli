@@ -229,3 +229,9 @@ __shr_public bool libnvme_transport_handle_is_mi(
 {
 	return hdl->type == LIBNVME_TRANSPORT_HANDLE_TYPE_MI;
 }
+
+__shr_public bool libnvme_transport_handle_is_privsep(
+		struct libnvme_transport_handle *hdl)
+{
+	return hdl->type == LIBNVME_TRANSPORT_HANDLE_TYPE_PRIVSEP;
+}

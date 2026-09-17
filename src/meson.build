@@ -26,6 +26,7 @@ sources = [
     'src/nvme-cmds-security.c',
     'src/plugin.c',
     'src/field-parser.c',
+    'src/privsep-lifecycle.c',
 ]
 
 if host_system == 'linux'

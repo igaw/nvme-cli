@@ -24,6 +24,8 @@
 #include "global-ctx.h"
 #include "logging.h"
 #include "nvme-print.h"
+#include "nvme/privsep.h"
+#include "privsep-lifecycle.h"
 
 static int check_arg_dev(int argc, char **argv)
 {
@@ -39,6 +41,7 @@ static int get_transport_handle(struct libnvme_global_ctx *ctx, int argc,
 					char **argv, int flags,
 					struct libnvme_transport_handle **hdl)
 {
+	struct libnvme_transport_handle *channel;
 	char *devname;
 	int ret;
 
@@ -47,6 +50,26 @@ static int get_transport_handle(struct libnvme_global_ctx *ctx, int argc,
 		return ret;
 
 	devname = argv[optind];
+
+	/*
+	 * Privilege separation (issue #3879): when active, there is one
+	 * shared channel handle for the whole invocation (set up once by
+	 * privsep_startup() before any argv was parsed) -- opening "a
+	 * device" means telling the already-running helper which one,
+	 * not creating a new transport handle per open. Covers repeated
+	 * opens within one command (e.g. open_fallback_chardev()'s sibling
+	 * re-open) the same way: each OPEN_DEVICE replaces the last.
+	 */
+	channel = privsep_get_channel();
+	if (channel) {
+		ret = libnvme_privsep_open_device(channel, devname, flags);
+		if (ret) {
+			nvme_show_err(ret, devname);
+			return ret;
+		}
+		*hdl = channel;
+		return 0;
+	}
 
 	ret = libnvme_open(ctx, devname, flags, hdl);
 	if (ret)
@@ -57,6 +80,15 @@ static int get_transport_handle(struct libnvme_global_ctx *ctx, int argc,
 
 void put_transport_handle(struct libnvme_transport_handle *hdl)
 {
+	/*
+	 * A privsep-backed handle is the shared per-invocation channel, not
+	 * a per-open resource -- leave it open for the rest of the process
+	 * (which may reopen a different device on it later); real teardown
+	 * happens once, at exit (privsep_startup()'s atexit() hook).
+	 */
+	if (libnvme_transport_handle_is_privsep(hdl))
+		return;
+
 	libnvme_close(hdl);
 }
 

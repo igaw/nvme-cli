@@ -89,6 +89,7 @@ LIBNVME_3 {
 		libnvme_ns_write_uncorrectable;
 		libnvme_ns_write_zeros;
 		libnvme_open;
+		libnvme_open_privsep;
 		libnvme_path_get_ctrl;
 		libnvme_path_get_inflights;
 		libnvme_path_get_io_ticks;
@@ -102,6 +103,7 @@ LIBNVME_3 {
 		libnvme_path_get_write_ticks;
 		libnvme_path_reset_stat;
 		libnvme_path_update_stat;
+		libnvme_privsep_open_device;
 		libnvme_random_uuid;
 		libnvme_realloc;
 		libnvme_reap_passthru;
@@ -145,6 +147,7 @@ LIBNVME_3 {
 		libnvme_transport_handle_is_direct;
 		libnvme_transport_handle_is_mi;
 		libnvme_transport_handle_is_ns;
+		libnvme_transport_handle_is_privsep;
 		libnvme_transport_handle_set_decide_retry;
 		libnvme_transport_handle_set_submit_entry;
 		libnvme_transport_handle_set_submit_exit;

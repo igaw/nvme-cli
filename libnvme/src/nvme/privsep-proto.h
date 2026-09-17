@@ -48,6 +48,18 @@ enum libnvme_privsep_op {
 	 * carries 0 or a negative errno exactly like the passthru ops.
 	 */
 	LIBNVME_PRIVSEP_OP_FABRICS_CONNECT,
+	/*
+	 * Open a device (issue #3879 Phase 3): req->data carries the
+	 * NUL-terminated device name, req->cdw10 carries the open() flags.
+	 * The helper closes whatever device it previously had open (if any)
+	 * before opening this one -- there is one "current" device per
+	 * helper session, not a table of them. Subsequent ADMIN/IO requests
+	 * apply to whichever device was most recently opened this way; sent
+	 * before any successful OPEN_DEVICE, they get -ENODEV. resp->status
+	 * carries 0 or a negative errno; resp->result and resp->data are
+	 * unused.
+	 */
+	LIBNVME_PRIVSEP_OP_OPEN_DEVICE,
 };
 
 struct libnvme_privsep_req {

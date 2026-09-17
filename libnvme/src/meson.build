@@ -135,6 +135,14 @@ if want_privsep
 else
     sources += 'nvme/no-privsep.c'
 endif
+# libnvme_open_privsep()/libnvme_privsep_open_device() are exported
+# (libnvme.ld) unconditionally -- no-privsep.c provides the -ENOTSUP stubs
+# when built without CONFIG_PRIVSEP -- so their prototypes need to be
+# reachable from an installed header unconditionally too, matching
+# check-public-headers.py's build-config-independent consistency check.
+headers += [
+    'nvme/privsep.h',
+]
 
 deps = [
     ccan_dep,

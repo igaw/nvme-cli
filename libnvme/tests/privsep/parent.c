@@ -9,8 +9,14 @@
  *
  * Each session spawns a fresh helper, since forcing the 32-bit vs 64-bit
  * ioctl state machine is a per-process ctx setting the helper self-
- * configures from argv before it ever calls libnvme_open() -- this
- * harness cannot reach across the exec boundary to change it afterward.
+ * configures before it ever calls libnvme_open() -- this harness cannot
+ * reach across the exec boundary to change it afterward.
+ *
+ * Phase 3: the helper no longer takes a device name via argv (nvme-cli's
+ * real usage forks before any argv is parsed, so the device name isn't
+ * known at spawn time either) -- this harness now opens it explicitly via
+ * LIBNVME_PRIVSEP_OP_OPEN_DEVICE (libnvme_privsep_open_device()) after
+ * the helper is already running, matching the real flow.
  */
 #include <errno.h>
 #include <inttypes.h>
@@ -46,11 +52,10 @@ static pid_t spawn_helper(bool force32, int *sock_out)
 	check(pid >= 0, "fork failed: %s", strerror(errno));
 
 	if (pid == 0) {
-		char *argv[4] = { (char *)helper_path, (char *)"NVME_TEST_FD",
-				   NULL, NULL };
+		char *argv[3] = { (char *)helper_path, NULL, NULL };
 
 		if (force32)
-			argv[2] = (char *)"32";
+			argv[1] = (char *)"32";
 
 		/*
 		 * Close sv[0] first: socketpair() commonly hands back the two
@@ -101,6 +106,27 @@ static void check_result(uint64_t result, uint8_t opcode, const char *what)
 {
 	check(result == (0xA5A5A5A5u ^ opcode),
 	      "%s: unexpected result 0x%" PRIx64, what, result);
+}
+
+/*
+ * Phase 3: before the first successful OPEN_DEVICE, the helper has no
+ * hdl -- libnvme_exec_admin_passthru()'s own `if (!hdl) return -ENODEV;`
+ * (ioctl-linux.c) handles this without any special-casing in the helper.
+ */
+static void run_admin_before_open_rejected(struct libnvme_transport_handle *hdl)
+{
+	struct nvme_id_ctrl id = {};
+	struct libnvme_passthru_cmd cmd = {};
+
+	nvme_init_identify_ctrl(&cmd, &id);
+	check(libnvme_exec_admin_passthru(hdl, &cmd) == -ENODEV,
+	      "admin passthru before OPEN_DEVICE should be rejected with -ENODEV");
+}
+
+static void run_open_device(struct libnvme_transport_handle *hdl)
+{
+	check(!libnvme_privsep_open_device(hdl, "NVME_TEST_FD", 0),
+	      "OPEN_DEVICE(NVME_TEST_FD) failed");
 }
 
 static void run_admin_identify(struct libnvme_transport_handle *hdl)
@@ -213,6 +239,8 @@ static void run_session(bool force32)
 	check(!libnvme_open_privsep(ctx, sock, &hdl),
 	      "libnvme_open_privsep failed");
 
+	run_admin_before_open_rejected(hdl);
+	run_open_device(hdl);
 	run_admin_identify(hdl);
 	run_admin_get_log_smart(hdl);
 	run_io_write(hdl);

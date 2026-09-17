@@ -2,13 +2,19 @@
 /*
  * This file is part of libnvme.
  *
- * LIBNVME_TRANSPORT_HANDLE_TYPE_PRIVSEP (issue #3879, Phase 1): a passthru
- * channel to a helper process that issues the real ioctl. Not yet part of
- * the public <libnvme.h> umbrella header -- like loopback.h, this is
- * included directly by whoever needs it (currently: the Phase 1 test
- * harness and helper binary). Phase 3 will decide the real public/opt-in
- * activation shape (mirroring libnvme_set_owner()-style setters) once
- * process-lifecycle spawning exists; this signature is transitional.
+ * LIBNVME_TRANSPORT_HANDLE_TYPE_PRIVSEP (issue #3879): a passthru channel
+ * to a helper process that issues the real ioctl. Not bundled into the
+ * <libnvme.h> umbrella header -- like <libnvme-mi.h>, this is its own
+ * header, included directly by whoever needs it: the libnvme test
+ * harness/helper, and (as of Phase 3) nvme-cli's own
+ * src/privsep-lifecycle.c, which owns forking and executing the helper.
+ *
+ * libnvme_open_privsep() and libnvme_privsep_open_device() are real public
+ * API (__shr_public, listed in libnvme.ld) since nvme-cli itself is now a
+ * genuine external-linkage caller, not just in-tree test code. The
+ * __libnvme_privsep_* functions below stay internal-linkage: they're only
+ * ever reached indirectly, through the already-public
+ * libnvme_exec_admin_passthru()/_io_passthru()/libnvme_close() dispatch.
  */
 #pragma once
 
@@ -25,10 +31,9 @@ struct libnvme_passthru_cmd;
  *	  handle takes ownership: libnvme_close() closes it.
  * @hdlp: On success, set to the new transport handle
  *
- * Does not spawn a helper: the caller (in Phase 1, the test harness; in a
- * later phase, nvme-cli's own process-lifecycle code) is responsible for
- * forking, executing the helper binary, and connecting @sock before
- * calling this.
+ * Does not spawn a helper: the caller (the libnvme test harness, or
+ * nvme-cli's own src/privsep-lifecycle.c) is responsible for forking,
+ * executing the helper binary, and connecting @sock before calling this.
  *
  * Return: 0 on success, negative error code otherwise (e.g. -ENOTSUP if
  * the library was built without privsep support).
@@ -56,6 +61,23 @@ int __libnvme_privsep_io_passthru(struct libnvme_transport_handle *hdl,
  */
 int __libnvme_privsep_fabrics_connect(struct libnvme_transport_handle *hdl,
 		const char *argstr, int *instance);
+
+/**
+ * libnvme_privsep_open_device() - Tell the helper which device to open
+ *				    (issue #3879 Phase 3)
+ * @hdl: An already-open PRIVSEP handle, reused as the control channel.
+ * @devname: Device name/path, exactly as would be passed to libnvme_open().
+ * @flags: open() flags, exactly as would be passed to libnvme_open().
+ *
+ * The helper closes whatever device it previously had open (if any) before
+ * opening this one -- there is one current device per helper session.
+ * Subsequent admin/IO passthru calls on @hdl apply to whichever device was
+ * most recently opened this way.
+ *
+ * Return: 0 on success, negative error code otherwise.
+ */
+int libnvme_privsep_open_device(struct libnvme_transport_handle *hdl,
+		const char *devname, int flags);
 
 /* Closes hdl->privsep_sock and frees hdl. Called from libnvme_close(); does
  * not reap a helper process, since this phase does not spawn one.

@@ -51,6 +51,7 @@
 #include "global-ctx.h"
 #include "nvme-print.h"
 #include "plugin.h"
+#include "privsep-lifecycle.h"
 
 static const char nvme_version_string[] = NVME_VERSION;
 
@@ -177,6 +178,15 @@ int main(int argc, char **argv)
 	_setmode(_fileno(stdout), O_BINARY);
 	_setmode(_fileno(stderr), O_BINARY);
 #endif
+
+	/*
+	 * Privilege separation (issue #3879): must happen before anything
+	 * else, including config-ini parsing just below -- that untrusted
+	 * parsing must never run privileged. A no-op unless this process
+	 * currently holds root and a helper binary can be found; see
+	 * privsep-lifecycle.h.
+	 */
+	privsep_startup();
 
 	nvme.extensions->parent = &nvme;
 	atexit(free_plugins);
