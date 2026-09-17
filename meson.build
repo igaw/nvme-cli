@@ -62,6 +62,7 @@ want_libkmod = get_option('libkmod').disabled() == false and host_system == 'lin
 want_tests = get_option('tests')
 want_ioctl_tests = want_tests and get_option('ioctl-tests')
 want_privsep_spike = want_ioctl_tests and get_option('privsep-spike')
+want_privsep = get_option('privsep')
 want_examples = get_option('examples') and host_system == 'linux'
 want_docs = get_option('docs')
 want_docs_build = get_option('docs-build')
@@ -170,6 +171,8 @@ conf.set('CONFIG_FABRICS', want_fabrics, description: 'Is fabrics enabled')
 conf.set('CONFIG_MI', want_mi, description: 'Is MI enabled')
 conf.set('CONFIG_LOOPBACK', want_ioctl_tests,
     description: 'Is the ioctl loopback test transport enabled')
+conf.set('CONFIG_PRIVSEP', want_privsep,
+    description: 'Is the privilege-separation passthru channel enabled (issue #3879)')
 conf.set('CONFIG_TOP', want_top, description: 'Is nvme top enabled')
 conf.set('CONFIG_DEPRECATED_CMDS', want_deprecated_cmds,
     description: 'Deprecated commands enabled')

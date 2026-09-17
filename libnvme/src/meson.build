@@ -130,6 +130,12 @@ else
     sources += 'nvme/no-loopback.c'
 endif
 
+if want_privsep
+    sources += 'nvme/ioctl-privsep.c'
+else
+    sources += 'nvme/no-privsep.c'
+endif
+
 deps = [
     ccan_dep,
     config_dep,

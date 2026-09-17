@@ -182,6 +182,7 @@ enum libnvme_transport_handle_type {
 	LIBNVME_TRANSPORT_HANDLE_TYPE_DIRECT,
 	LIBNVME_TRANSPORT_HANDLE_TYPE_MI,
 	LIBNVME_TRANSPORT_HANDLE_TYPE_LOOPBACK,
+	LIBNVME_TRANSPORT_HANDLE_TYPE_PRIVSEP,
 };
 
 enum ioctl_state {
@@ -238,6 +239,15 @@ struct libnvme_transport_handle {
 	size_t loopback_admin_remaining;
 	const struct libnvme_loopback_cmd *loopback_io_cmds;
 	size_t loopback_io_remaining;
+#endif
+
+#ifdef CONFIG_PRIVSEP
+	/* privsep: connected channel to the helper process that actually
+	 * issues the ioctl. Owned by whoever called libnvme_open_privsep();
+	 * this phase does not spawn the helper itself, so there is no pid
+	 * to reap here yet.
+	 */
+	int privsep_sock;
 #endif
 
 	struct libnvme_log *log;

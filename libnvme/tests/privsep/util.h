@@ -1,0 +1,15 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+#pragma once
+
+#include <stddef.h>
+#include <stdnoreturn.h>
+
+#if (defined(__MINGW32__) || defined(__MINGW64__)) && defined(__GNUC__)
+#define __fail_format(f, a) __attribute__((format(gnu_printf, f, a)))
+#else
+#define __fail_format(f, a) __attribute__((format(printf, f, a)))
+#endif
+
+noreturn void fail(const char *fmt, ...) __fail_format(1, 2);
+
+#define check(condition, fmt...) ((condition) || (fail(fmt), 0))

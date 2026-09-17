@@ -333,6 +333,11 @@ if want_privsep_spike
     subdir('privsep-spike')
 endif
 
+if want_privsep
+    subdir('privsep-helper')
+    subdir('privsep')
+endif
+
 if host_system == 'linux'
     subdir('sysfs')
     if want_fabrics

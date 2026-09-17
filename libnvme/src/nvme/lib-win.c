@@ -216,6 +216,11 @@ __shr_public void libnvme_close(struct libnvme_transport_handle *hdl)
 		break;
 	case LIBNVME_TRANSPORT_HANDLE_TYPE_LOOPBACK:
 	case LIBNVME_TRANSPORT_HANDLE_TYPE_UNKNOWN:
+	case LIBNVME_TRANSPORT_HANDLE_TYPE_PRIVSEP:
+		/* privsep is not built on Windows in this phase; hdl->fd (or
+		 * any privsep-specific field) was never populated, so a
+		 * plain free() is correct here, same as LOOPBACK/UNKNOWN.
+		 */
 		free(hdl);
 		break;
 	}

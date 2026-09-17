@@ -19,6 +19,7 @@
 #include "cleanup-linux.h"
 #include "private.h"
 #include "private-mi.h"
+#include "privsep.h"
 
 static int __libnvme_transport_handle_open_direct(
 		struct libnvme_transport_handle *hdl, const char *devname,
@@ -130,6 +131,9 @@ __shr_public void libnvme_close(struct libnvme_transport_handle *hdl)
 		break;
 	case LIBNVME_TRANSPORT_HANDLE_TYPE_MI:
 		__libnvme_transport_handle_close_mi(hdl);
+		break;
+	case LIBNVME_TRANSPORT_HANDLE_TYPE_PRIVSEP:
+		__libnvme_privsep_close(hdl);
 		break;
 	case LIBNVME_TRANSPORT_HANDLE_TYPE_LOOPBACK:
 	case LIBNVME_TRANSPORT_HANDLE_TYPE_UNKNOWN:
