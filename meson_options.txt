@@ -166,7 +166,7 @@ option(
   'privsep',
   type : 'boolean',
   value : false,
-  description : 'build LIBNVME_TRANSPORT_HANDLE_TYPE_PRIVSEP, its passthru channel, and the standalone helper binary (issue #3879 Phase 1). Not installed, not wired into nvme-cli yet.'
+  description : 'build LIBNVME_TRANSPORT_HANDLE_TYPE_PRIVSEP, its passthru channel, and the privileged helper binary (nvme-privsep-helper, installed to sbindir) that nvme-cli spawns and confines itself to when already invoked as root (issue #3879).'
 )
 option(
   'rundir',

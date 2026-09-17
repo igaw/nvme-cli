@@ -334,7 +334,6 @@ if want_privsep_spike
 endif
 
 if want_privsep
-    subdir('privsep-helper')
     subdir('privsep')
 endif
 

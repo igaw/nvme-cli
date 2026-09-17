@@ -261,6 +261,28 @@ libnvme_test_dep = declare_dependency(
     dependencies: [shared_dep],
 )
 
+# Static build of the same sources, for a privileged companion binary
+# (the privsep helper, issue #3879 Phase 6) that needs internal-linkage
+# access -- e.g. __nvmf_add_ctrl(), private-fabrics.h -- without either
+# promoting that access to permanent public ABI (a decision that outlives
+# any one caller and needs its own review) or depending on libnvme_test,
+# which is deliberately install:false and not something a real installed
+# binary may depend on at runtime. Linked statically, not as a shared
+# object: the resulting executable embeds this code directly and has no
+# runtime dependency on any libnvme .so at all.
+libnvme_internal = static_library(
+    libnvme_link_name + '-internal',
+    sources,
+    dependencies: deps,
+    install: false,
+)
+
+libnvme_internal_dep = declare_dependency(
+    link_with: libnvme_internal,
+    include_directories: '.',
+    dependencies: [shared_dep],
+)
+
 mode = 'rw-r--r--'
 install_headers(
     headers,

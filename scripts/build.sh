@@ -57,6 +57,7 @@ usage() {
     echo "  static              build a static binary"
     echo "  minimal_static      build a static binary without fabrics support"
     echo "  nofabrics           build without fabrics support, run unit tests"
+    echo "  privsep             build with privilege separation enabled, run unit tests"
     echo "  libnvme             build only libnvme"
     echo "  tests               build for nightly build"
     echo ""
@@ -379,6 +380,14 @@ config_meson_nofabrics() {
         -Dlibkmod=disabled                      \
         -Dopenssl=disabled                      \
         -Dkeyutils=disabled                     \
+        "${BUILDDIR}"
+}
+
+config_meson_privsep() {
+    CC="${CC}" "${MESON}" setup                 \
+        --werror                                \
+        --buildtype="${BUILDTYPE}"              \
+        -Dprivsep=true                          \
         "${BUILDDIR}"
 }
 

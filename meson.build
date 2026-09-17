@@ -668,12 +668,24 @@ if want_nvme
         link_args_list = ['-ldl']
     endif
 
+    nvme_c_args = []
+    if want_privsep
+        # Matches where libnvme/privsep-helper/meson.build actually
+        # installs it (issue #3879 Phase 6) -- see
+        # src/privsep-lifecycle.c's NVME_PRIVSEP_HELPER_DEFAULT_PATH.
+        nvme_c_args += [
+            '-DNVME_PRIVSEP_HELPER_DEFAULT_PATH="@0@"'.format(
+                sbindir / 'nvme-privsep-helper'),
+        ]
+    endif
+
     nvme_exe = executable(
         'nvme',
         sources,
         include_directories: 'src',
         dependencies: link_deps,
         link_args: link_args_list,
+        c_args: nvme_c_args,
         install: true,
         install_dir: sbindir,
     )

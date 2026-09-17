@@ -34,6 +34,9 @@ if want_libnvme
     subdir('tools/generator')  # generate code needed by src below
     subdir('src')              # declares: libnvme_dep
     subdir('libnvme3')
+    if want_privsep
+        subdir('privsep-helper')   # declares: nvme_privsep_helper
+    endif
     if want_tests
         subdir('tests')
     endif

@@ -53,6 +53,13 @@ bool privsep_find_drop_target(uid_t ruid, gid_t rgid, uid_t euid, gid_t egid,
 #include "nvme/privsep.h"
 #include "nvme/privsep-proto.h"
 
+/*
+ * The real build always defines this (root meson.build, -Dprivsep=true:
+ * sbindir / 'nvme-privsep-helper', matching where
+ * libnvme/privsep-helper/meson.build actually installs it -- issue
+ * #3879 Phase 6). This fallback only matters for a hand-invoked compiler
+ * command outside the normal build.
+ */
 #ifndef NVME_PRIVSEP_HELPER_DEFAULT_PATH
 #define NVME_PRIVSEP_HELPER_DEFAULT_PATH "/usr/sbin/nvme-privsep-helper"
 #endif
