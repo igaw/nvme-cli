@@ -6,10 +6,20 @@
  * socket inherited at a fixed fd; as of Phase 3, nvme-cli's own
  * src/privsep-lifecycle.c spawns it the same way, at startup, before any
  * device name is known -- nothing in this phase installs it anywhere yet.
- * No allowlist, O_NOFOLLOW, or capability/seccomp hardening yet: that's
- * Phase 4. It reuses the existing, already-shipped
- * libnvme_open()/libnvme_exec_*_passthru() path verbatim -- no path
- * validation is reinvented here.
+ * It reuses the existing, already-shipped libnvme_open()/
+ * libnvme_exec_*_passthru() path verbatim -- no path *parsing* is
+ * reinvented here, only the additional Phase 4 allowlist check layered
+ * in front of it (allowlist.c) plus O_NOFOLLOW.
+ *
+ * Phase 4 hardening (harden.c): after the first successful *real*
+ * (non-test-fd) device open, drops every capability but CAP_SYS_ADMIN and
+ * installs a seccomp-bpf filter. Deliberately not at process start --
+ * see harden.c and handle_open_device() below for why the timing matters.
+ * NVME_TEST_FD/NVME_TEST_FD64 dry-run sessions never reach it, by design:
+ * cap_set_proc() can only shrink a capability the process already holds,
+ * so exercising this in an environment without real privilege (this
+ * sandbox included) isn't possible -- see the Phase 4 plan's manual
+ * verification step.
  *
  * Session model (Phase 3): the helper starts with no device open. A
  * LIBNVME_PRIVSEP_OP_OPEN_DEVICE request (see handle_open_device() below)
@@ -43,8 +53,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <fcntl.h>
+
 #include <libnvme.h>
 
+#include "allowlist.h"
+#include "harden.h"
 #include "nvme/privsep-proto.h"
 #ifdef CONFIG_FABRICS
 #include "nvme/private-fabrics.h"
@@ -91,7 +105,9 @@ static void handle_fabrics_connect(struct libnvme_global_ctx *ctx,
 
 /*
  * req->data is the NUL-terminated device name (guaranteed by the sender,
- * __libnvme_privsep_open_device()); req->cdw10 is the open() flags.
+ * libnvme_privsep_open_device()) -- untrusted input from the unprivileged
+ * parent, never opened without the allowlist check below. req->cdw10 is
+ * the open() flags.
  */
 static void handle_open_device(struct libnvme_global_ctx *ctx,
 		struct libnvme_transport_handle **hdlp,
@@ -103,6 +119,11 @@ static void handle_open_device(struct libnvme_global_ctx *ctx,
 	struct libnvme_transport_handle *hdl;
 	int ret;
 
+	if (!privsep_is_allowed_devname(devname)) {
+		resp->status = -EACCES;
+		return;
+	}
+
 	if (*hdlp) {
 		libnvme_close(*hdlp);
 		*hdlp = NULL;
@@ -113,14 +134,21 @@ static void handle_open_device(struct libnvme_global_ctx *ctx,
 	 */
 	libnvme_set_dry_run(ctx, is_test_fd);
 
-	ret = libnvme_open(ctx, devname, (int)req->cdw10, &hdl);
+	ret = libnvme_open(ctx, devname, (int)req->cdw10 | O_NOFOLLOW, &hdl);
 	if (ret) {
 		resp->status = ret;
 		return;
 	}
 
-	if (is_test_fd)
+	if (is_test_fd) {
 		libnvme_transport_handle_set_submit_exit(hdl, test_submit_exit);
+	} else {
+		/* First real device open under full privilege has just
+		 * succeeded; harden before this handle is used for anything
+		 * else. See harden.c for why this timing, not process start.
+		 */
+		harden_once();
+	}
 
 	*hdlp = hdl;
 	resp->status = 0;

@@ -403,6 +403,18 @@ else
 endif
 conf.set('CONFIG_KEYUTILS', keyutils_dep.found(), description: 'Is libkeyutils available?')
 
+# Privsep helper hardening (issue #3879 Phase 4): required, not optional,
+# once -Dprivsep=true -- a privsep build with no capability/seccomp
+# hardening library would be a false sense of security, so there's no
+# separate user-facing option for these, only the existing 'privsep' one.
+if not want_privsep
+    libseccomp_dep = dependency('', required: false)
+    libcap_dep = dependency('', required: false)
+else
+    libseccomp_dep = dependency('libseccomp', required: true)
+    libcap_dep = dependency('libcap', required: true)
+endif
+
 if not want_discoverd
     libsystemd_dep = dependency('', required: false)
 else
