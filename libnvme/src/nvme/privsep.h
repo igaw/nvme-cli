@@ -41,6 +41,22 @@ int __libnvme_privsep_admin_passthru(struct libnvme_transport_handle *hdl,
 int __libnvme_privsep_io_passthru(struct libnvme_transport_handle *hdl,
 		struct libnvme_passthru_cmd *cmd);
 
+/**
+ * __libnvme_privsep_fabrics_connect() - Relay a fabrics connect through the
+ *					  helper (issue #3879 Phase 2)
+ * @hdl: An already-open PRIVSEP handle, reused here as a general control
+ *	 channel to the helper -- not tied to any one device.
+ * @argstr: An already-built connect option string (see build_options() in
+ *	    fabrics.c). Never (re)constructed on the helper side.
+ * @instance: On success, set to the parsed controller instance number.
+ *
+ * Return: the real __nvmf_add_ctrl()'s return value: a non-negative
+ * instance number on success (also written to @instance), or a negative
+ * -ENVME_CONNECT_* / -errno on failure.
+ */
+int __libnvme_privsep_fabrics_connect(struct libnvme_transport_handle *hdl,
+		const char *argstr, int *instance);
+
 /* Closes hdl->privsep_sock and frees hdl. Called from libnvme_close(); does
  * not reap a helper process, since this phase does not spawn one.
  */

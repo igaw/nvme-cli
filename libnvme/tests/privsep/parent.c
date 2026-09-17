@@ -147,6 +147,30 @@ static void run_io_write(struct libnvme_transport_handle *hdl)
 }
 
 /*
+ * Phase 2: relay a fabrics connect through the same helper and channel used
+ * for admin/IO passthru above. There is no dry-run double for
+ * __nvmf_add_ctrl() (unlike NVME_TEST_FD for ioctl passthru), so this can
+ * only validate the relay itself -- the real connect fails cleanly here
+ * because this machine has no /dev/nvme-fabrics (confirmed absent). On a
+ * machine that does have it, the connect would instead fail for a
+ * different reason (no real target at this address) -- either way the
+ * assertion is just "some negative status came back through the real
+ * exec'd helper," which is also exactly what a fabrics-disabled build
+ * reports (-ENOTSUP), so one assertion covers both configurations.
+ */
+static void run_fabrics_connect_relay(struct libnvme_transport_handle *hdl)
+{
+	static const char argstr[] =
+		"transport=tcp,nqn=nqn.2014-08.org.nvmexpress:privsep-spike,"
+		"traddr=203.0.113.1,trsvcid=4420";
+	int instance = -1;
+	int ret = __libnvme_privsep_fabrics_connect(hdl, argstr, &instance);
+
+	check(ret < 0, "fabrics connect relay: expected a negative status "
+	      "(no real target), got %d (instance=%d)", ret, instance);
+}
+
+/*
  * Bypasses libnvme_open_privsep()/libnvme_exec_admin_passthru() entirely to
  * exercise the shared framing code's (privsep-proto.h) own independent
  * rejection directly -- the same code path the helper relies on, not just
@@ -192,6 +216,7 @@ static void run_session(bool force32)
 	run_admin_identify(hdl);
 	run_admin_get_log_smart(hdl);
 	run_io_write(hdl);
+	run_fabrics_connect_relay(hdl);
 	run_oversized_rejection(sock);
 
 	libnvme_close(hdl); /* also closes sock, signaling the helper to exit */

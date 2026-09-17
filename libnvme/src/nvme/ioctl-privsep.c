@@ -101,6 +101,55 @@ int __libnvme_privsep_io_passthru(struct libnvme_transport_handle *hdl,
 	return privsep_passthru(hdl, LIBNVME_PRIVSEP_OP_IO, cmd);
 }
 
+int __libnvme_privsep_fabrics_connect(struct libnvme_transport_handle *hdl,
+		const char *argstr, int *instance)
+{
+	struct libnvme_privsep_req *req;
+	struct libnvme_privsep_resp *resp;
+	size_t len = strlen(argstr) + 1;
+	int ret;
+
+	if (len > LIBNVME_PRIVSEP_MAX_XFER)
+		return -EMSGSIZE;
+
+	req = malloc(sizeof(*req));
+	resp = malloc(sizeof(*resp));
+	if (!req || !resp) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	memset(req, 0, offsetof(struct libnvme_privsep_req, data));
+	req->op = LIBNVME_PRIVSEP_OP_FABRICS_CONNECT;
+	req->data_len = (uint32_t)len;
+	memcpy(req->data, argstr, len);
+
+	if (libnvme_privsep_send_req(hdl->privsep_sock, req) !=
+			(ssize_t)libnvme_privsep_req_len(req)) {
+		ret = -EIO;
+		goto out;
+	}
+
+	ret = libnvme_privsep_recv_resp(hdl->privsep_sock, resp);
+	if (ret <= 0) {
+		ret = ret == 0 ? -EPIPE : ret;
+		goto out;
+	}
+
+	if (resp->status == 0) {
+		*instance = (int)resp->result;
+		ret = *instance;
+	} else {
+		ret = resp->status;
+	}
+
+out:
+	free(req);
+	free(resp);
+
+	return ret;
+}
+
 int libnvme_open_privsep(struct libnvme_global_ctx *ctx, int sock,
 		struct libnvme_transport_handle **hdlp)
 {

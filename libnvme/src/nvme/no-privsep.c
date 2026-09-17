@@ -27,6 +27,12 @@ int __libnvme_privsep_io_passthru(struct libnvme_transport_handle *hdl,
 	return -ENOTSUP;
 }
 
+int __libnvme_privsep_fabrics_connect(struct libnvme_transport_handle *hdl,
+		const char *argstr, int *instance)
+{
+	return -ENOTSUP;
+}
+
 void __libnvme_privsep_close(struct libnvme_transport_handle *hdl)
 {
 	free(hdl);

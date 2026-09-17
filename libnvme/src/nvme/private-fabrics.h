@@ -117,6 +117,17 @@ int _libnvmf_tid_parse_strict_at_level(struct libnvme_global_ctx *ctx,
 				       int level, const char *str,
 				       struct libnvmf_tid **out);
 
+/*
+ * Opens /dev/nvme-fabrics, writes @argstr, reads back the kernel's reply,
+ * and returns the parsed controller instance number (or a negative
+ * -ENVME_CONNECT_* / -errno on failure). @argstr must already be fully
+ * built (see build_options()) -- this does no string construction of its
+ * own. Exposed (not static) so issue #3879's privsep helper
+ * (libnvme/tests/privsep-helper/helper.c) can call the exact same,
+ * already-reviewed sequence instead of reimplementing it.
+ */
+int __nvmf_add_ctrl(struct libnvme_global_ctx *ctx, const char *argstr);
+
 /**
  * NVMe-oF private struct definitions.
  *

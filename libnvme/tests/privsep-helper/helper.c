@@ -19,6 +19,12 @@
  * fork/exec/socket lifecycle, and the 32-vs-64-bit ioctl state machine's
  * *code path selection* -- not real kernel ioctl() behavior, since
  * dry_run skips the syscall entirely.
+ *
+ * Phase 2 addition: LIBNVME_PRIVSEP_OP_FABRICS_CONNECT relays a fabrics
+ * connect by calling the real, unmodified __nvmf_add_ctrl() (fabrics.c) --
+ * see handle_fabrics_connect() below. There is no dry-run double for it;
+ * on a machine without /dev/nvme-fabrics this simply returns a clean
+ * negative errno, which is enough to validate the relay itself.
  */
 #include <errno.h>
 #include <stdbool.h>
@@ -32,6 +38,9 @@
 #include <libnvme.h>
 
 #include "nvme/privsep-proto.h"
+#ifdef CONFIG_FABRICS
+#include "nvme/private-fabrics.h"
+#endif
 
 #define PRIVSEP_SOCK_FD 3
 
@@ -46,7 +55,34 @@ static void test_submit_exit(struct libnvme_transport_handle *hdl,
 		data[i] = (uint8_t)(i ^ cmd->opcode);
 }
 
-static void handle_one(struct libnvme_transport_handle *hdl,
+#ifdef CONFIG_FABRICS
+static void handle_fabrics_connect(struct libnvme_global_ctx *ctx,
+		const struct libnvme_privsep_req *req,
+		struct libnvme_privsep_resp *resp)
+{
+	/* req->data is the already-built option string (build_options(), in
+	 * fabrics.c) crossing the boundary as-is -- this never (re)builds it.
+	 */
+	int ret = __nvmf_add_ctrl(ctx, (const char *)req->data);
+
+	if (ret >= 0) {
+		resp->status = 0;
+		resp->result = (uint64_t)ret;
+	} else {
+		resp->status = ret;
+	}
+}
+#else
+static void handle_fabrics_connect(struct libnvme_global_ctx *ctx,
+		const struct libnvme_privsep_req *req,
+		struct libnvme_privsep_resp *resp)
+{
+	resp->status = -ENOTSUP;
+}
+#endif
+
+static void handle_one(struct libnvme_global_ctx *ctx,
+		struct libnvme_transport_handle *hdl,
 		const struct libnvme_privsep_req *req,
 		struct libnvme_privsep_resp *resp)
 {
@@ -77,6 +113,9 @@ static void handle_one(struct libnvme_transport_handle *hdl,
 	case LIBNVME_PRIVSEP_OP_IO:
 		resp->status = libnvme_exec_io_passthru(hdl, &cmd);
 		break;
+	case LIBNVME_PRIVSEP_OP_FABRICS_CONNECT:
+		handle_fabrics_connect(ctx, req, resp);
+		return;
 	default:
 		resp->status = -EINVAL;
 		return;
@@ -136,7 +175,7 @@ int main(int argc, char **argv)
 		if (ret < 0)
 			break; /* garbled message: not a well-formed peer, stop */
 
-		handle_one(hdl, req, resp);
+		handle_one(ctx, hdl, req, resp);
 		libnvme_privsep_send_resp(PRIVSEP_SOCK_FD, resp);
 	}
 

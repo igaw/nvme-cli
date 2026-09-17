@@ -39,6 +39,15 @@
 enum libnvme_privsep_op {
 	LIBNVME_PRIVSEP_OP_ADMIN = 1,
 	LIBNVME_PRIVSEP_OP_IO,
+	/*
+	 * Fabrics connect (issue #3879 Phase 2): req->data carries the
+	 * already-built, NUL-terminated option string (see build_options()
+	 * in fabrics.c, which runs only on the unprivileged side -- never
+	 * here), req->data_len = strlen(argstr) + 1. resp->result carries
+	 * the parsed controller instance number on success; resp->status
+	 * carries 0 or a negative errno exactly like the passthru ops.
+	 */
+	LIBNVME_PRIVSEP_OP_FABRICS_CONNECT,
 };
 
 struct libnvme_privsep_req {

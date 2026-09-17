@@ -1712,7 +1712,7 @@ static void registry_update_on_connect(struct libnvme_global_ctx *ctx,
 			    instance, libnvme_strerror(-ret));
 }
 
-static int __nvmf_add_ctrl(struct libnvme_global_ctx *ctx, const char *argstr)
+int __nvmf_add_ctrl(struct libnvme_global_ctx *ctx, const char *argstr)
 {
 	__cleanup_fd int fd = -1;
 	int ret, len = strlen(argstr);
