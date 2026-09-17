@@ -1452,6 +1452,19 @@ static void test_lm_migration_recv(void)
 	cmp(&data, &expected_data, sizeof(data), "incorrect data");
 }
 
+static void test_get_fd_non_direct(void)
+{
+	/*
+	 * libnvme_transport_handle_get_fd()'s own doc comment promises
+	 * LIBNVME_INVALID_FD for any non-DIRECT handle. test_hdl here is a
+	 * loopback handle, which never assigns hdl->fd, so a naive `return
+	 * hdl->fd` would silently hand back 0 (stdin) instead.
+	 */
+	check(libnvme_transport_handle_get_fd(test_hdl) == LIBNVME_INVALID_FD,
+	      "expected LIBNVME_INVALID_FD for a non-DIRECT handle, got %d",
+	      (int)libnvme_transport_handle_get_fd(test_hdl));
+}
+
 static void run_test(const char *test_name, void (*test_fn)(void))
 {
 	printf("Running test %s...", test_name);
@@ -1521,6 +1534,7 @@ int main(void)
 	RUN_TEST(lm_track_send);
 	RUN_TEST(lm_migration_send);
 	RUN_TEST(lm_migration_recv);
+	RUN_TEST(get_fd_non_direct);
 
 	libnvme_free_global_ctx(ctx);
 }
