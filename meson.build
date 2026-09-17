@@ -865,6 +865,8 @@ dep_dict = {
     'liburing':         liburing_dep.found(),
     'libkmod':          libkmod_dep.found(),
     'libsystemd':       libsystemd_dep.found(),
+    'libseccomp':       libseccomp_dep.found(),
+    'libcap':           libcap_dep.found(),
 }
 if host_system == 'windows'
     dep_dict += {
@@ -885,6 +887,7 @@ wanted_dict = {
     'deprecated-cmds':  want_deprecated_cmds,
     'python bindings ': want_python,
     'build docs':       want_docs_build,
+    'privsep':          want_privsep,
 }
 summary(wanted_dict, section: 'Features to build', bool_yn: true)
 
