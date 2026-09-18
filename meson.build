@@ -645,6 +645,7 @@ if want_nvme
         shared_dep,
         json_c_dep,
         libkmod_dep,
+        libcap_dep,
     ]
 
     if host_system == 'windows'

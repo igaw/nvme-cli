@@ -45,10 +45,10 @@ bool privsep_should_engage(uid_t ruid, uid_t euid);
  *      rejected defensively -- "drop to root" isn't a drop.
  *   3. else: no distinguishable lower-privilege identity exists (a bare
  *      root shell, no sudo, no setuid bit) -- returns false. Privsep
- *      still engages in this case (see privsep_should_engage()), but the
- *      parent cannot usefully drop; the confinement benefit on the
- *      parent side is zero here, though the child is still confined and
- *      Phase 4's hardening still applies to it.
+ *      still engages in this case (see privsep_should_engage()); the
+ *      caller (privsep_startup()) substitutes a capability-only drop
+ *      (uid stays 0, but capabilities go to empty) since there is no
+ *      other uid to become.
  *
  * Pure function, unit-testable without real uids/env vars.
  *
@@ -65,12 +65,17 @@ bool privsep_find_drop_target(uid_t ruid, gid_t rgid, uid_t euid, gid_t egid,
  * Real orchestration (issue #3879 Phase 3), called once at the very top
  * of main(), before any argv or config-ini parsing: if
  * privsep_should_engage() says yes and a helper binary can be found
- * (NVME_PRIVSEP_HELPER_PATH environment override, else a compiled-in
- * default path -- nothing installs a real one there before Phase 6),
- * forks, execs the helper over a fresh socketpair, and in the parent
- * drops to the identity found by privsep_find_drop_target() (if any) and
- * wraps the connected socket via libnvme_open_privsep(). Registers its
- * own atexit() teardown.
+ * (NVME_PRIVSEP_HELPER_PATH environment override, else a path relative
+ * to this binary's own real location -- covers both the installed
+ * layout and running straight out of a build directory -- else the
+ * compiled-in installed-layout default), forks, execs the helper over a
+ * fresh socketpair, and in the parent either drops to the identity found
+ * by privsep_find_drop_target() or, if none exists, drops its own
+ * capabilities to empty instead (see privsep_find_drop_target()'s doc
+ * comment) -- either way the parent never keeps doing the untrusted
+ * argv/config-ini parsing and decode work with more privilege than it
+ * needs. Wraps the connected socket via libnvme_open_privsep().
+ * Registers its own atexit() teardown.
  *
  * Known limitation, not solved here: the resulting channel's own
  * libnvme_global_ctx is independent of whatever ctx each command later

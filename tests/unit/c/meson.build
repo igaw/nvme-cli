@@ -48,6 +48,7 @@ if want_privsep
             ccan_dep,
             libnvme_dep,
             shared_dep,
+            libcap_dep,
         ],
     )
 

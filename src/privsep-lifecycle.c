@@ -51,6 +51,8 @@ bool privsep_find_drop_target(uid_t ruid, gid_t rgid, uid_t euid, gid_t egid,
 }
 
 #ifdef CONFIG_PRIVSEP
+#include <sys/capability.h>
+
 #include "nvme/privsep.h"
 #include "nvme/privsep-proto.h"
 
@@ -252,6 +254,60 @@ static void privsep_prescan_verbosity(int argc, char **argv, int *verbose,
 	*quiet = q;
 }
 
+/*
+ * Bare-root case: privsep_find_drop_target() found no real/sudo identity
+ * to setuid()/setgid() away from (a literal root shell or a plain
+ * `sudo su -`-style invocation, no setuid bit, no SUDO_UID/SUDO_GID) --
+ * without this, the parent (all the untrusted argv/config-ini parsing
+ * and JSON/plugin decode logic privsep exists to confine) would simply
+ * stay full root for the rest of the run, defeating the point even
+ * though the helper is correctly confined. setuid() to a real non-root
+ * uid already clears capabilities as a kernel side effect, so that case
+ * needs nothing extra; this is the substitute for the case where there
+ * is no other uid to become.
+ *
+ * Drops to EMPTY, not {CAP_SYS_ADMIN} like
+ * libnvme/privsep-helper/harden.c's drop_capabilities() (which this
+ * mirrors) -- the parent issues no ioctls at all once privsep is
+ * engaged, so it needs no capability whatsoever. Bounding-set drop
+ * first, matching harden.c's ordering: it needs CAP_SETPCAP, which
+ * cap_set_proc() below would already have cleared.
+ *
+ * Return: true on success. A failure here is treated the same as a
+ * failed setuid()/setgid() above (see privsep_startup()) -- fail
+ * closed, no live privileged connection without it.
+ */
+static bool privsep_drop_own_capabilities(void)
+{
+	cap_value_t cap;
+	cap_t caps;
+	bool ok;
+
+	/* Best-effort per bit: an unsupported/unrecognized capability
+	 * number on this kernel isn't itself a hardening failure.
+	 */
+	for (cap = 0; cap < cap_max_bits(); cap++)
+		cap_drop_bound(cap);
+
+	caps = cap_init();
+	if (!caps) {
+		privsep_log(LIBNVME_LOG_WARN,
+			    "privsep: cap_init failed, can't drop parent capabilities\n");
+		return false;
+	}
+
+	ok = !cap_clear(caps) && !cap_set_proc(caps);
+	if (!ok)
+		privsep_log(LIBNVME_LOG_WARN,
+			    "privsep: cap_set_proc failed, can't drop parent "
+			    "capabilities: %s\n", strerror(errno));
+	else
+		privsep_log(LIBNVME_LOG_DEBUG, "privsep: parent capabilities dropped\n");
+
+	cap_free(caps);
+	return ok;
+}
+
 struct libnvme_transport_handle *privsep_startup(int argc, char **argv)
 {
 	const char *path;
@@ -294,8 +350,8 @@ struct libnvme_transport_handle *privsep_startup(int argc, char **argv)
 	else
 		privsep_log(LIBNVME_LOG_DEBUG,
 			    "privsep: no drop target found (bare root, no "
-			    "setuid bit, no SUDO_UID/SUDO_GID); parent stays "
-			    "root, child is still confined\n");
+			    "setuid bit, no SUDO_UID/SUDO_GID); parent will "
+			    "drop its own capabilities instead after fork\n");
 
 	if (socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv) < 0) {
 		privsep_log(LIBNVME_LOG_DEBUG,
@@ -349,6 +405,11 @@ struct libnvme_transport_handle *privsep_startup(int argc, char **argv)
 		}
 		privsep_log(LIBNVME_LOG_DEBUG, "privsep: parent dropped to uid=%d "
 			    "gid=%d\n", getuid(), getgid());
+	} else if (!privsep_drop_own_capabilities()) {
+		/* Same fail-closed rule as above. */
+		close(sv[0]);
+		waitpid(pid, NULL, 0);
+		return NULL;
 	}
 
 	ctx = libnvme_create_global_ctx();
