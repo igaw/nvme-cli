@@ -90,9 +90,12 @@ bool privsep_find_drop_target(uid_t ruid, gid_t rgid, uid_t euid, gid_t egid,
  * to this binary's own real location -- covers both the installed
  * layout and running straight out of a build directory -- else the
  * compiled-in installed-layout default), forks, execs the helper over a
- * fresh socketpair, and in the parent either drops to the identity found
- * by privsep_find_drop_target() or, if none exists, drops its own
- * capabilities to empty instead (see privsep_find_drop_target()'s doc
+ * fresh socketpair, and in the parent unconditionally drops the
+ * capability bounding set (before touching uid at all -- a real
+ * setuid()/setgid() clears EFFECTIVE/PERMITTED as a kernel side effect,
+ * but never the bounding set), then either drops to the identity found
+ * by privsep_find_drop_target() or, if none exists, clears its own
+ * EFFECTIVE/PERMITTED sets too (see privsep_find_drop_target()'s doc
  * comment) -- either way the parent never keeps doing the untrusted
  * argv/config-ini parsing and decode work with more privilege than it
  * needs. Wraps the connected socket via libnvme_open_privsep().

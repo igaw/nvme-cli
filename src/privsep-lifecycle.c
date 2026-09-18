@@ -277,39 +277,61 @@ static void privsep_prescan_verbosity(int argc, char **argv, int *verbose,
 }
 
 /*
- * Bare-root case: privsep_find_drop_target() found no real/sudo identity
- * to setuid()/setgid() away from (a literal root shell or a plain
- * `sudo su -`-style invocation, no setuid bit, no SUDO_UID/SUDO_GID) --
- * without this, the parent (all the untrusted argv/config-ini parsing
- * and JSON/plugin decode logic privsep exists to confine) would simply
- * stay full root for the rest of the run, defeating the point even
- * though the helper is correctly confined. setuid() to a real non-root
- * uid already clears capabilities as a kernel side effect, so that case
- * needs nothing extra; this is the substitute for the case where there
- * is no other uid to become.
+ * Always run, unconditionally, before any setuid()/setgid() below --
+ * regardless of whether the parent goes on to drop to a real uid or
+ * stays uid 0. setuid() to a real non-root uid already clears the
+ * process's EFFECTIVE/PERMITTED capability sets as a kernel side effect
+ * (capabilities(7), "Effect of user ID changes on capabilities"), but
+ * that leaves the BOUNDING set untouched -- no uid transition affects
+ * it, only an explicit prctl(PR_CAPBSET_DROP) while CAP_SETPCAP is still
+ * held. Left full, anything this (now unprivileged-looking) process
+ * later exec()s that's setuid-root or carries file capabilities could
+ * still reacquire up to whatever's in that bounding set. Dropping it
+ * unconditionally closes that regardless of which uid path is taken.
+ *
+ * Must run *before* any setuid()/setgid() call, not after: it needs
+ * CAP_SETPCAP, which a uid transition away from 0 would already have
+ * cleared from EFFECTIVE. Mirrors libnvme/privsep-helper/harden.c's
+ * drop_capabilities() bounding-set loop and its same "best-effort per
+ * bit" stance -- an unsupported/unrecognized capability number on this
+ * kernel isn't itself a hardening failure, matching harden.c's precedent
+ * of only fail-closing on the EFFECTIVE/PERMITTED clear that follows
+ * (here, in privsep_clear_own_capabilities() below), not on this loop.
+ */
+static void privsep_drop_capability_bounding_set(void)
+{
+	cap_value_t cap;
+
+	for (cap = 0; cap < cap_max_bits(); cap++)
+		cap_drop_bound(cap);
+}
+
+/*
+ * Bare-root case only: privsep_find_drop_target() found no real/sudo/
+ * explicit identity to setuid()/setgid() away from (a literal root
+ * shell, no sudo, no NVME_PRIVSEP_DROP_UID/GID) -- without this, the
+ * parent (all the untrusted argv/config-ini parsing and JSON/plugin
+ * decode logic privsep exists to confine) would simply stay full root
+ * for the rest of the run, defeating the point even though the helper
+ * is correctly confined. A real setuid()/setgid() call would already
+ * clear EFFECTIVE/PERMITTED as a kernel side effect (see
+ * privsep_drop_capability_bounding_set()'s comment); this is the
+ * substitute for the case where there's no other uid to become, so
+ * nothing does that clearing for us.
  *
  * Drops to EMPTY, not {CAP_SYS_ADMIN} like
  * libnvme/privsep-helper/harden.c's drop_capabilities() (which this
  * mirrors) -- the parent issues no ioctls at all once privsep is
- * engaged, so it needs no capability whatsoever. Bounding-set drop
- * first, matching harden.c's ordering: it needs CAP_SETPCAP, which
- * cap_set_proc() below would already have cleared.
+ * engaged, so it needs no capability whatsoever.
  *
  * Return: true on success. A failure here is treated the same as a
- * failed setuid()/setgid() above (see privsep_startup()) -- fail
- * closed, no live privileged connection without it.
+ * failed setuid()/setgid() (see privsep_startup()) -- fail closed, no
+ * live privileged connection without it.
  */
-static bool privsep_drop_own_capabilities(void)
+static bool privsep_clear_own_capabilities(void)
 {
-	cap_value_t cap;
 	cap_t caps;
 	bool ok;
-
-	/* Best-effort per bit: an unsupported/unrecognized capability
-	 * number on this kernel isn't itself a hardening failure.
-	 */
-	for (cap = 0; cap < cap_max_bits(); cap++)
-		cap_drop_bound(cap);
 
 	caps = cap_init();
 	if (!caps) {
@@ -414,6 +436,11 @@ struct libnvme_transport_handle *privsep_startup(int argc, char **argv)
 	privsep_log(LIBNVME_LOG_DEBUG, "privsep: forked helper pid %d\n", (int)pid);
 	close(sv[1]);
 
+	/* Unconditional, and before any setuid()/setgid() below -- see
+	 * privsep_drop_capability_bounding_set()'s comment for why both.
+	 */
+	privsep_drop_capability_bounding_set();
+
 	if (have_drop_target) {
 		/* Fail closed: if we can't honor the drop, don't continue
 		 * privileged with a live helper connection.
@@ -428,7 +455,7 @@ struct libnvme_transport_handle *privsep_startup(int argc, char **argv)
 		}
 		privsep_log(LIBNVME_LOG_DEBUG, "privsep: parent dropped to uid=%d "
 			    "gid=%d\n", getuid(), getgid());
-	} else if (!privsep_drop_own_capabilities()) {
+	} else if (!privsep_clear_own_capabilities()) {
 		/* Same fail-closed rule as above. */
 		close(sv[0]);
 		waitpid(pid, NULL, 0);
