@@ -4,6 +4,8 @@
 #include <shared/cleanup-util.h>
 #include <libnvme.h>
 
+#include "global-ctx.h"
+
 static inline void libnvme_freep(void *p)
 {
 	libnvme_free(*(void **)p);
@@ -18,9 +20,20 @@ static inline void cleanup_nvme_global_ctx(struct libnvme_global_ctx **ctx)
 }
 #define __cleanup_nvme_global_ctx __cleanup(cleanup_nvme_global_ctx)
 
+/*
+ * put_transport_handle(), not a bare libnvme_close(): a privsep-backed
+ * handle (issue #3879) is the shared per-invocation channel, not a
+ * per-open resource, and must not be closed here -- only
+ * put_transport_handle() knows that distinction. Every one of this
+ * attribute's ~60 call sites across src/ and plugins/ gets this for
+ * free through this one chokepoint; found the hard way (a real
+ * heap-use-after-free, ASan-confirmed via a genuine root invocation)
+ * when this used to call libnvme_close() directly, double-freeing the
+ * shared channel once per command and again at process exit.
+ */
 static inline void cleanup_nvme_transport_handle(struct libnvme_transport_handle **hdl)
 {
-	libnvme_close(*hdl);
+	put_transport_handle(*hdl);
 }
 #define __cleanup_nvme_transport_handle __cleanup(cleanup_nvme_transport_handle)
 

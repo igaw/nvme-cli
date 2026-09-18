@@ -115,6 +115,19 @@ int nvme_raw_ioctl(struct libnvme_transport_handle *hdl, unsigned long request,
 void put_transport_handle(struct libnvme_transport_handle *hdl)
 {
 	/*
+	 * Tolerate NULL like libnvme_close() itself does: as of issue
+	 * #3879, this is also the target of src/cleanup.h's
+	 * __cleanup_nvme_transport_handle RAII attribute, which -- unlike
+	 * this function's original explicit call sites -- always runs on
+	 * scope exit, including when the handle was never successfully
+	 * acquired (e.g. parse_and_open() failed early, hdl stayed NULL).
+	 * libnvme_transport_handle_is_privsep() below dereferences hdl
+	 * unconditionally and would crash on NULL otherwise.
+	 */
+	if (!hdl)
+		return;
+
+	/*
 	 * A privsep-backed handle is the shared per-invocation channel, not
 	 * a per-open resource -- leave it open for the rest of the process
 	 * (which may reopen a different device on it later); real teardown
