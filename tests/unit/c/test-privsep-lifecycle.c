@@ -44,7 +44,7 @@ static void test_drop_target_setuid(void)
 	 * regardless of anything SUDO_UID/SUDO_GID might claim.
 	 */
 	shr_assert(privsep_find_drop_target(1000, 2000, 0, 0,
-			"3000", "4000", &uid, &gid));
+			NULL, NULL, "3000", "4000", &uid, &gid));
 	shr_assert(uid == 1000);
 	shr_assert(gid == 2000);
 }
@@ -58,7 +58,7 @@ static void test_drop_target_sudo(void)
 	 * SUDO_UID/SUDO_GID convention is the only way to find who invoked.
 	 */
 	shr_assert(privsep_find_drop_target(0, 0, 0, 0,
-			"1000", "1000", &uid, &gid));
+			NULL, NULL, "1000", "1000", &uid, &gid));
 	shr_assert(uid == 1000);
 	shr_assert(gid == 1000);
 }
@@ -72,7 +72,7 @@ static void test_drop_target_sudo_uid_zero_rejected(void)
 	 * rather than "drop to root".
 	 */
 	shr_assert(!privsep_find_drop_target(0, 0, 0, 0,
-			"0", "0", &uid, &gid));
+			NULL, NULL, "0", "0", &uid, &gid));
 }
 
 static void test_drop_target_sudo_malformed_rejected(void)
@@ -81,11 +81,11 @@ static void test_drop_target_sudo_malformed_rejected(void)
 	gid_t gid = 12345;
 
 	shr_assert(!privsep_find_drop_target(0, 0, 0, 0,
-			"not-a-number", "1000", &uid, &gid));
+			NULL, NULL, "not-a-number", "1000", &uid, &gid));
 	shr_assert(!privsep_find_drop_target(0, 0, 0, 0,
-			"1000", NULL, &uid, &gid));
+			NULL, NULL, "1000", NULL, &uid, &gid));
 	shr_assert(!privsep_find_drop_target(0, 0, 0, 0,
-			NULL, NULL, &uid, &gid));
+			NULL, NULL, NULL, NULL, &uid, &gid));
 }
 
 static void test_drop_target_bare_root_no_target(void)
@@ -93,10 +93,75 @@ static void test_drop_target_bare_root_no_target(void)
 	uid_t uid = 12345;
 	gid_t gid = 12345;
 
-	/* A bare root shell: real == effective, no sudo env vars. Honest
-	 * "nothing to drop to", not a crash or a guessed identity.
+	/* A bare root shell: real == effective, no sudo env vars, no
+	 * explicit override. Honest "nothing to drop to", not a crash or a
+	 * guessed identity.
 	 */
-	shr_assert(!privsep_find_drop_target(0, 0, 0, 0, NULL, NULL, &uid, &gid));
+	shr_assert(!privsep_find_drop_target(0, 0, 0, 0,
+			NULL, NULL, NULL, NULL, &uid, &gid));
+}
+
+static void test_drop_target_explicit_override(void)
+{
+	uid_t uid = 12345;
+	gid_t gid = 12345;
+
+	/* NVME_PRIVSEP_DROP_UID/GID on an otherwise bare-root process (no
+	 * setuid bit, no sudo) -- exactly the case an orchestrator with no
+	 * natural non-root identity of its own needs.
+	 */
+	shr_assert(privsep_find_drop_target(0, 0, 0, 0,
+			"5000", "5000", NULL, NULL, &uid, &gid));
+	shr_assert(uid == 5000);
+	shr_assert(gid == 5000);
+}
+
+static void test_drop_target_explicit_override_wins_priority(void)
+{
+	uid_t uid = 12345;
+	gid_t gid = 12345;
+
+	/* The explicit override outranks both auto-detected sources, not
+	 * just the bare-root fallback.
+	 */
+	shr_assert(privsep_find_drop_target(1000, 2000, 0, 0,
+			"5000", "5000", NULL, NULL, &uid, &gid));
+	shr_assert(uid == 5000);
+	shr_assert(gid == 5000);
+
+	uid = 12345;
+	gid = 12345;
+	shr_assert(privsep_find_drop_target(0, 0, 0, 0,
+			"5000", "5000", "3000", "4000", &uid, &gid));
+	shr_assert(uid == 5000);
+	shr_assert(gid == 5000);
+}
+
+static void test_drop_target_explicit_override_zero_rejected(void)
+{
+	uid_t uid = 12345;
+	gid_t gid = 12345;
+
+	/* Same "drop to root isn't a drop" rule applies to an explicit
+	 * request as to SUDO_UID=0 -- falls through, doesn't silently
+	 * grant it. Bare root here, so it falls all the way through to
+	 * "no target found".
+	 */
+	shr_assert(!privsep_find_drop_target(0, 0, 0, 0,
+			"0", "0", NULL, NULL, &uid, &gid));
+}
+
+static void test_drop_target_explicit_override_malformed_falls_through(void)
+{
+	uid_t uid = 12345;
+	gid_t gid = 12345;
+
+	/* A malformed override doesn't hard-error -- it falls through to
+	 * the next priority level, here the setuid case. */
+	shr_assert(privsep_find_drop_target(1000, 2000, 0, 0,
+			"not-a-number", "5000", NULL, NULL, &uid, &gid));
+	shr_assert(uid == 1000);
+	shr_assert(gid == 2000);
 }
 
 int main(void)
@@ -107,6 +172,10 @@ int main(void)
 	RUN_TEST(drop_target_sudo_uid_zero_rejected);
 	RUN_TEST(drop_target_sudo_malformed_rejected);
 	RUN_TEST(drop_target_bare_root_no_target);
+	RUN_TEST(drop_target_explicit_override);
+	RUN_TEST(drop_target_explicit_override_wins_priority);
+	RUN_TEST(drop_target_explicit_override_zero_rejected);
+	RUN_TEST(drop_target_explicit_override_malformed_falls_through);
 
 	return 0;
 }

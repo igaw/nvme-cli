@@ -25,27 +25,49 @@ bool privsep_should_engage(uid_t ruid, uid_t euid)
 	return euid == 0;
 }
 
+/*
+ * Shared by the NVME_PRIVSEP_DROP_UID/GID and SUDO_UID/GID cases: both
+ * are "a pair of decimal strings from the environment, or nothing" with
+ * identical validation (both present, both fully-numeric, both
+ * strictly positive -- 0 is never a real drop target, "drop to root"
+ * isn't a drop).
+ */
+static bool parse_uid_gid_pair(const char *uid_str, const char *gid_str,
+		uid_t *out_uid, gid_t *out_gid)
+{
+	char *end_uid, *end_gid;
+	long uid, gid;
+
+	if (!uid_str || !*uid_str || !gid_str || !*gid_str)
+		return false;
+
+	uid = strtol(uid_str, &end_uid, 10);
+	gid = strtol(gid_str, &end_gid, 10);
+
+	if (*end_uid || *end_gid || uid <= 0 || gid <= 0)
+		return false;
+
+	*out_uid = (uid_t)uid;
+	*out_gid = (gid_t)gid;
+	return true;
+}
+
 bool privsep_find_drop_target(uid_t ruid, gid_t rgid, uid_t euid, gid_t egid,
+		const char *drop_uid_env, const char *drop_gid_env,
 		const char *sudo_uid, const char *sudo_gid,
 		uid_t *out_uid, gid_t *out_gid)
 {
+	if (parse_uid_gid_pair(drop_uid_env, drop_gid_env, out_uid, out_gid))
+		return true;
+
 	if (ruid != euid) {
 		*out_uid = ruid;
 		*out_gid = rgid;
 		return true;
 	}
 
-	if (sudo_uid && *sudo_uid && sudo_gid && *sudo_gid) {
-		char *end_uid, *end_gid;
-		long uid = strtol(sudo_uid, &end_uid, 10);
-		long gid = strtol(sudo_gid, &end_gid, 10);
-
-		if (!*end_uid && !*end_gid && uid > 0 && gid > 0) {
-			*out_uid = (uid_t)uid;
-			*out_gid = (gid_t)gid;
-			return true;
-		}
-	}
+	if (parse_uid_gid_pair(sudo_uid, sudo_gid, out_uid, out_gid))
+		return true;
 
 	return false;
 }
@@ -341,6 +363,7 @@ struct libnvme_transport_handle *privsep_startup(int argc, char **argv)
 
 	have_drop_target = privsep_find_drop_target(getuid(), getgid(),
 			geteuid(), getegid(),
+			getenv("NVME_PRIVSEP_DROP_UID"), getenv("NVME_PRIVSEP_DROP_GID"),
 			getenv("SUDO_UID"), getenv("SUDO_GID"),
 			&drop_uid, &drop_gid);
 	if (have_drop_target)

@@ -35,20 +35,40 @@ bool privsep_should_engage(uid_t ruid, uid_t euid);
  * privsep_find_drop_target() - Find the identity the parent should drop
  *				 to after forking
  * @ruid, @rgid, @euid, @egid: the process's real/effective ids
+ * @drop_uid_env, @drop_gid_env: the NVME_PRIVSEP_DROP_UID/
+ *				  NVME_PRIVSEP_DROP_GID environment values,
+ *				  or NULL
  * @sudo_uid, @sudo_gid: the SUDO_UID/SUDO_GID environment values, or NULL
  * @out_uid, @out_gid: on success, the identity to drop to
  *
  * Priority order:
- *   1. real != effective (classic setuid binary) -> drop to real uid/gid.
- *   2. else SUDO_UID/SUDO_GID present, parse as valid positive integers
- *      -> drop to those (the standard `sudo` convention). SUDO_UID=0 is
- *      rejected defensively -- "drop to root" isn't a drop.
- *   3. else: no distinguishable lower-privilege identity exists (a bare
- *      root shell, no sudo, no setuid bit) -- returns false. Privsep
- *      still engages in this case (see privsep_should_engage()); the
- *      caller (privsep_startup()) substitutes a capability-only drop
- *      (uid stays 0, but capabilities go to empty) since there is no
- *      other uid to become.
+ *   1. NVME_PRIVSEP_DROP_UID/NVME_PRIVSEP_DROP_GID present, parse as
+ *      valid positive integers -> drop to those. An explicit override,
+ *      checked before anything auto-detected: lets an orchestrator with
+ *      no natural non-root identity of its own (a systemd unit, a
+ *      container's PID 1 -- real == effective == 0, no sudo wrapper)
+ *      pick a specific service account instead of falling all the way
+ *      through to the capability-only drop below. Also lets a real
+ *      setuid/sudo invocation be redirected somewhere else entirely, if
+ *      that's ever wanted.
+ *   2. else real != effective (classic setuid binary) -> drop to real
+ *      uid/gid.
+ *   3. else SUDO_UID/SUDO_GID present, parse as valid positive integers
+ *      -> drop to those (the standard `sudo` convention).
+ *   4. else: no distinguishable lower-privilege identity exists (a bare
+ *      root shell, no sudo, no setuid bit, no explicit override) --
+ *      returns false. Privsep still engages in this case (see
+ *      privsep_should_engage()); the caller (privsep_startup())
+ *      substitutes a capability-only drop (uid stays 0, but capabilities
+ *      go to empty) since there is no other uid to become.
+ *
+ * NVME_PRIVSEP_DROP_UID/GID and SUDO_UID/GID share identical validation:
+ * both of a pair must be present, both fully-numeric, both strictly
+ * positive -- 0 is never accepted as a target, "drop to root" isn't a
+ * drop, not even when explicitly requested. A malformed or incomplete
+ * pair is silently skipped (falls through to the next priority level),
+ * not a hard error -- this runs before any of nvme-cli's own
+ * error-reporting machinery exists yet.
  *
  * Pure function, unit-testable without real uids/env vars.
  *
@@ -56,6 +76,7 @@ bool privsep_should_engage(uid_t ruid, uid_t euid);
  * @out_gid), false otherwise.
  */
 bool privsep_find_drop_target(uid_t ruid, gid_t rgid, uid_t euid, gid_t egid,
+		const char *drop_uid_env, const char *drop_gid_env,
 		const char *sudo_uid, const char *sudo_gid,
 		uid_t *out_uid, gid_t *out_gid);
 
