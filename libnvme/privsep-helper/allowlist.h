@@ -29,3 +29,16 @@
  * Return: true if @name may be opened, false otherwise.
  */
 bool privsep_is_allowed_devname(const char *name);
+
+/**
+ * privsep_devname_allowlist_description() - Human-readable summary of
+ *					       the policy above, for
+ *					       security review (issue #3879)
+ *
+ * A fixed string, not derived from the matching code above at runtime
+ * (it's pattern-matching logic, not a data table there is to enumerate)
+ * -- kept next to it deliberately so the two are reviewed together.
+ *
+ * Return: a static, never-NULL description string.
+ */
+const char *privsep_devname_allowlist_description(void);

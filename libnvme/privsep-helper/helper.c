@@ -285,8 +285,35 @@ static void handle_hello(const struct libnvme_privsep_req *req,
 	resp->status = (req->cdw10 == LIBNVME_PRIVSEP_PROTO_VERSION) ? 0 : -EPROTO;
 }
 
-/* Dispatches every request type, including the three (HELLO, OPEN_DEVICE,
- * FABRICS_CONNECT) that don't operate on an already-open passthru handle.
+/* See privsep-proto.h's LIBNVME_PRIVSEP_OP_DEBUG_INFO doc comment. Each
+ * describe-style call below writes into its own local buffer, then the
+ * pieces are joined with a final snprintf into resp->data (which is
+ * LIBNVME_PRIVSEP_MAX_XFER bytes -- comfortably larger than this ever
+ * needs); simpler than threading a shared running offset through three
+ * independently-owned modules for text that's assembled once per debug
+ * session, not a hot path.
+ */
+static void handle_debug_info(struct libnvme_privsep_resp *resp)
+{
+	char harden_buf[768] = "";
+	char ioctl_buf[1024] = "";
+	int n;
+
+	harden_describe(harden_buf, sizeof(harden_buf));
+	privsep_describe_ioctl_allowlist(ioctl_buf, sizeof(ioctl_buf));
+
+	n = snprintf((char *)resp->data, sizeof(resp->data),
+		     "%sdevice allowlist: %s\n%s",
+		     harden_buf, privsep_devname_allowlist_description(), ioctl_buf);
+
+	resp->data_len = (n > 0 && (size_t)n < sizeof(resp->data)) ?
+		(uint32_t)n : (uint32_t)sizeof(resp->data) - 1;
+	resp->status = 0;
+}
+
+/* Dispatches every request type, including the four (HELLO, DEBUG_INFO,
+ * OPEN_DEVICE, FABRICS_CONNECT) that don't operate on an already-open
+ * passthru handle.
  */
 static void dispatch(struct libnvme_global_ctx *ctx,
 		struct libnvme_transport_handle **hdlp,
@@ -296,6 +323,9 @@ static void dispatch(struct libnvme_global_ctx *ctx,
 	switch (req->op) {
 	case LIBNVME_PRIVSEP_OP_HELLO:
 		handle_hello(req, resp);
+		break;
+	case LIBNVME_PRIVSEP_OP_DEBUG_INFO:
+		handle_debug_info(resp);
 		break;
 	case LIBNVME_PRIVSEP_OP_OPEN_DEVICE:
 		handle_open_device(ctx, hdlp, req, resp);

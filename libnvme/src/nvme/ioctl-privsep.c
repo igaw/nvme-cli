@@ -355,6 +355,54 @@ out:
 	return ret;
 }
 
+/*
+ * See privsep-proto.h's LIBNVME_PRIVSEP_OP_DEBUG_INFO doc comment: only
+ * sent when the caller's own logging is already at DEBUG or above, so a
+ * normal, non-debug invocation never pays for the helper building this
+ * or the extra round trip. Only ever called after a successful HELLO
+ * (see libnvme_open_privsep()) -- a version mismatch means the wire
+ * format itself might differ, so nothing past the HELLO response can be
+ * trusted. Failure here is diagnostic-only, never propagated: missing
+ * debug info is not a reason to refuse an otherwise-healthy channel.
+ */
+static void privsep_fetch_debug_info(struct libnvme_global_ctx *ctx, int sock)
+{
+	struct libnvme_privsep_req *req;
+	struct libnvme_privsep_resp *resp;
+
+	if (libnvme_get_logging_level(ctx, NULL, NULL) < LIBNVME_LOG_DEBUG)
+		return;
+
+	req = malloc(sizeof(*req));
+	resp = malloc(sizeof(*resp));
+	if (!req || !resp)
+		goto out;
+
+	memset(req, 0, offsetof(struct libnvme_privsep_req, data));
+	req->op = LIBNVME_PRIVSEP_OP_DEBUG_INFO;
+
+	if (libnvme_privsep_send_req(sock, req) != (ssize_t)libnvme_privsep_req_len(req)) {
+		libnvme_msg(ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to send DEBUG_INFO request to helper\n");
+		goto out;
+	}
+
+	if (libnvme_privsep_recv_resp(sock, resp) <= 0) {
+		libnvme_msg(ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to receive DEBUG_INFO response from helper\n");
+		goto out;
+	}
+
+	if (resp->data_len)
+		libnvme_msg(ctx, LIBNVME_LOG_DEBUG,
+			    "privsep: helper confinement policy:\n%.*s",
+			    (int)resp->data_len, resp->data);
+
+out:
+	free(req);
+	free(resp);
+}
+
 __shr_public int libnvme_open_privsep(struct libnvme_global_ctx *ctx, int sock,
 		struct libnvme_transport_handle **hdlp)
 {
@@ -374,6 +422,8 @@ __shr_public int libnvme_open_privsep(struct libnvme_global_ctx *ctx, int sock,
 		free(hdl);
 		return ret;
 	}
+
+	privsep_fetch_debug_info(ctx, sock);
 
 	*hdlp = hdl;
 

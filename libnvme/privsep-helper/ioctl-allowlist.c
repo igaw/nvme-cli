@@ -8,6 +8,7 @@
 #include <linux/ioctl.h>
 #include <linux/sed-opal.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "ioctl-allowlist.h"
 #include "sfx-ioctl.h"
@@ -68,4 +69,30 @@ bool privsep_is_allowed_ioctl(unsigned long request, size_t arg_size)
 	}
 
 	return false;
+}
+
+void privsep_describe_ioctl_allowlist(char *buf, size_t bufsize)
+{
+	size_t off;
+	size_t i;
+
+	off = (size_t)snprintf(buf, bufsize,
+		"raw-ioctl allowlist (%zu entries, request:arg_size in hex):",
+		sizeof(allowed_ioctls) / sizeof(allowed_ioctls[0]));
+	if (off >= bufsize)
+		return;
+
+	for (i = 0; i < sizeof(allowed_ioctls) / sizeof(allowed_ioctls[0]); i++) {
+		int n = snprintf(buf + off, bufsize - off, " 0x%lx:0x%zx",
+				  allowed_ioctls[i].request, allowed_ioctls[i].arg_size);
+
+		if (n < 0 || (size_t)n >= bufsize - off) {
+			off = bufsize;
+			break;
+		}
+		off += (size_t)n;
+	}
+
+	if (off < bufsize)
+		snprintf(buf + off, bufsize - off, "\n");
 }

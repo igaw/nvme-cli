@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <sys/capability.h>
@@ -110,6 +111,40 @@ static void install_seccomp(void)
 	}
 
 	seccomp_release(ctx);
+}
+
+void harden_describe(char *buf, size_t bufsize)
+{
+	size_t off;
+	size_t i;
+
+	off = (size_t)snprintf(buf, bufsize,
+		"harden target: CAP_SYS_ADMIN only, applied once after the "
+		"first real (non-test-fd) device open\n"
+		"seccomp allowlist (%zu syscalls):",
+		sizeof(allowed_syscalls) / sizeof(allowed_syscalls[0]));
+	if (off >= bufsize)
+		return;
+
+	for (i = 0; i < sizeof(allowed_syscalls) / sizeof(allowed_syscalls[0]); i++) {
+		/* Resolved from the same numeric list install_seccomp()
+		 * actually loads, not a hand-maintained second copy of
+		 * names that could silently drift from it.
+		 */
+		char *name = seccomp_syscall_resolve_num_arch(SCMP_ARCH_NATIVE,
+							       allowed_syscalls[i]);
+		int n = snprintf(buf + off, bufsize - off, " %s", name ? name : "?");
+
+		free(name);
+		if (n < 0 || (size_t)n >= bufsize - off) {
+			off = bufsize;
+			break;
+		}
+		off += (size_t)n;
+	}
+
+	if (off < bufsize)
+		snprintf(buf + off, bufsize - off, "\n");
 }
 
 void harden_once(void)

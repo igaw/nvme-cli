@@ -66,3 +66,10 @@ bool privsep_is_allowed_devname(const char *name)
 
 	return false;
 }
+
+const char *privsep_devname_allowlist_description(void)
+{
+	return "/dev/nvme-fabrics, /dev/nvme<N>, /dev/nvme<N>n<M>, "
+	       "/dev/ng<N>n<M> (full match required, not prefix), "
+	       "NVME_TEST_FD, NVME_TEST_FD64 (test-only, never a real path)";
+}

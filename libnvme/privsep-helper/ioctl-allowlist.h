@@ -47,3 +47,21 @@
  * Return: true if the helper may relay this (request, arg_size) pair.
  */
 bool privsep_is_allowed_ioctl(unsigned long request, size_t arg_size);
+
+/**
+ * privsep_describe_ioctl_allowlist() - Human-readable dump of the table
+ *					 above, for security review (issue
+ *					 #3879)
+ * @buf: destination buffer
+ * @bufsize: size of @buf
+ *
+ * Lists every (request, arg_size) pair privsep_is_allowed_ioctl() will
+ * accept, in hex -- generic ioctl numbers have no universal symbolic
+ * name available at runtime the way syscalls do (contrast
+ * harden_describe()'s use of seccomp_syscall_resolve_num_arch()), so a
+ * reviewer cross-references these against the headers named in this
+ * file's own comments (linux/sed-opal.h, linux/fs.h,
+ * plugins/scaleflux/sfx-ioctl.h). Truncates silently if @bufsize is too
+ * small, same as harden_describe().
+ */
+void privsep_describe_ioctl_allowlist(char *buf, size_t bufsize);

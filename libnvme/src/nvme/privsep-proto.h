@@ -115,6 +115,24 @@ enum libnvme_privsep_op {
 	 * wire format.
 	 */
 	LIBNVME_PRIVSEP_OP_HELLO,
+	/*
+	 * Confinement-policy dump, for security review (issue #3879) --
+	 * NOT part of the HELLO handshake on purpose: sent only when the
+	 * client's own logging is already at DEBUG or above (see
+	 * libnvme_open_privsep()), so a normal, non-debug invocation never
+	 * pays for building or transmitting it. req carries nothing (no
+	 * fields consulted). resp->data carries a human-readable text
+	 * summary (capability target, seccomp syscall allowlist, device-
+	 * path and raw-ioctl allowlists -- see harden_describe(),
+	 * privsep_devname_allowlist_description(),
+	 * privsep_describe_ioctl_allowlist() in the helper's own sources);
+	 * resp->status is always 0 (building this can't meaningfully
+	 * fail; a buffer too small to fit everything just truncates).
+	 * Never sent after a failed HELLO -- a version mismatch means the
+	 * wire format itself might differ, so nothing beyond the version
+	 * numbers already in the HELLO response can be trusted.
+	 */
+	LIBNVME_PRIVSEP_OP_DEBUG_INFO,
 };
 
 struct libnvme_privsep_req {

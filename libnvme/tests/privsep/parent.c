@@ -277,6 +277,44 @@ static void run_oversized_rejection(int sock)
 }
 
 /*
+ * Sent directly on the raw socket, bypassing the client-side log-level
+ * gate in privsep_fetch_debug_info() (ioctl-privsep.c) -- that gate is
+ * a client-side courtesy ("don't bother building/sending this for a
+ * non-debug invocation"), not something the helper itself enforces, so
+ * this validates the helper's actual handle_debug_info() response
+ * regardless of what level this test harness's own ctx is configured
+ * at. Only content-shape checks (non-empty, expected substrings) --
+ * the exact text is deliberately not pinned line-for-line, so this
+ * doesn't need updating every time harden.c's syscall allowlist grows.
+ */
+static void run_debug_info_relay(int sock)
+{
+	struct libnvme_privsep_req *req = malloc(sizeof(*req));
+	struct libnvme_privsep_resp *resp = malloc(sizeof(*resp));
+
+	check(req && resp, "out of memory");
+	memset(req, 0, offsetof(struct libnvme_privsep_req, data));
+	req->op = LIBNVME_PRIVSEP_OP_DEBUG_INFO;
+
+	check(libnvme_privsep_send_req(sock, req) == (ssize_t)libnvme_privsep_req_len(req),
+	      "debug info: send failed: %s", strerror(errno));
+	check(libnvme_privsep_recv_resp(sock, resp) == 1, "debug info: recv failed");
+	check(resp->status == 0, "debug info: unexpected status %d", resp->status);
+	check(resp->data_len > 0, "debug info: empty response");
+#define HAS(needle) \
+	(memmem(resp->data, resp->data_len, needle, strlen(needle)) != NULL)
+	check(HAS("CAP_SYS_ADMIN"), "debug info: missing expected capability-target text");
+	check(HAS("seccomp allowlist"), "debug info: missing expected seccomp-allowlist text");
+	check(HAS("device allowlist"), "debug info: missing expected device-allowlist text");
+	check(HAS("raw-ioctl allowlist"),
+	      "debug info: missing expected raw-ioctl-allowlist text");
+#undef HAS
+
+	free(req);
+	free(resp);
+}
+
+/*
  * Bypasses libnvme_open_privsep() to send a deliberately wrong protocol
  * version as the very first message -- exercises the wire-level
  * rejection (handle_hello() in helper.c) directly, the same way
@@ -332,6 +370,7 @@ static void run_session(bool force32)
 	run_raw_ioctl_not_allowed(hdl);
 	run_raw_ioctl_wrong_size(hdl);
 	run_fabrics_connect_relay(hdl);
+	run_debug_info_relay(sock);
 	run_oversized_rejection(sock);
 
 	libnvme_close(hdl); /* also closes sock, signaling the helper to exit */

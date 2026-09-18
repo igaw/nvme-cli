@@ -9,6 +9,26 @@
  */
 #pragma once
 
+#include <stddef.h>
+
+/**
+ * harden_describe() - Human-readable summary of the target hardening
+ *			policy, for security review (issue #3879)
+ * @buf: destination buffer
+ * @bufsize: size of @buf
+ *
+ * Describes what harden_once() *will* do (target capability, seccomp
+ * allowlist by syscall name, resolved via libseccomp from the same
+ * numeric list install_seccomp() actually loads -- not a hand-maintained
+ * second copy that could drift), not the process's current state --
+ * meaningful even before harden_once() has run, e.g. when reported in
+ * the HELLO handshake (issue #3879), which is always the very first
+ * message, well before any device is open. Truncates silently (via
+ * snprintf's own semantics) if @bufsize is too small; this is a
+ * diagnostic aid, not something a caller should size-negotiate over.
+ */
+void harden_describe(char *buf, size_t bufsize);
+
 /**
  * harden_once() - Drop to CAP_SYS_ADMIN and install the seccomp filter
  *
