@@ -276,6 +276,42 @@ static void run_oversized_rejection(int sock)
 	free(resp);
 }
 
+/*
+ * Bypasses libnvme_open_privsep() to send a deliberately wrong protocol
+ * version as the very first message -- exercises the wire-level
+ * rejection (handle_hello() in helper.c) directly, the same way
+ * run_oversized_rejection() exercises the framing rejection, without
+ * needing two differently-versioned binaries to prove the check fires.
+ */
+static void run_hello_version_mismatch(void)
+{
+	struct libnvme_privsep_req *req = malloc(sizeof(*req));
+	struct libnvme_privsep_resp *resp = malloc(sizeof(*resp));
+	int sock;
+	pid_t pid = spawn_helper(false, &sock);
+
+	check(req && resp, "out of memory");
+	memset(req, 0, offsetof(struct libnvme_privsep_req, data));
+	req->op = LIBNVME_PRIVSEP_OP_HELLO;
+	req->cdw10 = LIBNVME_PRIVSEP_PROTO_VERSION + 1; /* deliberately wrong */
+
+	check(libnvme_privsep_send_req(sock, req) == (ssize_t)libnvme_privsep_req_len(req),
+	      "hello mismatch: send failed: %s", strerror(errno));
+
+	check(libnvme_privsep_recv_resp(sock, resp) == 1, "hello mismatch: recv failed");
+	check(resp->status == -EPROTO,
+	      "hello version mismatch wasn't rejected with -EPROTO (got %d)",
+	      resp->status);
+	check(resp->result == LIBNVME_PRIVSEP_PROTO_VERSION,
+	      "hello mismatch: helper reported version %" PRIu64 ", expected %u",
+	      resp->result, (unsigned int)LIBNVME_PRIVSEP_PROTO_VERSION);
+
+	free(req);
+	free(resp);
+	close(sock); /* signals the helper to exit, same as libnvme_close() does */
+	reap_helper(pid);
+}
+
 static void run_session(bool force32)
 {
 	struct libnvme_global_ctx *ctx;
@@ -316,6 +352,11 @@ int main(int argc, char **argv)
 	printf("session: probing disabled (expect 32-bit ioctl path)...");
 	fflush(stdout);
 	run_session(true);
+	puts(" OK");
+
+	printf("session: HELLO version mismatch rejected...");
+	fflush(stdout);
+	run_hello_version_mismatch();
 	puts(" OK");
 
 	puts("privsep: all sessions OK");

@@ -36,6 +36,24 @@
 
 #define LIBNVME_PRIVSEP_MAX_XFER (4 * 1024 * 1024)
 
+/*
+ * Wire protocol version (issue #3879). Bump whenever
+ * struct libnvme_privsep_req/resp's layout, or the semantics of any op
+ * already listed below, changes in a way older code on either side
+ * wouldn't handle correctly. A mismatch means the client and helper
+ * were built from different sources -- e.g. the shared library got
+ * upgraded independently of the installed helper binary, or (the
+ * scenario this was written to catch) a stale helper left over from an
+ * older build sits in a build tree that the newer NVME_PRIVSEP_HELPER_PATH
+ * self-relative discovery (issue #3879, Phase 6 follow-up) still finds
+ * and would otherwise happily talk to. Checked once, via
+ * LIBNVME_PRIVSEP_OP_HELLO, the very first message on a newly connected
+ * channel -- see libnvme_open_privsep(). No compatibility matrix: an
+ * exact match is required, on purpose, to keep this simple until there's
+ * a real need for anything more.
+ */
+#define LIBNVME_PRIVSEP_PROTO_VERSION 1
+
 enum libnvme_privsep_op {
 	LIBNVME_PRIVSEP_OP_ADMIN = 1,
 	LIBNVME_PRIVSEP_OP_IO,
@@ -84,6 +102,19 @@ enum libnvme_privsep_op {
 	 * or a negative errno; resp->result is unused.
 	 */
 	LIBNVME_PRIVSEP_OP_RAW_IOCTL,
+	/*
+	 * Version handshake (issue #3879) -- always the first message
+	 * libnvme_open_privsep() sends on a freshly connected channel,
+	 * before any other op. req->cdw10 carries the client's own
+	 * LIBNVME_PRIVSEP_PROTO_VERSION. resp->result carries the
+	 * helper's version regardless of outcome (useful for a
+	 * diagnostic message either way); resp->status is 0 if the
+	 * versions match, -EPROTO otherwise. libnvme_open_privsep() fails
+	 * the whole open on a nonzero status -- the caller never gets a
+	 * handle to a channel whose other end might not agree on the
+	 * wire format.
+	 */
+	LIBNVME_PRIVSEP_OP_HELLO,
 };
 
 struct libnvme_privsep_req {

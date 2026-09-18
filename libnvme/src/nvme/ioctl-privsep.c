@@ -294,10 +294,72 @@ out:
 	return ret;
 }
 
+/*
+ * Always the first message on a freshly connected channel -- see
+ * privsep-proto.h's LIBNVME_PRIVSEP_OP_HELLO doc comment. Frees nothing
+ * of the caller's; just reports the outcome.
+ */
+static int privsep_hello(struct libnvme_global_ctx *ctx, int sock)
+{
+	struct libnvme_privsep_req *req;
+	struct libnvme_privsep_resp *resp;
+	int ret;
+
+	req = malloc(sizeof(*req));
+	resp = malloc(sizeof(*resp));
+	if (!req || !resp) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	memset(req, 0, offsetof(struct libnvme_privsep_req, data));
+	req->op = LIBNVME_PRIVSEP_OP_HELLO;
+	req->cdw10 = LIBNVME_PRIVSEP_PROTO_VERSION;
+
+	libnvme_msg(ctx, LIBNVME_LOG_DEBUG,
+		    "privsep: sending HELLO version=%u\n",
+		    (unsigned int)LIBNVME_PRIVSEP_PROTO_VERSION);
+
+	if (libnvme_privsep_send_req(sock, req) != (ssize_t)libnvme_privsep_req_len(req)) {
+		libnvme_msg(ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to send HELLO to helper\n");
+		ret = -EIO;
+		goto out;
+	}
+
+	ret = libnvme_privsep_recv_resp(sock, resp);
+	if (ret <= 0) {
+		libnvme_msg(ctx, LIBNVME_LOG_WARN,
+			    "privsep: failed to receive HELLO response from helper (%d)\n",
+			    ret);
+		ret = ret == 0 ? -EPIPE : ret;
+		goto out;
+	}
+
+	if (resp->status != 0)
+		libnvme_msg(ctx, LIBNVME_LOG_WARN,
+			    "privsep: protocol version mismatch (ours=%u, "
+			    "helper's=%" PRIu64 "); refusing to use this channel\n",
+			    (unsigned int)LIBNVME_PRIVSEP_PROTO_VERSION, resp->result);
+	else
+		libnvme_msg(ctx, LIBNVME_LOG_DEBUG,
+			    "privsep: HELLO ok, helper protocol version=%" PRIu64 "\n",
+			    resp->result);
+
+	ret = resp->status;
+
+out:
+	free(req);
+	free(resp);
+
+	return ret;
+}
+
 __shr_public int libnvme_open_privsep(struct libnvme_global_ctx *ctx, int sock,
 		struct libnvme_transport_handle **hdlp)
 {
 	struct libnvme_transport_handle *hdl;
+	int ret;
 
 	hdl = __libnvme_create_transport_handle(ctx);
 	if (!hdl)
@@ -306,6 +368,12 @@ __shr_public int libnvme_open_privsep(struct libnvme_global_ctx *ctx, int sock,
 	hdl->type = LIBNVME_TRANSPORT_HANDLE_TYPE_PRIVSEP;
 	hdl->uring_state = LIBNVME_IO_URING_STATE_NOT_AVAILABLE;
 	hdl->privsep_sock = sock;
+
+	ret = privsep_hello(ctx, sock);
+	if (ret) {
+		free(hdl);
+		return ret;
+	}
 
 	*hdlp = hdl;
 

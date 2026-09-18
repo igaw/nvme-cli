@@ -275,7 +275,17 @@ static void handle_one(struct libnvme_global_ctx *ctx,
 	resp->data_len = req->data_len;
 }
 
-/* Dispatches every request type, including the two (OPEN_DEVICE,
+/* See privsep-proto.h's LIBNVME_PRIVSEP_OP_HELLO doc comment. Always the
+ * first request this process sees on a freshly connected channel.
+ */
+static void handle_hello(const struct libnvme_privsep_req *req,
+		struct libnvme_privsep_resp *resp)
+{
+	resp->result = LIBNVME_PRIVSEP_PROTO_VERSION;
+	resp->status = (req->cdw10 == LIBNVME_PRIVSEP_PROTO_VERSION) ? 0 : -EPROTO;
+}
+
+/* Dispatches every request type, including the three (HELLO, OPEN_DEVICE,
  * FABRICS_CONNECT) that don't operate on an already-open passthru handle.
  */
 static void dispatch(struct libnvme_global_ctx *ctx,
@@ -284,6 +294,9 @@ static void dispatch(struct libnvme_global_ctx *ctx,
 		struct libnvme_privsep_resp *resp)
 {
 	switch (req->op) {
+	case LIBNVME_PRIVSEP_OP_HELLO:
+		handle_hello(req, resp);
+		break;
 	case LIBNVME_PRIVSEP_OP_OPEN_DEVICE:
 		handle_open_device(ctx, hdlp, req, resp);
 		break;
