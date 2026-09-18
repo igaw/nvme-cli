@@ -646,6 +646,7 @@ if want_nvme
         json_c_dep,
         libkmod_dep,
         libcap_dep,
+        libseccomp_dep,
     ]
 
     if host_system == 'windows'

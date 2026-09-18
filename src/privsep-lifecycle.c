@@ -75,6 +75,8 @@ bool privsep_find_drop_target(uid_t ruid, gid_t rgid, uid_t euid, gid_t egid,
 #ifdef CONFIG_PRIVSEP
 #include <sys/capability.h>
 
+#include <seccomp.h>
+
 #include "nvme/privsep.h"
 #include "nvme/privsep-proto.h"
 
@@ -352,6 +354,136 @@ static bool privsep_clear_own_capabilities(void)
 	return ok;
 }
 
+/*
+ * Narration for privsep_install_parent_seccomp_denylist()/the capability
+ * drop above: logs the parent's *actual* resulting capability state at
+ * -vv, not just "we asked for a drop" -- lets an admin (or the log
+ * itself) confirm what really happened without reaching for
+ * /proc/<pid>/status by hand. cap_to_text() renders the empty set as
+ * "= " and a non-empty one as e.g. "= cap_sys_admin+ep", so this line is
+ * meaningful whether the drop succeeded, partially succeeded, or (in the
+ * fail-closed paths above, which already bailed out before this point)
+ * never got called at all.
+ */
+static void privsep_log_capability_state(void)
+{
+	cap_t caps;
+	char *text;
+
+	caps = cap_get_proc();
+	if (!caps) {
+		privsep_log(LIBNVME_LOG_WARN,
+			    "privsep: cap_get_proc failed, can't report parent "
+			    "capability state: %s\n", strerror(errno));
+		return;
+	}
+
+	text = cap_to_text(caps, NULL);
+	if (text) {
+		privsep_log(LIBNVME_LOG_DEBUG, "privsep: parent capabilities now '%s'\n",
+			    text);
+		cap_free(text);
+	}
+
+	cap_free(caps);
+}
+
+/*
+ * Defense-in-depth on top of the capability drop above, not a
+ * replacement for it: a denylist, not an allowlist like
+ * libnvme/privsep-helper/harden.c's seccomp filter. That filter is
+ * tractable as a strict allowlist because the helper's entire job is
+ * one narrow relay loop (~19 syscalls, verified empirically). The
+ * parent runs all of nvme-cli -- every subcommand, every vendor plugin,
+ * JSON output, DNS resolution, keyutils for TLS/PSK -- so a correct,
+ * non-breaking allowlist for it is a much bigger undertaking than this
+ * phase attempts. Instead, block a small, deliberately conservative set
+ * of syscalls that are unambiguously irrelevant to nvme-cli and
+ * dangerous if reachable -- confirmed absent from this codebase by
+ * grep, not just assumed. Mostly capability-gated already (this runs
+ * after the capability drop, so most of these would already fail), but
+ * still worth denying outright as a second, syscall-level layer against
+ * a kernel bug that mishandles the capability check itself, and against
+ * the bare-root case specifically, where uid 0 retains some
+ * capability-independent kernel special-casing even with every
+ * capability stripped.
+ *
+ * SCMP_ACT_ERRNO(EPERM), not SCMP_ACT_KILL_PROCESS like the helper's
+ * filter: an unexpectedly-triggered rule here should look like an
+ * ordinary permission failure to whatever nvme-cli code path hit it
+ * (which already has error handling for that), not an unexplained crash
+ * of the user's whole command -- this is a supplementary layer on an
+ * already-complete confinement, not the primary boundary the helper's
+ * filter is. For the same reason, a failure to install this filter at
+ * all (unsupported kernel/libseccomp, permission issue) is logged and
+ * skipped, not fail-closed: it would be a worse tradeoff to abandon
+ * privsep entirely -- capabilities already dropped -- over an
+ * additional hardening layer failing to install.
+ */
+static void privsep_install_parent_seccomp_denylist(void)
+{
+	static const int denied_syscalls[] = {
+		SCMP_SYS(ptrace),
+		SCMP_SYS(process_vm_readv),
+		SCMP_SYS(process_vm_writev),
+		SCMP_SYS(bpf),
+		SCMP_SYS(mount),
+		SCMP_SYS(umount2),
+		SCMP_SYS(pivot_root),
+		SCMP_SYS(chroot),
+		SCMP_SYS(unshare),
+		SCMP_SYS(setns),
+		SCMP_SYS(init_module),
+		SCMP_SYS(finit_module),
+		SCMP_SYS(delete_module),
+		SCMP_SYS(kexec_load),
+		SCMP_SYS(kexec_file_load),
+		SCMP_SYS(reboot),
+		SCMP_SYS(iopl),
+		SCMP_SYS(ioperm),
+		SCMP_SYS(swapon),
+		SCMP_SYS(swapoff),
+		SCMP_SYS(acct),
+		SCMP_SYS(quotactl),
+		SCMP_SYS(open_by_handle_at),
+		SCMP_SYS(personality),
+		SCMP_SYS(syslog),
+		SCMP_SYS(capset),
+	};
+	scmp_filter_ctx ctx;
+	size_t i;
+
+	ctx = seccomp_init(SCMP_ACT_ALLOW);
+	if (!ctx) {
+		privsep_log(LIBNVME_LOG_WARN,
+			    "privsep: seccomp_init failed, parent syscall "
+			    "denylist not installed\n");
+		return;
+	}
+
+	for (i = 0; i < sizeof(denied_syscalls) / sizeof(denied_syscalls[0]); i++) {
+		if (seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM),
+				      denied_syscalls[i], 0)) {
+			privsep_log(LIBNVME_LOG_WARN,
+				    "privsep: seccomp_rule_add failed, parent "
+				    "syscall denylist not installed\n");
+			seccomp_release(ctx);
+			return;
+		}
+	}
+
+	if (seccomp_load(ctx))
+		privsep_log(LIBNVME_LOG_WARN,
+			    "privsep: seccomp_load failed, parent syscall "
+			    "denylist not installed\n");
+	else
+		privsep_log(LIBNVME_LOG_DEBUG,
+			    "privsep: parent syscall denylist installed (%zu rules)\n",
+			    sizeof(denied_syscalls) / sizeof(denied_syscalls[0]));
+
+	seccomp_release(ctx);
+}
+
 struct libnvme_transport_handle *privsep_startup(int argc, char **argv)
 {
 	const char *path;
@@ -461,6 +593,9 @@ struct libnvme_transport_handle *privsep_startup(int argc, char **argv)
 		waitpid(pid, NULL, 0);
 		return NULL;
 	}
+
+	privsep_log_capability_state();
+	privsep_install_parent_seccomp_denylist();
 
 	ctx = libnvme_create_global_ctx();
 	if (ctx) {
