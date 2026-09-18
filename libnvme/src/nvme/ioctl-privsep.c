@@ -49,6 +49,17 @@ static int privsep_passthru(struct libnvme_transport_handle *hdl,
 		goto out;
 	}
 
+	/* Struct padding (e.g. between flags and nsid) is never touched by
+	 * the field-by-field assignments below, so on a malloc'd (not
+	 * calloc'd) buffer it holds whatever was previously on the heap --
+	 * sent over the wire regardless, since libnvme_privsep_req_len()
+	 * sends a raw byte range, not field-by-field. Every other request
+	 * builder in this file already does this; this one -- the original
+	 * Phase 1 code -- didn't, until valgrind's memcheck caught the
+	 * uninitialized-bytes-in-a-syscall-argument warning it produces.
+	 */
+	memset(req, 0, offsetof(struct libnvme_privsep_req, data));
+
 	req->op = op;
 	req->opcode = cmd->opcode;
 	req->flags = cmd->flags;
