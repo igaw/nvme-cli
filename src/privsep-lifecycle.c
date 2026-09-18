@@ -6,6 +6,7 @@
  * #3879, Phase 3). See privsep-lifecycle.h for the design rationale.
  */
 #include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -68,12 +69,8 @@ bool privsep_find_drop_target(uid_t ruid, gid_t rgid, uid_t euid, gid_t egid,
 
 static struct libnvme_transport_handle *privsep_channel;
 
-static const char *privsep_helper_path(void)
-{
-	const char *env = getenv("NVME_PRIVSEP_HELPER_PATH");
-
-	return env && *env ? env : NVME_PRIVSEP_HELPER_DEFAULT_PATH;
-}
+/* Defined below, after privsep_log() -- see there for why. */
+static const char *privsep_helper_path(void);
 
 static void privsep_teardown(void)
 {
@@ -129,6 +126,86 @@ static int privsep_map_log_level(int verbose, bool quiet)
 	}
 
 	return LIBNVME_LOG_DEBUG_VERBOSE;
+}
+
+/*
+ * Best-effort discovery of a helper binary next to this process's own
+ * real executable path, so the common nvme-cli dev workflow -- run
+ * straight out of a meson build directory (./build/nvme,
+ * ./.build-ci/nvme, ...), never `meson install`ed -- finds a working
+ * helper without NVME_PRIVSEP_HELPER_PATH having to be set by hand
+ * every time. /proc/self/exe always resolves to this binary's real
+ * absolute path regardless of how it was invoked (relative, via PATH,
+ * through a symlink); Linux-only, same constraint privsep already has
+ * throughout (seccomp, capabilities).
+ *
+ * Tries, in order:
+ *   1. a sibling of this binary -- the installed layout, where
+ *      sbindir/nvme and sbindir/nvme-privsep-helper sit side by side.
+ *      Also makes a relocated install (different --prefix than this
+ *      binary was compiled with) resolve correctly, for free.
+ *   2. libnvme/privsep-helper/<name>, relative to this binary's
+ *      directory -- the build-tree layout, where 'nvme' itself lands
+ *      at the build root and libnvme/privsep-helper/meson.build's
+ *      output sits at that fixed relative path underneath it.
+ *
+ * Returns @buf (populated) on success, NULL if /proc/self/exe can't be
+ * resolved or neither candidate is executable -- caller falls back to
+ * NVME_PRIVSEP_HELPER_DEFAULT_PATH.
+ */
+static const char *privsep_helper_path_relative_to_self(char *buf, size_t bufsize)
+{
+	static const char *const candidates[] = {
+		"nvme-privsep-helper",
+		"libnvme/privsep-helper/nvme-privsep-helper",
+	};
+	char exe[PATH_MAX];
+	ssize_t n;
+	char *slash;
+	size_t i;
+
+	n = readlink("/proc/self/exe", exe, sizeof(exe) - 1);
+	if (n <= 0)
+		return NULL;
+	exe[n] = '\0';
+
+	slash = strrchr(exe, '/');
+	if (!slash)
+		return NULL;
+	*slash = '\0'; /* exe now holds this binary's own directory */
+
+	for (i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
+		int len = snprintf(buf, bufsize, "%s/%s", exe, candidates[i]);
+
+		if (len < 0 || (size_t)len >= bufsize)
+			continue;
+
+		privsep_log(LIBNVME_LOG_DEBUG, "privsep: trying helper at '%s'\n", buf);
+		if (access(buf, X_OK) == 0)
+			return buf;
+	}
+
+	return NULL;
+}
+
+static const char *privsep_helper_path(void)
+{
+	static char path_buf[PATH_MAX];
+	const char *env = getenv("NVME_PRIVSEP_HELPER_PATH");
+	const char *found;
+
+	if (env && *env)
+		return env;
+
+	found = privsep_helper_path_relative_to_self(path_buf, sizeof(path_buf));
+	if (found)
+		return found;
+
+	privsep_log(LIBNVME_LOG_DEBUG,
+		    "privsep: no helper found relative to this binary's own "
+		    "path, falling back to the compiled-in default\n");
+
+	return NVME_PRIVSEP_HELPER_DEFAULT_PATH;
 }
 
 /*
