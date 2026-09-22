@@ -399,13 +399,20 @@ static struct shr_table *stdout_persistent_event_log_rci_table(__le32 pel_header
 	return t;
 }
 
-static void stdout_persistent_event_entry_ehai(__u8 ehai)
+static struct shr_table *stdout_persistent_event_entry_ehai_table(__u8 ehai)
 {
+	struct shr_table *t;
 	__u8 rsvd1 = NVME_PEL_EHAI_RSVD(ehai);
 	__u8 pit = NVME_PEL_EHAI_PIT(ehai);
 
-	printf("  [7:2] : %#x\tReserved\n", rsvd1);
-	printf("\tPort Identifier Type (PIT): %u(%s)\n", pit, nvme_pel_ehai_pit_to_string(pit));
+	t = stdout_bits_table_create();
+	if (!t)
+		return NULL;
+
+	stdout_bits_add(t, "[7:2]", rsvd1, "Reserved");
+	stdout_bits_add(t, "[1:0]", pit, "%s", nvme_pel_ehai_pit_to_string(pit));
+
+	return t;
 }
 
 static void stdout_add_bitmap(int i, __u8 seb)
@@ -486,22 +493,38 @@ void nvme_show_pel_header(struct nvme_persistent_event_log *pevent_log_head, int
 void nvme_show_pel_event_header(int i, struct nvme_persistent_event_entry *pevent_entry_head,
 				int human)
 {
+	struct shr_table *t;
 	__u16 vsil = le16_to_cpu(pevent_entry_head->vsil);
+	int row;
 
-	printf("Event Number: %u\n", i);
-	printf("Event Type: %s\n", nvme_pel_event_to_string(pevent_entry_head->etype));
-	printf("Event Type Revision: %u\n", pevent_entry_head->etype_rev);
-	printf("Event Header Length: %u\n", pevent_entry_head->ehl);
-	printf("Event Header Additional Info: %u\n", pevent_entry_head->ehai);
+	t = stdout_kv_table_create();
+	if (!t)
+		return;
 
+	stdout_kv_add(t, "Event Number", "%u", i);
+	stdout_kv_add(t, "Event Type", "%s",
+		      nvme_pel_event_to_string(pevent_entry_head->etype));
+	stdout_kv_add(t, "Event Type Revision", "%u", pevent_entry_head->etype_rev);
+	stdout_kv_add(t, "Event Header Length", "%u", pevent_entry_head->ehl);
+	row = stdout_kv_add(t, "Event Header Additional Info", "%u",
+			     pevent_entry_head->ehai);
 	if (human)
-		stdout_persistent_event_entry_ehai(pevent_entry_head->ehai);
+		shr_table_set_row_subtable(t, row,
+			stdout_persistent_event_entry_ehai_table(pevent_entry_head->ehai));
+	stdout_kv_add(t, "Controller Identifier", "%u",
+		      le16_to_cpu(pevent_entry_head->cntlid));
+	stdout_kv_add(t, "Event Timestamp", "%"PRIu64,
+		      le64_to_cpu(pevent_entry_head->ets));
+	stdout_kv_add(t, "Port Identifier", "%u",
+		      le16_to_cpu(pevent_entry_head->pelpid));
+	stdout_kv_add(t, "Vendor Specific Information Length", "%u", vsil);
+	stdout_kv_add(t, "Event Length", "%u", le16_to_cpu(pevent_entry_head->el));
 
-	printf("Controller Identifier: %u\n", le16_to_cpu(pevent_entry_head->cntlid));
-	printf("Event Timestamp: %"PRIu64"\n", le64_to_cpu(pevent_entry_head->ets));
-	printf("Port Identifier: %u\n", le16_to_cpu(pevent_entry_head->pelpid));
-	printf("Vendor Specific Information Length: %u\n", vsil);
-	printf("Event Length: %u\n", le16_to_cpu(pevent_entry_head->el));
+	if (shr_table_has_error(t))
+		fprintf(stderr, "Failed to build persistent-event-entry-header table\n");
+	else
+		stdout_kv_render(stdout, t);
+	shr_table_free(t);
 
 	if (vsil) {
 		printf("Vendor Specific Information:\n");
