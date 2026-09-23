@@ -5113,6 +5113,50 @@ static char *stdout_power_and_scale_str(__u16 power, __u8 scale)
 	return s;
 }
 
+static char *stdout_bandwidth_and_scale_str(__u8 bw, __u8 scale)
+{
+	char *s = NULL;
+
+	if (!bw) {
+		if (asprintf(&s, "-") < 0)
+			s = NULL;
+		return s;
+	}
+
+	switch (scale & 0x7) {
+	case NVME_PSD_MBWS_1_MIB_S:
+		if (asprintf(&s, "%uMiB/s", bw) < 0)
+			s = NULL;
+		break;
+	case NVME_PSD_MBWS_10_MIB_S:
+		if (asprintf(&s, "%uMiB/s", bw * 10) < 0)
+			s = NULL;
+		break;
+	case NVME_PSD_MBWS_100_MIB_S:
+		if (asprintf(&s, "%uMiB/s", bw * 100) < 0)
+			s = NULL;
+		break;
+	case NVME_PSD_MBWS_1_GIB_S:
+		if (asprintf(&s, "%uGiB/s", bw) < 0)
+			s = NULL;
+		break;
+	case NVME_PSD_MBWS_10_GIB_S:
+		if (asprintf(&s, "%uGiB/s", bw * 10) < 0)
+			s = NULL;
+		break;
+	case NVME_PSD_MBWS_100_GIB_S:
+		if (asprintf(&s, "%uGiB/s", bw * 100) < 0)
+			s = NULL;
+		break;
+	default:
+		if (asprintf(&s, "reserved") < 0)
+			s = NULL;
+		break;
+	}
+
+	return s;
+}
+
 static char *stdout_psd_workload_str(__u8 apw)
 {
 	const char *s;
@@ -5206,6 +5250,7 @@ static struct shr_table *stdout_id_ctrl_ps_table(struct nvme_id_ctrl *ctrl)
 		{ "epfrt", LEFT, AUTO_WIDTH },
 		{ "fqvt", LEFT, AUTO_WIDTH },
 		{ "epfvt", LEFT, AUTO_WIDTH },
+		{ "max_bandwidth", RIGHT, AUTO_WIDTH },
 		{ "miiell", RIGHT, AUTO_WIDTH },
 	};
 	struct shr_table *t;
@@ -5226,6 +5271,7 @@ static struct shr_table *stdout_id_ctrl_ps_table(struct nvme_id_ctrl *ctrl)
 		__cleanup_free char *epfrt = NULL;
 		__cleanup_free char *fqvt = NULL;
 		__cleanup_free char *epfvt = NULL;
+		__cleanup_free char *max_bandwidth = NULL;
 		__cleanup_free char *miiell = NULL;
 		int row = shr_table_get_row_id(t);
 
@@ -5245,6 +5291,8 @@ static struct shr_table *stdout_id_ctrl_ps_table(struct nvme_id_ctrl *ctrl)
 		epfrt = stdout_psd_time_str(psd->epfrt, psd->epfr_fqv_ts & 0xf);
 		fqvt = stdout_psd_time_str(psd->fqvt, psd->epfr_fqv_ts >> 4);
 		epfvt = stdout_psd_time_str(psd->epfvt, psd->epfvts & 0xf);
+		max_bandwidth = stdout_bandwidth_and_scale_str(psd->mbw,
+								psd->mbws);
 
 		if (iiellss) {
 			__u16 miiell_val = le16_to_cpu(psd->miiell);
@@ -5275,7 +5323,9 @@ static struct shr_table *stdout_id_ctrl_ps_table(struct nvme_id_ctrl *ctrl)
 		shr_table_set_value_str(t, 12, row, epfrt ?: "-", LEFT);
 		shr_table_set_value_str(t, 13, row, fqvt ?: "-", LEFT);
 		shr_table_set_value_str(t, 14, row, epfvt ?: "-", LEFT);
-		shr_table_set_value_str(t, 15, row, miiell ?: "-", RIGHT);
+		shr_table_set_value_str(t, 15, row,
+				max_bandwidth ?: "-", RIGHT);
+		shr_table_set_value_str(t, 16, row, miiell ?: "-", RIGHT);
 
 		shr_table_add_row(t, row);
 	}
