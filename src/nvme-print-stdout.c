@@ -5219,6 +5219,21 @@ static char *stdout_psd_time_str(__u8 time, __u8 ts)
 	return s;
 }
 
+/* @lat is in microseconds; a value of 0 means "not reported". */
+static char *stdout_psd_latency_str(__u32 lat)
+{
+	char *s = NULL;
+
+	if (!lat) {
+		if (asprintf(&s, "-") < 0)
+			s = NULL;
+	} else if (asprintf(&s, "%uus", lat) < 0) {
+		s = NULL;
+	}
+
+	return s;
+}
+
 /*
  * One row per power state, one column per sub-field -- unlike the bit-decode
  * subtables, which are one row per bit range -- since every power state
@@ -5265,6 +5280,8 @@ static struct shr_table *stdout_id_ctrl_ps_table(struct nvme_id_ctrl *ctrl)
 		struct nvme_id_psd *psd = &ctrl->psd[i];
 		__u16 max_power = le16_to_cpu(psd->mp);
 		__cleanup_free char *mp = NULL;
+		__cleanup_free char *enlat = NULL;
+		__cleanup_free char *exlat = NULL;
 		__cleanup_free char *idle_power = NULL;
 		__cleanup_free char *active_power = NULL;
 		__cleanup_free char *workload = NULL;
@@ -5293,6 +5310,8 @@ static struct shr_table *stdout_id_ctrl_ps_table(struct nvme_id_ctrl *ctrl)
 		epfvt = stdout_psd_time_str(psd->epfvt, psd->epfvts & 0xf);
 		max_bandwidth = stdout_bandwidth_and_scale_str(psd->mbw,
 								psd->mbws);
+		enlat = stdout_psd_latency_str(le32_to_cpu(psd->enlat));
+		exlat = stdout_psd_latency_str(le32_to_cpu(psd->exlat));
 
 		if (iiellss) {
 			__u16 miiell_val = le16_to_cpu(psd->miiell);
@@ -5311,8 +5330,8 @@ static struct shr_table *stdout_id_ctrl_ps_table(struct nvme_id_ctrl *ctrl)
 		shr_table_set_value_str(t, 2, row,
 				psd->flags & NVME_PSD_FLAGS_NOPS ? "non-operational" : "operational",
 				LEFT);
-		shr_table_set_value_unsigned(t, 3, row, le32_to_cpu(psd->enlat), RIGHT);
-		shr_table_set_value_unsigned(t, 4, row, le32_to_cpu(psd->exlat), RIGHT);
+		shr_table_set_value_str(t, 3, row, enlat ?: "-", RIGHT);
+		shr_table_set_value_str(t, 4, row, exlat ?: "-", RIGHT);
 		shr_table_set_value_unsigned(t, 5, row, psd->rrt, RIGHT);
 		shr_table_set_value_unsigned(t, 6, row, psd->rrl, RIGHT);
 		shr_table_set_value_unsigned(t, 7, row, psd->rwt, RIGHT);
